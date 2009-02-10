@@ -54,9 +54,10 @@ http://opensource.org/licenses/bsd-license.php
 .%% Building the library
     ''''''''''''''''''''
     
-From the root directory type make cfg_msys or make cfg_linux to create the
-configuration file, then make dist to build the library, pmxshell and pmx2c
-in the dist directory.
+From the root directory type: '|make release| to build the library and 
+the pmx tools.  The '|dist| directory will contain all that you need 
+to use libutl in your project.
+
 
   
   
