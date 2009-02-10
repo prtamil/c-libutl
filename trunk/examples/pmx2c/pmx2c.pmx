@@ -1,0 +1,186 @@
+/* 
+**  (C) by Remo Dentato (rdentato@gmail.com)
+** 
+** This sofwtare is distributed under the terms of the BSD license:
+**   http://creativecommons.org/licenses/BSD/
+**   http://opensource.org/licenses/bsd-license.php 
+*/
+
+#include "libutl.h"
+#include <ctype.h>
+
+#define CODE    1
+#define COMMENT 2
+
+int Cstrlen(char *s, int l)
+{
+  int j = 0;
+  int k = 0;
+  
+  while (j<l) {
+    if (s[j] == '\\') {
+      j++;
+      if (0 <= s[j] && s[j] <= 7) {
+        j++;
+        if (0 <= s[j] && s[j] <= 7) j++;
+        if (0 <= s[j] && s[j] <= 7) j++;
+      }
+      else if (s[j] == 'x' && isxdigit(s[j+1])) {
+        j+=2;
+        if (isxdigit(s[j+1])) j++;
+      }
+    }
+    k++;
+    j++;
+  }
+  return k;
+}
+
+void printptrn(FILE *f,int ncase, char *start, size_t len)
+{
+  /* #TODO: Pattern Optimization */
+  fprintf(f,"  /* %3d */ ",ncase);
+  if (len<253) 
+    fprintf(f,"\"&:\\%03o\"",Cstrlen(start+1,len-2));
+  fprintf(f,"%.*s", len,start);
+}
+
+int main(int argc, char *argv[])
+{
+  FILE *inf = stdin;
+  FILE *outf = stdout;
+  FILE *tmpf;
+  char *cur;
+  char *alt;
+  char *fname = "(stdin)";
+  int switch_num=0, case_num=0, c;
+  int state = CODE;
+
+  chs_t ln = NULL;
+  int ln_num=0;
+  
+  tmpf = tmpfile();
+  if (!tmpf) utlError(202,"Unable to open temp file");
+
+  if (argc > 1) { 
+    if (strcmp(argv[1],"-h") == 0) {
+      fprintf(stderr,"Usage: pmx2c [inputfile.pmx [outputfile.c]]\n"
+                     "       defaults to stdin and stdout");
+      exit(1);
+    }
+    fname = argv[1];
+    inf = fopen(fname,"r");
+  }
+  if (!inf) utlError(203,"Unable to open input file");
+
+  if (argc > 2)
+    outf = fopen(argv[2],"w");
+  if (!outf) utlError(204,"Unable to open output file");
+
+  chsForLines(ln,inf) {
+    cur = ln;
+    ln_num++;
+    _dbgmsg("** %s\n",cur);
+    while (*cur) {
+      switch (state) {
+        case CODE :
+          switch pmx(cur) {
+          
+              case "/*"  :
+                state = COMMENT;
+                fprintf(tmpf,"%.*s", pmx(Len,0), pmx(Start,0));
+                break;
+                
+              case "&e\\&q" :
+                fprintf(tmpf,"%.*s", pmx(Len,0), pmx(Start,0));
+                break;
+                                
+              case "switch&spmx&S(&b())" :
+                switch_num++;
+                case_num = 0;
+                fprintf(tmpf,"pmx_switch(%.*s,pmx_%d)", pmx(Len,1)-2,
+                                             pmx(Start,1)+1,switch_num);
+                break; 
+                
+              case "case&s&e\\(&b\"\")&S:" :
+                if (switch_num == 0) {
+                  fprintf(stderr, "ERR206 - [%s:%d] - Unexpected case",fname,ln_num);
+                  exit(206);
+                }
+                
+                if (case_num == 0) 
+                  fprintf(outf,";\nstatic char *pmx_%d = \n",switch_num);
+                else 
+                  fprintf(outf,"\"&|\"\n");
+                  
+                printptrn(outf,case_num+1,pmx(Start,1),pmx(Len,1));
+                
+                /* If '&|' is used in the pattern, a case for each
+                ** alternative will be created
+                ** {{
+                */ 
+                alt = pmx(Start,1);
+                do {
+                  fprintf(tmpf,"case %d : ", ++case_num);
+                  while (alt < pmx(End,1)) {
+                    if (*alt++ == '&' && *alt++ == '|') break;
+                  }
+                } while (alt < pmx(End,1));
+                /* }} */
+                
+                break;
+                
+              default :
+                fprintf(tmpf,"%c", *cur);
+                cur++;
+                break;
+          }
+          break;
+          
+        case COMMENT :
+          switch pmx(cur) {
+          
+              case "*/" :
+                state = CODE;
+                fprintf(tmpf,"%.*s", pmx(Len,0), pmx(Start,0));
+                break;
+
+              default:                
+                fprintf(tmpf,"%c", *cur);
+                cur++;
+                break;
+          }
+          break;
+      }
+    }
+  }
+  
+  if (switch_num > 0) {
+    fprintf(outf,";\n\n");
+    fprintf(outf, 
+      "#define pmx_switch(s,n) "
+      "switch ((pmx_cur=s, (pmx_ret=pmxMatchStr(s,n)), (s)+=pmxLen(pmx_ret,0), pmxMatched(pmx_ret)))\n");
+  
+    fprintf(outf,"\n");
+    fprintf(outf, "#define pmx_Start(x) (pmx_cur+pmxStart(pmx_ret,x))\n");
+    fprintf(outf, "#define pmx_End(x)   (pmx_cur+pmxEnd(pmx_ret,x))\n");
+    fprintf(outf, "#define pmx_Len(x)    pmxLen(pmx_ret,x)\n");
+    fprintf(outf, "#define pmx(w,n)      pmx_##w(n)\n");  
+  
+    fprintf(outf,"\n");
+    fprintf(outf,"static void *pmx_ret;\n");
+    fprintf(outf,"static char *pmx_cur;\n");
+      
+    fprintf(outf,"\n");
+  }
+  fprintf(outf,"#line 1 \"%s\"\n",fname);
+
+  fseek(tmpf,SEEK_SET,0);
+  while ((c = fgetc(tmpf)) != EOF) 
+    fputc(c,outf);
+  
+  if (outf != stdout) fclose(outf);
+  if (inf  != stdin)  fclose(inf);
+  fclose(tmpf);
+  exit (0);  
+}
