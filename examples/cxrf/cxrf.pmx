@@ -1,0 +1,104 @@
+/* 
+**  (C) by Remo Dentato (rdentato@gmail.com)
+** 
+** This sofwtare is distributed under the terms of the BSD license:
+**   http://creativecommons.org/licenses/BSD/
+**   http://opensource.org/licenses/bsd-license.php 
+*/
+
+#include "libutl.h"
+
+#define CODE    1
+#define COMMENT 2
+
+int state = CODE;
+
+chs_t ln;
+int ln_num=0;
+
+tbl_t identifiers = NULL;
+
+int main(int argc, char *argv[])
+{
+  FILE *inf = stdin;
+  FILE *outf = stdout;
+  FILE *tmpf;
+  char *cur;
+  int c,k;
+  char *alt;
+  char *fname = "(stdin)";
+  int switch_num=0, case_num=0;
+  
+  tmpf = tmpfile();
+  if (!tmpf) utlError(202,"Unable to open temp file");
+
+  if (argc > 1) { 
+    if (strcmp(argv[1],"-h") == 0) {
+      fprintf(stderr,"Usage: pmx2c [inputfile.pmx [outputfile.c]]\n"
+                     "       defaults to stdin and stdout");
+      exit(1);
+    }
+    fname = argv[1];
+    inf = fopen(fname,"r");
+  }
+  if (!inf) utlError(203,"Unable to open input file");
+
+  if (argc > 2)
+    outf = fopen(argv[2],"w");
+  if (!outf) utlError(204,"Unable to open output file");
+
+  chsForLines(ln,inf) {
+    cur = ln;
+    ln_num++;
+    while (*cur) {
+      switch (state) {
+        case CODE :
+          switch pmx(cur) {
+          
+              case "/*"  :
+                state = COMMENT;
+                break;
+                
+              case "&e\\&q" :
+              case "&f<?jEe>%F" :
+              case "0x<+h>" :
+              case "&d<?jLl>" :
+                break;
+
+              case "<jA-Z_a-z><*j0-9A-Z_a-z>" :
+                c = *pmx(End,0);
+                *pmx(End,0) = '\0';
+                k=tblGetSN(identifiers,pmx(Start,0),0);            
+                identifiers = tblSetSN(identifiers,pmx(Start,0),k+1);                
+                *pmx(End,0) = c;                
+                break;   
+                
+              case "<.>" :
+                break;
+          }
+          break;
+          
+        case COMMENT :
+          switch pmx(cur) {
+          
+              case "*/" :
+                state = CODE;
+                break;
+
+              case "<.>" :
+                break;
+          }
+          break;
+      }
+    }
+  }
+  
+  printf("Total: %d\n",tblCount(identifiers));
+  
+  if (outf != stdout) fclose(outf);
+  if (inf  != stdin)  fclose(inf);
+  fclose(tmpf);
+  identifiers=tblFree(identifiers);
+  ln = chsFree(ln);
+  exit (0);  
+}

@@ -1,0 +1,125 @@
+[Config]
+Compilator.FileName=D:\0_Proj\c-libutl\mk.bat
+Compilator.PSPar=%ProjectDir% %Input%
+Compilator.DefaultDir=%Dir%
+Compilator.SaveAll=0
+Compilator.Capture=1
+Compilator.ParsLog=%F:%L:*
+Compilator.HideOutput=1
+Compilator.LogType=0
+DefaultDir=D:\0_Proj\c-libutl
+DefaultCPIndex=0
+LogtoEnd=1
+DontOpen=0
+AbsolutePath=0
+FileFormat=1
+ProjectFilesOnly=0
+[Project tree]
+vec
+	+vec
+		-doc
+			doc\stk.gif
+		+examples
+			+cxrf
+				examples\cxrf\cxrf.pmx
+			-fsm
+				examples\cxref\Jamfile.mk
+				examples\fsm\fsm.txt
+				examples\fsm\fsm.pmx
+			+fmt
+				examples\fmt\fmt.pmx
+				examples\fmt\fmt9.txt
+			+pmx2c
+				examples\pmx2c\pmx2c.pmx
+				examples\pmx2c\pmx2c_boot.c
+				examples\pmx2c\makefile
+			+pmxshell
+				examples\pmxshell\pmxshell.pmx
+				examples\pmxshell\pmxshell.tcl
+				examples\pmxshell\makefile
+			+macro
+				examples\macro\m2.txt
+				examples\macro\macro.c
+				examples\macro\mm.txt
+			+utl_h
+				examples\utl_h\Jamfile
+				examples\utl_h\utlh.c
+		+src
+			src\pmx.c
+			src\pmx.h
+			src\utl.h
+			src\utl.c
+			src\chs.h
+			src\chs.c
+			src\tbl.h
+			src\tbl.c
+			src\obj.h
+			src\obj.c
+			src\makefile
+		+test
+			+regress
+				test\regress\rgr_tbl.c
+				test\regress\rgr_chs.c
+			+stress
+				test\stress\sts_add.lua
+		README
+[Open project files]
+0=examples\cxrf\cxrf.pmx
+1=src\makefile
+2=examples\pmxshell\makefile
+3=examples\pmx2c\makefile
+4=examples\cxrf\makefile
+5=config.mk
+6=src\chs.c
+7=src\pmx.c
+8=src\pmx.h
+9=examples\pmx2c\pmx2c.pmx
+10=src\utl.h
+11=src\chs.h
+12=examples\pmxshell\pmxshell.pmx
+13=src\tbl.h
+[Selected Project Files]
+Main=
+Selected=src\utl.h
+[examples\cxrf\cxrf.pmx]
+TopLine=56
+Caret=23,66
+[src\makefile]
+TopLine=1
+Caret=1,34
+[examples\pmxshell\makefile]
+TopLine=1
+Caret=1,22
+[examples\pmx2c\makefile]
+TopLine=1
+Caret=1,36
+[examples\cxrf\makefile]
+TopLine=1
+Caret=1,22
+[config.mk]
+TopLine=4
+Caret=8,47
+[src\chs.c]
+TopLine=1
+Caret=1,1
+[src\pmx.c]
+TopLine=537
+Caret=20,563
+[src\pmx.h]
+TopLine=109
+Caret=1,109
+[examples\pmx2c\pmx2c.pmx]
+TopLine=99
+Caret=68,116
+[src\utl.h]
+TopLine=2
+Caret=1,29
+[src\chs.h]
+TopLine=5
+Caret=3,25
+[examples\pmxshell\pmxshell.pmx]
+TopLine=1
+Caret=1,15
+[src\tbl.h]
+TopLine=200
+Caret=1,18
