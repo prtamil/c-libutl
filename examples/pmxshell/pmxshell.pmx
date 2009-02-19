@@ -590,6 +590,27 @@ void explain(char *ptrn)
         expl_ptrn();
         printf("  a sequence of blank\n"); break;
                     
+      case "&&F" :  
+        expl_ptrn();
+        printf("  an optional floating point number\n"); break;    
+      case "&&f" :  
+        expl_ptrn();
+        printf("  a floating point number\n"); break;
+                    
+      case "&&D" :  
+        expl_ptrn();
+        printf("  an optional integer number\n"); break;    
+      case "&&d" :  
+        expl_ptrn();
+        printf("  an integer number\n"); break;
+                    
+      case "&&X" :  
+        expl_ptrn();
+        printf("  an optional hexadecimal number\n"); break;    
+      case "&&x" :  
+        expl_ptrn();
+        printf("  an hexadecimal number\n"); break;
+                    
       case "&&S" :  
         expl_ptrn();
         printf("  an optional sequence of spaces\n"); break;
