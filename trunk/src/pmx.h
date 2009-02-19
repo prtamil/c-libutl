@@ -132,16 +132,16 @@ as follows:
   If any of the characters '&', '>' or '-' are part of the set to be specified,
 they must be preceeded by '&'.  For example:
 
- .['|<=A&-B>'] matches ''|A|', ''|B|' or ''|-|'
-  ['|<=<&>']   matches ''|<|' or ''|>|'
+ .['|<=A&-B>|] matches '|A|', '|B|' or '|-|'
+  ['|<=<&>|]   matches '|<|' or '|>|'
  ..
 
-  The pattern "'|<j...>" (and its negation "'|<J...>|") is meant to be
+  The pattern "'|<j...>|" (and its negation "'|<J...>|") is meant to be
 used by tools that generate pmx expressions and not for expressions created
 "by hand". It assumes that the patterns are sorted so that tests is faster.  
 
   For example, "'|<jA-Z_a-z>|" will work properly and will be slightly faster
-than "'|<=A-Z_a-z>|"  while "'|<jA-Za-z>_|"  will not work at all! 
+than "'|<=A-Z_a-z>|"  while "'|<jA-Za-z_>|"  will not work! 
 
   My advice is to not use it, unless you know exactly what you're doing.
 
@@ -181,9 +181,9 @@ they must be preceeded by '&'.  For example:
 .%% Recognizers
 '''''''''''''''
   Recognizers are patterns that match a specific object (for example
-  a "'|&q|" for a quoted string).
+  "'|&q|" for a quoted string).
   
-  .['|&b|/xy/] Braced string. Matches a string enclosed by the characters
+  .['|&b|'/xy/] Braced string. Matches a string enclosed by the characters
                /x/ and /y/.
                
                If /x/ and /y/ are different there must be a balanced number
@@ -265,7 +265,7 @@ expression '|A&`|B| matches if '|A| matches if '|A| fails and '|B| matches.
 
 .%% Expression length
 '''''''''''''''''''''
-  The operator "'|&:|/x/" is meant to be used, in conjunction with '|&`||,
+  The operator "'|&:|'/x/" is meant to be used, in conjunction with '|&`||,
 by tools that generate pmx expressions and not for expressions created
 "by hand".
 

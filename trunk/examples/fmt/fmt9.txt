@@ -62,7 +62,7 @@ must appear at the very beginning of the line).
   The tag extends up to the end of line so that parameters may be
 specified.
 
-  All tags are one character long, the rest is ignore. This means that, for
+  All tags are one character long, the rest is ignored. This means that, for
 example, '|.T| and '|.Title| are exactly the same (and so is '|.Tutor|!)
   
   For example in:
@@ -697,29 +697,29 @@ as its title. To change an index title, you can use the following syntax:
 
 .%% Code blocks
 
-  You can outline the code using '|.{| and '|.}| tags
+  You can outline the code using '|.{{| and '|.}}| tags
 
 .verb
-  .{ create the flag environment
+  .{{ create the flag environment
     .... 
-  .} 
+  .}} 
 ..
 
   You can specify what language the code block is in:
 
 .v
-  .{ =C
+  .{{ =C
   
-  .}
+  .}}
 ..
 
   You can also specify that a code block should not be formatted or considerd
 for cross reference:
 
 .v
-   .{ - Batch source 
+   .{{ - Batch source 
   
-   .}
+   .}}
 ..
 
  This may be useful for languages that embeds parts of code in other languages
