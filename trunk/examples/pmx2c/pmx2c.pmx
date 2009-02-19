@@ -30,8 +30,14 @@ int Cstrlen(char *s, int l)
         if (isxdigit(s[j+1])) j++;
       }
     }
-    else if (s[j] == '&' && s[j+1] == '|')
-      break;
+    else if (s[j] == '&') {
+      if ( s[j+1] == '&') { 
+        k++;
+        j++;
+      }
+      else if (s[j+1] == '|') 
+        break;
+    }
     k++;
     j++;
   }
@@ -44,10 +50,8 @@ void printptrn(FILE *f,int ncase, char *start, size_t len)
   /* replace <=...> with <j...>  */
   fprintf(f,"  /* %3d */ ",ncase);
   /* Add pattern length for a quicker skip*/
-  /*
   if (len<253) 
     fprintf(f,"\"&:\\%03o\"",Cstrlen(start+1,len-2));
-    */
   fprintf(f,"%.*s", len,start);
 }
 
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
   FILE *outf = stdout;
   FILE *tmpf;
   char *cur;
-  char *alt;
+  char *alt, *altend;
   char *fname = "(stdin)";
   int switch_num=0, case_num=0, c;
   int state = CODE;
@@ -119,16 +123,18 @@ int main(int argc, char *argv[])
                 else 
                   fprintf(outf,"\"&|\"\n");
                   
+                alt = pmx(Start,1);
+                altend = pmx(End,1);
+                
                 printptrn(outf,case_num+1,pmx(Start,1),pmx(Len,1));
                 
                 /* If '&|' is used in the pattern, a case for each
                 ** alternative will be created
                 ** {{
                 */ 
-                alt = pmx(Start,1);
                 do {
                   fprintf(tmpf,"case %d : ", ++case_num);
-                  while (alt < pmx(End,1)) {
+                  while (alt < altend) {
                     if (*alt++ == '&' && *alt++ == '|') break;
                   }
                 } while (alt < pmx(End,1));
