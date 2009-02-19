@@ -9,7 +9,6 @@
 #ifndef CHS_H
 #define CHS_H
 
-
 /*
 .v
                      __        
@@ -20,7 +19,36 @@
                 \____)_||_(_____/
 ..
 
+            ===============================
+.T                Character strings 
+            ===============================
+            
+.A         Remo Dentato (rdentato@gmail.com)
 
+
+.% Overview
+===========
+
+ C strings have two major drawbacks:
+  .- They cannot easily resized 
+   - They are zero-terminated (meaning that getting the
+     lenght of a strings costs O(n))
+  ..
+
+ This functions help handling variable lenght string
+
+.% Usage
+========
+
+  There is a key concept to bear in mind when using chs, the string 
+address may change any time the string is modified.  This makes address
+of chs strings unsuitable to being stored in two different variable at
+the same time.
+
+  It may require some time to get used to this but in practice it doesn't
+cause too many issues.
+
+  The common idiom is to write something like: '|str = chsXXX(str, ...)| 
 
 */
 
@@ -40,6 +68,11 @@ extern chs_t   chs_tmp_;
 
 #define chs_blk(s) ((chsBlk *)(((char*)(s)) - offsetof(chsBlk,chs)))
 
+/* .% API
+=========
+
+
+*/
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size  : 0)
 #define chsCur(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->cur : 0)

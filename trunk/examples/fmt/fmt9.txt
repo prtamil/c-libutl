@@ -735,7 +735,7 @@ for cross reference:
  [.D]  document date (breaks other .)
  [.:]  section with a given style (breaks other .)
  [.%]  Section (number of '|%| matters!) (breaks other .)
- [.{]  code outline (breaks other .)
+ [.{{]  code outline (breaks other .)
 
  [.f]  figure (doesn't break other .)
  [.t]  table (doesn't break other .)
