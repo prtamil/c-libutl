@@ -109,7 +109,7 @@ void utlEmptyFun(void);
 UTL_EXTERN( char *utlEmptyString , = "") ;
 
 /*   .[utlZero]  Is a constant whose value is 0 and that is to be used in
-**               idioms like |do { ... } while (utlZero)|.
+**               idioms like '|do { ... } while (utlZero)|.
 **               This is useful to avoid compilers warning about testing
 **               constant values.
 **   ..
@@ -163,7 +163,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 **
 **   The first parameter of the '{:err()} function is the error code (an
 ** integer) that will be used with '|exit()|. The rest of parameters are 
-** the same that you would have used for a '|printf|. 
+** the same that you would have used for a '|printf()|. 
 **   To properly release resources you should register a cleanup function
 ** with |atexit()|
 **
@@ -201,7 +201,7 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 
 #define TSTTITLE(s) TSTWRITE("# ** %s **\nTAP version 13\n\n",s)
 
-/* Tests are divided in sections introduced by the |TSTSECTION(s)| macro.
+/* Tests are divided in sections introduced by the '|TSTSECTION(s)| macro.
 ** The macro reset the appropriate counters and print the header |s|
 */
 
@@ -216,21 +216,16 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
                      TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
                      TSTGRP)
 
-/* The single test is defined  with the |TST(s,x)| macro.
-**   |s| is a string that defines the test
-**   |x| an assertion that has to be true for the test to succeed.
+/* The single test is defined  with the '|TST(s,x)| macro.
+**   .['|s|] is a string that defines the test
+**    ['|x|] an assertion that has to be true for the test to succeed.
+**   ..
 */
 
 #define TST(s,x)    (TST_DO(s,(TSTSKP != NULL? 1 : (x))),\
                      (TSTSKP != NULL? TSTWRITE(" # SKIP %s",TSTSKP):0),\
                      TSTWRITE("\n"),TSTRES)
-/*
-#define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
-                     TSTWRITE("%s %4d - $%02d%02d%03d %s",\
-                              (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
-                              TSTGTT, TSTSEC, TSTGRP, TSTNUM, s))
 
-*/
 #define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
                      TSTWRITE("%s %4d - %s",\
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
@@ -268,7 +263,7 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 /* Execute a statement if a test failed */
 #define TSTIF_NOTOK if (!TSTRES)
 
-static int TSTRES  = 0;  /* Result of the last performed |TST()| */
+static int TSTRES  = 0;  /* Result of the last performed '|TST()| */
 static int TSTNUM  = 0;  /* Last test number */
 static int TSTGRP  = 0;  /* Current test group */
 static int TSTSEC  = 0;  /* Current test SECTION*/
@@ -286,7 +281,7 @@ static const char *TSTKO  = "not ok";
 /* .% Debugging
 ** ============
 ** 
-**   Sometimes it's useful to insert tracing |printf()| to understand what's
+**   Sometimes it's useful to insert tracing '|printf()| to understand what's
 ** going on in a program. Those '|printf()| statements are normally guarded
 ** with an |#ifdef DEBUG| so that they disappear in the final version of the
 ** software.  The downsides of this approach is that they visually clutter the
@@ -294,7 +289,7 @@ static const char *TSTKO  = "not ok";
 **
 **   The macro here helps inserting debug messages that can be turned on/off
 ** and that will be completely disappear from the program if the source is
-** compiled without the |DEBUG| symbol defined.
+** compiled without the '|DEBUG| symbol defined.
 */
 
 /* Let's give precedence to '{NDEBUG} over '{DEBUG} */
