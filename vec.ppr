@@ -19,7 +19,7 @@ vec
 	+vec
 		-doc
 			doc\stk.gif
-		+examples
+		-examples
 			-uncomment
 				examples\uncomment\uncomment.pmx
 				examples\uncomment\makefile
@@ -49,7 +49,7 @@ vec
 				examples\utl_h\Jamfile
 				examples\utl_h\utlh.c
 			examples\makefile
-		-src
+		+src
 			src\pmx.c
 			src\pmx.h
 			src\utl.h
@@ -79,15 +79,16 @@ vec
 4=examples\uncomment\uncomment.pmx
 5=examples\uncomment\makefile
 6=examples\makefile
+7=src\pmx.c
 [Selected Project Files]
 Main=
-Selected=examples\makefile
+Selected=makefile
 [src\makefile]
 TopLine=1
-Caret=21,24
+Caret=12,5
 [makefile]
-TopLine=2
-Caret=1,48
+TopLine=15
+Caret=1,33
 [targets.mk]
 TopLine=1
 Caret=1,1
@@ -95,7 +96,7 @@ Caret=1,1
 TopLine=4
 Caret=20,24
 [examples\uncomment\uncomment.pmx]
-TopLine=15
+TopLine=16
 Caret=30,49
 [examples\uncomment\makefile]
 TopLine=1
@@ -103,3 +104,6 @@ Caret=1,22
 [examples\makefile]
 TopLine=1
 Caret=1,20
+[src\pmx.c]
+TopLine=284
+Caret=13,294
