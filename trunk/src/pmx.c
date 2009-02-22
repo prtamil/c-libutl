@@ -296,7 +296,7 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
                                 if (esc && ch == esc) {
                                   ch = pmxGetc(text); 
                                 } 
-                                else if (isclass(p,ch)) break;
+                                else if (isclass(p+1,ch)) break;
                                 ch = pmxGetc(text); cnt++;
                               }
                               if (ch == EOF || cnt >= max) return NULL;
