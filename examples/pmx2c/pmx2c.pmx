@@ -46,9 +46,9 @@ int Cstrlen(char *s, int l)
 
 void printptrn(FILE *f,int ncase, char *start, size_t len)
 {
+  fprintf(f,"  /* %3d */ ",ncase);
   /* #TODO: Pattern Optimization */
   /* replace <=...> with <j...>  */
-  fprintf(f,"  /* %3d */ ",ncase);
   /* Add pattern length for a quicker skip*/
   if (len<253) 
     fprintf(f,"\"&:\\%03o\"",Cstrlen(start+1,len-2));
