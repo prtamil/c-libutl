@@ -13,11 +13,13 @@
 long tbl_i;
 
 static unsigned long hsh_num1(unsigned long a);
-static unsigned long hsh_num2(unsigned long a);
 static unsigned long hsh_str1(const void *data, int len);
-static unsigned long hsh_str2(const void *data, int len);
 static unsigned long hsh_ptr1(void *p);
+#if 0
+static unsigned long hsh_num2(unsigned long a);
+static unsigned long hsh_str2(const void *data, int len);
 static unsigned long hsh_ptr2(void *p);
+#endif 
 static unsigned short llog2(unsigned long x);
 
 
@@ -417,6 +419,7 @@ static unsigned long hsh_num1 ( unsigned long a)
     return a;
 }
 
+#if 0
 /*
 ** by Thomas Wang
 */
@@ -429,28 +432,31 @@ static unsigned long hsh_num2( unsigned long a)
     a =  a ^ (a >> 15);
     return a;
 }
+#endif 
 
 /*********/
 static unsigned long hsh_str1(const void *data, int len)
 {
   return SuperFastHash(data, len, 0x165667b1);
 } 
-
+#if 0
 static unsigned long hsh_str2(const void *data, int len)
 {
   return SuperFastHash(data, len, 0x27d4eb2d);
 } 
+#endif
 
 static unsigned long hsh_ptr1(void *p)
 {
   return hsh_num1((unsigned long)p);
 }
 
+#if 0
 static unsigned long hsh_ptr2(void *p)
 {
   return hsh_num2((unsigned long)p);
 }
-
+#endif
 /************************/
 
 /*
