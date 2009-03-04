@@ -181,7 +181,7 @@ they must be preceeded by '&'.  For example:
 .%% Recognizers
 '''''''''''''''
   Recognizers are patterns that match a specific object (for example
-  "'|&q|" for a quoted string).
+"'|&q|" for a quoted string).
   
   .['|&b|'/xy/] Braced string. Matches a string enclosed by the characters
                /x/ and /y/.
@@ -260,7 +260,7 @@ submatches. Submatches can be nested. Examples:
 first expression fails, the second must be tried.
 
   In other words, if '|A| and '|B| are two generic pmx expressions, the 
-expression '|A&`|B| matches if '|A| matches if '|A| fails and '|B| matches. 
+expression '|A&`|B| matches if '|A| matches or if '|A| fails and '|B| matches. 
 
 
 .%% Expression length
@@ -275,7 +275,7 @@ over an alternative expressions that failed.
 
 .% Tools
 """"""""
-  The examples directory contains two useful tools for pmx.
+  The '|examples| directory contains two useful tools for pmx.
   
   .[pmxshell]   an interactive shell that allows to define a set of 
                 pmx patterns and test strings against them.  It is 

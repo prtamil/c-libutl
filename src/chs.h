@@ -49,6 +49,7 @@ the same time.
 cause too many issues.
 
   The common idiom is to write something like: '|str = chsXXX(str, ...)| 
+whenever the function '|XXXX| modifies the string itself 
 
 */
 
@@ -73,6 +74,7 @@ extern chs_t   chs_tmp_;
 
 
 */
+
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size  : 0)
 #define chsCur(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->cur : 0)
