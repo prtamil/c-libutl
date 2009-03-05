@@ -51,9 +51,13 @@ cause too many issues.
   The common idiom is to write something like: '|str = chsXXX(str, ...)| 
 whenever the function '|XXXX| modifies the string itself 
 
-*/
+.% The "block"
+==================
 
-#define chsBlksz 32
+ 
+*/
+ 
+#define chsBlksz 16
 
 typedef struct {
   long size;
