@@ -30,7 +30,7 @@ typedef obj_s *obj_t;
 
 extern obj_t *obj_tmp;
  
-#define objCpy(d,s) ((d)->class->cpy(d,s))
+#define objCpy(d,s) ((obj_tmp=(d))->class->cpy(obj_tmp,s))
 #define objDup(s)   ((s)->class->dup(s))
 #define objNew(c) \
   (((obj_tmp=(obj_t)((c)->new())) \
