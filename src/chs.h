@@ -19,11 +19,11 @@
                 \____)_||_(_____/
 ..
 
-            ===============================
-.T                Character strings 
-            ===============================
+.         ===============================
+.T             Character strings 
+.         ===============================
             
-.A         Remo Dentato (rdentato@gmail.com)
+.A      Remo Dentato (rdentato@gmail.com)
 
 
 .% Overview
@@ -68,9 +68,6 @@ typedef struct {
 
 typedef char *chs_t ;
 
-extern chsBlk *chs_blk_;
-extern chs_t   chs_tmp_;
-
 #define chs_blk(s) ((chsBlk *)(((char*)(s)) - offsetof(chsBlk,chs)))
 
 /* .% API
@@ -78,6 +75,8 @@ extern chs_t   chs_tmp_;
 
 
 */
+extern chsBlk *chs_blk_;
+extern chs_t   chs_tmp_;
 
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size  : 0)
