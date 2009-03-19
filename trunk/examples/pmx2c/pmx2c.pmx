@@ -9,6 +9,58 @@
 #include "libutl.h"
 #include <ctype.h>
 
+
+/*
+.% Overview
+~~~~~~~~~~~~
+
+  '|pmx2c|' is a preprocessor that extends the '|switch| statement allowing
+'|case| labels to be pmx expressions instead of integer constants.
+
+  For example:
+.v
+    switch pmx(s) {
+    
+      case "<+d>" : ...
+                    break;
+      case "<.>"  : ...
+                    break
+    }
+..
+
+  The preprocessor relies on the '|pmx(..)| following the switch statement
+to recognize that this is not a regular '|switch| and on the double quotes
+to recognize the special '|case| statements.
+
+  The colon '|:| of the case statement has to appear on the same line as the
+closing double quotes.
+
+  '|s| has to be a variable of type '|char *| pointing to a null-terminated
+string.
+
+  This is the proper way to use '|pmx2c| in a makefile 
+
+.v
+    .SUFFIXES: .c .o .pmx
+    
+    .c.o:
+         	$(CC) $(CFLAGS) -c -o $*.o $*.c
+    	
+    .pmx.o:
+      	  pmx2c $*.pmx $*.c
+       	  -$(CC) $(CFLAGS) -c -o $*.o $*.c
+      	  $(RM) $*.c
+..	
+
+so that a file with extension '|.pmx| is directly translated into an
+object file hiding the intermediate '|.c| file.  It is assumend that the
+'|pmx2c| exectuable is in the path.
+
+  Note the '|-| before the '|$(CC)| command to ensure that the '|.c| file is 
+properly cleaned up even if there's a syntax error.   
+
+*/
+
 #define CODE    1
 #define COMMENT 2
 
