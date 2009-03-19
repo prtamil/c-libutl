@@ -7,21 +7,6 @@
   This document describes the markup language that fmt recognize
   in comments.
 
-.: copyright
-
-.v
- (C) by Remo Dentato (rdentato@gmail.com)
-
- Permission to use, copy, modify and distribute this code and
- its documentation for any purpose is hereby granted without
- fee, provided that the above copyright notice, or equivalent
- attribution acknowledgement, appears in all copies and
- supporting documentation.
- 
- Copyright holder makes no representations about the suitability
- of this software for any purpose. It is provided "as is" without
- express or implied warranty.
-..
   
 .% Objectives
 =============
@@ -221,6 +206,7 @@ be ignored. This allows the title to be adorned as in:
 ..
    
 .%% Lists
+---------
 
   A list is a sequence of items. There are many typese of lists:
   
@@ -261,6 +247,7 @@ be ignored. This allows the title to be adorned as in:
   
   
 .%% Equations
+-------------
 
   Equations are difficult to render in ASCII but may be very useful when
 explaing the behavior of certain part of code. The tag '|'`$| enters
@@ -292,7 +279,7 @@ it will retain the ASCII format that is readable anyway.
 
 
 .%% Verbatim text
-----------------
+-----------------
 
   One of the features common to all text formatters is the ability to disable
 any formatting for a piece of text. This is useful for including raw material
@@ -761,4 +748,20 @@ for cross reference:
  [`'{] An identifier (will be included in cross references!)
 ..
 
+.% License
+==========
+
+.v
+ (C) by Remo Dentato (rdentato@gmail.com)
+
+ Permission to use, copy, modify and distribute this code and
+ its documentation for any purpose is hereby granted without
+ fee, provided that the above copyright notice, or equivalent
+ attribution acknowledgement, appears in all copies and
+ supporting documentation.
+ 
+ Copyright holder makes no representations about the suitability
+ of this software for any purpose. It is provided "as is" without
+ express or implied warranty.
+..
  

@@ -1,7 +1,7 @@
 /* 
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
-** This sofwtare is distributed under the terms of the BSD license:
+** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
 **   http://opensource.org/licenses/bsd-license.php 
 */
@@ -25,16 +25,14 @@ int main(int argc, char *argv[])
   FILE *tmpf;
   char *cur;
   int c,k;
-  char *alt;
   char *fname = "(stdin)";
-  int switch_num=0, case_num=0;
   
   tmpf = tmpfile();
   if (!tmpf) utlError(202,"Unable to open temp file");
 
   if (argc > 1) { 
     if (strcmp(argv[1],"-h") == 0) {
-      fprintf(stderr,"Usage: pmx2c [inputfile.pmx [outputfile.c]]\n"
+      fprintf(stderr,"Usage: cxrf [inputfile.pmx [outputfile.c]]\n"
                      "       defaults to stdin and stdout");
       exit(1);
     }
