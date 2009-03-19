@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
           
         case COMMENT :
           switch pmx(cur) {
-          
               case "*/" :
                 state = CODE;
                 break;
