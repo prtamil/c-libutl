@@ -199,7 +199,8 @@ they must be preceeded by '&'.  For example:
                 
    ['|&d|]     A possibly signed integer (e.g. : "'|32|", "'|-15|", "'|+7|")
    ['|&f|]     A possibly signed decimal number. It will also match integers
-               (e.g. : "'|3.2|", "'|-.5|", "'|+7|").
+               (e.g. : '|3.2|, '|-.5|, '|+7|).
+               
    ['|&k|]     A sequence of blanks (space or tab)
    ['|&l|]     The rest of the line up to the newline character(s) (see below)
    ['|&n|]     The end of the line. Matches any of "'|\r\n|", "'|\r|" or "'|\n|"
@@ -207,7 +208,7 @@ they must be preceeded by '&'.  For example:
                match just one type of quoted string use the "'|&b|" recognizer
                (e.g. "'|&b'`'|" for single quoted strings).
  
-               The recognires '|&q| honours the escape character set with '|&e|
+               The recognizer '|&q| honours the escape character set with '|&e|
                (see below).
                
    ['|&s|]     A sequence of spaces (space, tab, newlines, vertical tabs, etc)
@@ -216,15 +217,16 @@ they must be preceeded by '&'.  For example:
 
   Use the uppercase corresponding letter to make it optional. For example:
   
-  .['|a&K+&Kb|] matches "'|a+b|", "'|a + b|", "'|a+   b|" etc.
-   ['|x&D|] matches "'|x|", "'|x42|", "'|x+1|" etc.
+  .['|a&K+&Kb|] matches '|a+b|, '|a + b|, '|a+   b|, etc.
+   ['|x&D|] matches '|x|, '|x42|, '|x+1|, etc.
+   ['|&f<?=eE>&F|] matches '|-3.2|, '|+3.1E-52|', etc
   .. 
 
 
 .%% Matching options
 ''''''''''''''''''''
 
-  .['|&e|/x/] Set the character /x/ as the escape character. For example,
+  .['|&e|'/x/] Set the character '/x/ as the escape character. For example,
               given the string '|"abc!"def"|': 
               
                   .['|&q|]     matches '|"abc!"| 
