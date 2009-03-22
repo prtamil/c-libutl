@@ -8,5 +8,5 @@
 
 #include "libutl.h"
 
-obj_t *obj_tmp;
+
 
