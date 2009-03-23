@@ -517,7 +517,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 ** comment.
 */
 
-#define FSM 
+#define FSM for(;;)
 #define STATE(x) x##_s 
 #define GOTO(x)  goto x##_s
 
