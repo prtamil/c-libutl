@@ -497,6 +497,29 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 
 #endif /* UTL_LOGGING */
 
+/* .% Finite state machine
+**
+**  Three quick macros to embed Finite state machine into C programs.
+**
+** .v
+**      FSM {
+**        STATE(x) : ...
+**                   GOTO(y);
+**        ....
+**
+**        STATE(y) : ...
+**                   ...
+**      }
+** ..
+**
+**   It's a good practice to include a graphic of the FSM in the technical
+** documentation. I often use to include the GraphViz description as 
+** comment.
+*/
+
+#define FSM 
+#define STATE(x) x##_s 
+#define GOTO(x)  goto x##_s
 
 #endif /* UTL_H */
 
