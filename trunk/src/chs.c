@@ -350,9 +350,8 @@ static char  *rpl_fun(char *mtc, pmxMatches_t cpt)
   char *r, *t;
   long l;
   
+  rpl_chs = chsCpy(rpl_chs, utlEmptyString);
   if (rpl_str && *rpl_str) {
-    rpl_chs = chsDel(rpl_chs, 0, -1);
-
     r = rpl_str;
     while (*r) {
       l = 0;
