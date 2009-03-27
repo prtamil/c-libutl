@@ -11,9 +11,12 @@ all:
 	cd pmxshell; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd uncomment; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd cxrf; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
+	cd scanner; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 
 clean:
 	cd pmx2c; make clean
 	cd pmxshell; make clean
 	cd uncomment; make clean
 	cd cxrf; make clean
+	cd scanner; make clean
+
