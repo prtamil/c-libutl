@@ -360,13 +360,14 @@ extern char *pmx_tmpstr;
 extern char *pmx_tmpptrn;
 extern pmxMatches_t pmx_tmpmtc;
 
-#define pmxScanner(s,p,c) \
+#define pmxScanner(s,p,c) do {\
     for (pmx_tmpstr = s, pmx_tmpptrn =  p, \
                        pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
          *pmx_tmpstr && pmx_tmpmtc; \
          pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
                        pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
-    { c ; break; }
+    { c ; break; } \
+    } while (0)
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
