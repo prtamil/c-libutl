@@ -354,7 +354,7 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
-#define pmxCase(y) case pmxTok_defcase(y)
+#define pmxTokCase(y) case pmxTok_defcase(y)
 
 extern char *pmx_tmpstr;
 extern char *pmx_tmpptrn;

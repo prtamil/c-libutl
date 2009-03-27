@@ -27,15 +27,15 @@ int main(int argc, char *argv[])
     pmxTokSet("(<.>)", TK_UNKNOWN)
   ,  
     pmxTokSwitch {
-      pmxCase(TK_NOTE) :
+      pmxTokCase(TK_NOTE) :
          printf("NOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
          continue;
                       
-      pmxCase(TK_DEFNOTE):
+      pmxTokCase(TK_DEFNOTE):
          printf("DEFNOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
          continue;
                          
-      pmxCase(TK_PAUSE):
+      pmxTokCase(TK_PAUSE):
          printf("PAUSE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
          continue;
          
