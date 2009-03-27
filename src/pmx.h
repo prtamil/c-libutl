@@ -319,11 +319,12 @@ pmxMatches_t pmxMatchStr(char *text, char *p);
 ''''''''''''''''''''
 .{{ */
 
-int          pmxMatched (pmxMatches_t mtc);
-pmxMatches_t pmxMatchStr(char *text, char *p);
-size_t       pmxLen     (pmxMatches_t mtc, unsigned char n);
-size_t       pmxStart   (pmxMatches_t mtc, unsigned char n);
-size_t       pmxEnd     (pmxMatches_t mtc, unsigned char n);
+int           pmxMatched (pmxMatches_t mtc);
+unsigned char pmxToken(pmxMatches_t mtc);
+pmxMatches_t  pmxMatchStr(char *text, char *p);
+size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
+size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
+size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
 /* .}} 
 
@@ -350,5 +351,29 @@ typedef int (*pmxScanFun_t)(char *txt, pmxMatches_t mtc);
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
 /* .}} */
+
+#define pmxTok_defcase(y) 0##y 
+#define pmxTok_defstr(y)  #y 
+#define pmxCase(y) case pmxTok_defcase(y)
+
+extern char *pmx_tmpstr;
+extern char *pmx_tmpptrn;
+extern pmxMatches_t pmx_tmpmtc;
+
+#define pmxScanner(s,p,c) \
+    for (pmx_tmpstr = s, pmx_tmpptrn =  p, \
+                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
+         *pmx_tmpstr && pmx_tmpmtc; \
+         pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
+                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
+    { c ; break; }
+
+#define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
+#define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
+#define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
+#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+#define pmxTokSwitch  switch (pmxToken(pmx_tmpmtc))   
+
+
 
 #endif

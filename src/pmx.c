@@ -66,6 +66,11 @@ int pmxMatched(pmxMatches_t mtc)
   return mtc ? (*mtc)[pmxCaptMax][0] : 0;
 }
 
+unsigned char pmxToken(pmxMatches_t mtc)
+{
+  return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0);
+}
+
 /* {{ Checks on characters **/
 #define ic(c) (icase?tolower(c):c)
 
@@ -224,7 +229,7 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
   #if 0
   memset(capt,0,sizeof(capt));
   #else
-  for (capt_opn = 0; capt_opn < pmxCaptMax; capt_opn++) {
+  for (capt_opn = 0; capt_opn <= pmxCaptMax; capt_opn++) {
     capt[capt_opn][0] = 0;
     capt[capt_opn][1] = 0;
   }
@@ -409,8 +414,13 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
                               
                    case '\0': return NULL;
                    
-                   default : if (ic(ch) != ic(*p)) return NULL;
-                             ch = READ_NEXT;
+                   default : if (*p & 0x80) {
+                               capt[pmxCaptMax][1] = *p;
+                             }
+                             else {
+                               if (ic(ch) != ic(*p)) return NULL;
+                               ch = READ_NEXT;
+                             }
                              break;
                  }
                  break;
@@ -480,8 +490,9 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
                      case 'e' : if (*++p == '&' && *p) p++;
                      case 'E' : break;
                      case '|' : ch = '\0'; break;
-                     case '\0' : if (pmxEof(text)) break;
-                     default  : return NULL;
+                     case '\0': if (pmxEof(text)) break;
+                     default  : if ((*p & 0x80) == 0) return NULL;
+                                capt[pmxCaptMax][1] = *p;
                    }
                    break;
   
@@ -528,6 +539,9 @@ pmxMatches_t pmxMatchStr(char *txt, char *ptrn)
   sb.eof   = 0;
 
   start = pmxTell(text);
+  
+  if (*ptrn == '&' && ptrn[1] == '|') ptrn+=2;  
+
   while (*ptrn) {
     cnt = start;
     if (*ptrn == '&' && ptrn[1] == ':') {
@@ -583,3 +597,11 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   }
   return 0;
 }
+
+char *pmx_tmpstr;
+char *pmx_tmpptrn;
+pmxMatches_t pmx_tmpmtc;
+
+/*******************/
+
+
