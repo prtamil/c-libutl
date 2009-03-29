@@ -581,15 +581,14 @@ void explain(char *ptrn)
         break;    
       case "&&b(<.>)(<.>)" :
         printf("  a string enclosed in balanced '%c' and '%c'\n",*pmx(Start,1),*pmx(Start,2));
-        break;
-                    
+        break;     
       case "&&K" :  
         expl_ptrn();
         printf("  an optional sequence of blank\n"); break;    
       case "&&k" :  
         expl_ptrn();
         printf("  a sequence of blank\n"); break;
-                    
+      
       case "&&F" :  
         expl_ptrn();
         printf("  an optional floating point number\n"); break;    
@@ -613,21 +612,28 @@ void explain(char *ptrn)
                     
       case "&&S" :  
         expl_ptrn();
-        printf("  an optional sequence of spaces\n"); break;
+        printf("  an optional sequence of spaces\n"); break;        
       case "&&s" :  
         expl_ptrn();
         printf("  a sequence of spaces\n"); break;
       
+      case "&&:(<.>)" :
+        expl_ptrn();
+        printf("  pattern is %d characters\n",(unsigned char)*pmx(Start,1)); 
+       
       case "&&(<.>)" :   
         expl_ptrn();
-        printf("  the character '%c'\n",*pmx(Start,1)); break;
+        if (*pmx(Start,1) & 0x80)
+          printf("  set token to 'x%02X'\n",(unsigned char)*pmx(Start,1)); 
+        else
+          printf("  the character '%c'\n",*pmx(Start,1)); break;
 
       case "<+!&&&(&)&<>" : 
         expl_ptrn();
         printf("  the string \"%.*s\"\n",pmx(Len,0),pmx(Start,0));
         break;
       
-      case "<.>":        
+      case "<.>": 
         expl_ptrn();
         printf("INVALID PATTERN %c\n",*pmx(Start,0));
         return;
