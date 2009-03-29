@@ -328,9 +328,10 @@ size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
 /* .}} 
 
-.%% Text Scanner
-''''''''''''''''
-  The function '{pmxScanStr()} can be used to repeatedly match pattern
+.%% Function Scanner
+~~~~~~~~~~~~~~~~~~~~
+
+  The function '{pmxScanStr()} can be used to repeatedly match a pattern
 against a text.
   
   The pattern is usually made by a list of expression joined with the '|&`||' 
@@ -343,7 +344,7 @@ results as parameters.
 starting from the first character after the end of the previous match, 
 otherwise '{pmxScanStr()} returns that value. 
 
-  Look at the '|pmxshell| example for more details on how to use this function 
+  Look at the '|pmxshell.pmx| example for more details on how to use this function 
 
 .{{ */
 
@@ -351,6 +352,23 @@ typedef int (*pmxScanFun_t)(char *txt, pmxMatches_t mtc);
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
 /* .}} */
+
+
+/*
+.%% Scanner
+~~~~~~~~~~~
+
+  pmx offers another format for scanners that directly refers to "tokens".
+  
+  
+
+.v
+   pmxScanner (string, token_patterns, token_handlers)
+..
+
+  Where '|token_patterns| i
+
+*/
 
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
@@ -367,7 +385,8 @@ extern pmxMatches_t pmx_tmpmtc;
          pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
                        pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
     { c ; break; } \
-    } while (0)
+    pmx_tmpstr = ""; \
+    } while (pmx_tmpstr == NULL)
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
