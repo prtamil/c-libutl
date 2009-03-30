@@ -19,28 +19,27 @@ int main(int argc, char *argv[])
 {
   if (argc < 2) return(1);
   
-  pmxScanner( argv[1]
+  pmxScanner(
+    argv[1]
   ,
     pmxTokSet("(<?=,'>)<=a-gA-G>(<*==>)" ,TK_NOTE)
     pmxTokSet("(<?=,'>)&io(<*==>)", TK_DEFNOTE)
     pmxTokSet("&ip(<*==>)", TK_PAUSE)
     pmxTokSet("(<.>)", TK_UNKNOWN)
-  ,  
-    pmxTokSwitch {
-      pmxTokCase(TK_NOTE) :
-         printf("NOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
-         continue;
-                      
-      pmxTokCase(TK_DEFNOTE):
-         printf("DEFNOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
-         continue;
-                         
-      pmxTokCase(TK_PAUSE):
-         printf("PAUSE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
-         continue;
-         
-      default: continue;
-    }
+  , 
+    pmxTokCase(TK_NOTE) :
+       printf("NOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       continue;
+                    
+    pmxTokCase(TK_DEFNOTE):
+       printf("DEFNOTE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       continue;
+                       
+    pmxTokCase(TK_PAUSE):
+       printf("PAUSE: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       continue;
+       
+    default: continue;  
   );
 
   return 0;
