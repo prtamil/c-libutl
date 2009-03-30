@@ -384,15 +384,15 @@ extern pmxMatches_t pmx_tmpmtc;
          *pmx_tmpstr && pmx_tmpmtc; \
          pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
                        pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
-    { c ; break; } \
+    { switch (pmxToken(pmx_tmpmtc)) { c } ; break; } \
     pmx_tmpstr = ""; \
-    } while (pmx_tmpstr == NULL)
+  } while (pmx_tmpstr == NULL)
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
 #define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
-#define pmxTokSwitch  switch (pmxToken(pmx_tmpmtc))   
+#define pmxTokSwitch     
 
 
 
