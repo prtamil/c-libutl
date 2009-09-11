@@ -1,8 +1,8 @@
-{{{
-djulios. tcesares. djacobes.
 
-le tadji lenu binxo la .budas. ze'a lo jeftu be li mu
-po'u le junri ctucku be lenu sevzi makcu 
+_djulios. tcesares. djacobes._
+
+=le tadji lenu binxo la .budas. ze'a lo jeftu be li mu=
+==po'u le junri ctucku be lenu sevzi makcu ==
 
 ni'oni'oni'o lidne ckupau
 
@@ -17,4 +17,3 @@ to
 toi 
 
 ni'o la budas. ctuca fi le tadji be le claxu be lo se xlafri
-}}}
