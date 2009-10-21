@@ -14,6 +14,7 @@ A state is introduced by its name:
  "A" = "a" $v -> s2 ;
 
 The patterns BEGIN and END match when entering/exiting a state
+The pattern EOF matches the end of text
 
 There are 26 string variable named $a-$z
 
@@ -32,11 +33,37 @@ The following functions are implemented
 @mid(a,b,i,j) - set a to the substring of b from i to j (inclusive)
 @len(a,b)     - set a to the length of b
 
-@lnm(a)       - set a to current line number
+@lnm(a)       - set a to the current input line number
  
-@ret          - exit from the current state
+@ret(a)       - exit from the current state
 @clr          - clear all the accumulated text
 
-@if(x op y, a, b)
-@case(x,y,w,z,...,q)
+@if(x op y, b, c)
 
+
+script = state*
+
+state = "[" state_name "]" rule*
+
+rule  = "\"" pattern "\"" replace? next_state? ";"
+
+nextsate = "->" state_name
+
+replace = "=" (value | func)+
+
+value = var | STRING | NUMBER
+
+var = "$" (var_name | DIGIT)
+
+func = add | sub | cat | set | div | mul | mod
+
+add = "@add" "(" var_name, value ")"
+sub = "@sub" "(" var_name, value ")"
+set = "@set" "(" var_name, value ")"
+div = "@div" "(" var_name, value ")"
+mul = "@mul" "(" var_name, value ")"
+mod = "@mod" "(" var_name, value ")"
+cat = "@cat" "(" var_name, value ")"
+
+sif = "@if" "(" value op value "," func ("," func)? ")"
+op = "=" | "<" | ">" | "<=" | ">=" | "<>"
