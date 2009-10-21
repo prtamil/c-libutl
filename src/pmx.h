@@ -355,18 +355,47 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
 
 /*
-.%% Scanner
-~~~~~~~~~~~
+.%% Complex scanners
+~~~~~~~~~~~~~~~~~~~~
 
-  pmx offers another format for scanners that directly refers to "tokens".
-  
-  
+  To ease the definition of more complex scanners, the following
+alternative is provided. The syntax makes use of conventions that 
+need to be abided to make everything work.
 
+  Basically, one define a set of tokens, associate one or more 
+pmx patterns to them and then specify the actions to perform when a
+token is encountered in the text. 
+  
 .v
-   pmxScanner (string, token_patterns, token_handlers)
+   #define T_LETTERS  xF1     <--- tokens are in the form '|x|'/HH/
+   #define T_NUMBERS  xF2          where HH is an hex number
+   #define T_OTHER    xFE
+   
+   pmxScannerBegin("Text to be scanned ....")  <--- Note: '*NO* semicolon
+                                                    at the end of lines
+     pmxTokSet("<+=0-9>",T_NUMBERS)              <---
+     pmsTokSet("<+=A-Z>",T_LETTERS)
+     pmsTokSet("<+=a-z>",T_LETTERS)
+     pmsTokSet("<.>",T_OTHER)
+     
+   pmxTokSwitch        <--- This sections is similar to a
+                            regular switch() statement
+     pmxTokCase(TK_LETTERS):
+       printf("LETTERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       continue;
+
+     pmxTokCase(TK_NUMBERS):
+       printf("NUMBERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       continue;
+       
+     default: continue; 
+      
+   pmxScannerEnd;      <--- Note: the semicolon at the end!!
+   
 ..
 
-  Where '|token_patterns| i
+  Scanning will stop as long as the end of text is reached, no match
+is found or a break is executed within the '|pmxTokSwitch| section. 
 
 */
 
@@ -378,15 +407,6 @@ extern char *pmx_tmpstr;
 extern char *pmx_tmpptrn;
 extern pmxMatches_t pmx_tmpmtc;
 
-#define pmxScanner(s,p,c) do {\
-    for (pmx_tmpstr = s, pmx_tmpptrn =  p, \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
-         *pmx_tmpstr && pmx_tmpmtc; \
-         pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
-    { switch (pmxToken(pmx_tmpmtc)) { c } ; break; } \
-    pmx_tmpstr = ""; \
-  } while (pmx_tmpstr == NULL)
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
@@ -404,6 +424,17 @@ extern pmxMatches_t pmx_tmpmtc;
     { switch (pmxToken(pmx_tmpmtc)) { 
     
 #define pmxScannerEnd } ; break; } \
+    pmx_tmpstr = ""; \
+  } while (pmx_tmpstr == NULL)
+
+
+#define pmxScanner(s,p,c) do {\
+    for (pmx_tmpstr = s, pmx_tmpptrn =  p, \
+                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
+         *pmx_tmpstr && pmx_tmpmtc; \
+         pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
+                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
+    { switch (pmxToken(pmx_tmpmtc)) { c } ; break; } \
     pmx_tmpstr = ""; \
   } while (pmx_tmpstr == NULL)
 
