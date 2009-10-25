@@ -25,6 +25,7 @@ ifeq ($(SYS),MINGW)
 _EXE=.exe
 endif
 
+CC=gcc
 AR=ar -ru
 CAT=cat
 RM=rm -f
