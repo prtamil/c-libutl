@@ -129,11 +129,12 @@ as follows:
   ['|<!xyz>|]     matches anything except the characters '|x|, '|y| and '|z|
  ..
 
-  If any of the characters '&', '>' or '-' are part of the set to be specified,
-they must be preceeded by '&'.  For example:
+  If any of the characters '|&|, '|>| or '|-| are part of the set to be specified,
+they must be preceeded by '|&|.  For example:
 
- .['|<=A&-B>|] matches '|A|', '|B|' or '|-|'
-  ['|<=<&>|]   matches '|<|' or '|>|'
+ .['|<=A&-B>|] matches '|A|, '|B| or '|-|
+  ['|<=A-B>|]  matches '|A| or '|B|
+  ['|<=<&>|]   matches '|<| or '|>|
  ..
 
   The pattern "'|<j...>|" (and its negation "'|<J...>|") is meant to be
@@ -217,9 +218,9 @@ they must be preceeded by '&'.  For example:
 
   Use the uppercase corresponding letter to make it optional. For example:
   
-  .['|a&K+&Kb|] matches '|a+b|, '|a + b|, '|a+   b|, etc.
-   ['|x&D|] matches '|x|, '|x42|, '|x+1|, etc.
-   ['|&f<?=eE>&F|] matches '|-3.2|, '|+3.1E-52|', etc
+  .['|a&K+&Kb|]      matches '|a+b|, '|a + b|, '|a+   b|, etc.
+   ['|x&D|]          matches '|x|, '|x42|, '|x+1|, etc.
+   ['|&f<?=eE>&F|]   matches '|-3.2|, '|+3.1E-52|', etc
   .. 
 
 
