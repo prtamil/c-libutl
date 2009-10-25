@@ -13,10 +13,10 @@
 .v
                      __        
                     |  |        
-                 ___|  |__  ____ 
-                /  _|  __ \/ ___)
+                 ___|  |__  ______
+                /  _|  __ \/ ____/
                (  (_|  || |\___ \
-                \____)_||_(_____/
+                \___\__||_/_____/
 ..
 
 .         ===============================
@@ -40,8 +40,8 @@
 .% Usage
 ========
 
-  There is a key concept to bear in mind when using chs, the string 
-address may change any time the string is modified.  This makes address
+  There is a key concept to bear in mind when using '|chs|: '/the string 
+address may change any time the string is modified/.  This makes address
 of chs strings unsuitable to being stored in two different variable at
 the same time.
 
@@ -72,9 +72,8 @@ typedef char *chs_t ;
 
 /* .% API
 =========
-
-
 */
+
 extern chsBlk *chs_blk_;
 extern chs_t   chs_tmp_;
 
