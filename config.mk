@@ -13,7 +13,13 @@ ifneq "$(COMSPEC)" ""
  SYS=MINGW
 endif
 
+### Uncomment next line if you want to force Mingw as system (in case the 
+### test above doesn't work)
 #SYS=MINGW
+
+### Uncomment next line if you don't want any ASM code to be used in the
+### library
+#NO_ASM=-DUTL_NOASM
 
 ################
 
@@ -37,7 +43,7 @@ LN=gcc $(LNFLAGS) -o
 DIST=$(TOP)dist
 CHKLIB=$(DIST)/libutl$(_LIB)
 
-CFLAGS=-I. -I$(DIST) -Wall $(CCOPTS)
+CFLAGS=-I. -I$(DIST) -Wall $(CCOPTS) $(NO_ASM)
 LNFLAGS=-L. -L$(DIST) $(LNOPTS)
 
 .SUFFIXES: .c .h .o .pmx
