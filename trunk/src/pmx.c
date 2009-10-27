@@ -25,20 +25,15 @@ typedef struct {
   short eof;
 } sbuf;
 
-/*}} *************************/
 
-#if 0
-pmxGetc_t pmxGetc = NULL;
-pmxTell_t pmxTell = NULL;
-pmxSeek_t pmxSeek = NULL;
-pmxEof_t  pmxEof  = NULL;
-#else
 #define SB(s)          ((sbuf *)(s))
 #define pmxGetc(s)     ((SB(s)->text && *SB(s)->text)?  *SB(s)->text++ : (SB(s)->eof = 1, EOF))
 #define pmxTell(s)     (SB(s)->text - SB(s)->start)
 #define pmxSeek(s,o,w) (SB(s)->text = SB(s)->start + o, SB(s)->eof = 0) 
 #define pmxEof(s)      (SB(s)->eof)
-#endif
+
+/* }} *************************/
+
 
 static pmxMatches capt;
 
@@ -191,28 +186,6 @@ static int braced(void *text, int left, int right, char esc)
 */
 #define MAX_MAX 0xFFFFFFFE
 
-
-typedef struct {
-  unsigned long cnt;
-  unsigned long min;
-  unsigned long max;
-  pmxMatches capt;
-} bra;
-
-static bra bra_save[3];
-
-#define BRA_PAR 0
-#define BRA_BRA 1
-#define BRA_CRL 2
-
-#define bra_save(b) (bra_save[b].cnt=cnt, bra_save[b].min=min, bra_save[b].max=max,\
-                     memcpy(&bra_save[b].capt, capt,sizeof(capt)),\
-                     bra_save[b].capt[pmxCaptMax][0] = pmxTell(text),\
-                     bra_save[b].capt[pmxCaptMax][1] = p-pattern )
-
-
-#define checkFail() 
-
 static pmxMatches_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
@@ -226,24 +199,16 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
   unsigned char capt_stk_cnt = 0;
   unsigned char capt_stk[pmxCaptMax];
 
-  #if 0
-  memset(capt,0,sizeof(capt));
-  #else
   for (capt_opn = 0; capt_opn <= pmxCaptMax; capt_opn++) {
     capt[capt_opn][0] = 0;
     capt[capt_opn][1] = 0;
   }
-  #endif
   
   capt_opn = 0;
   capt_stk_cnt = 0;
 
   capt[0][0] = pmxTell(text);
   capt[0][1] = capt[0][0];
-  
-  bra_save[0].capt[0][0] = MAX_MAX;
-  bra_save[1].capt[0][0] = MAX_MAX;
-  bra_save[2].capt[0][0] = MAX_MAX;
   
   esc = '\0';
   icase = mFALSE;
@@ -308,9 +273,6 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
                               break;
                               
                    case '$' : W(hasstring(text,p));
-                              break;
-
-                   case '{' : bra_save(BRA_CRL);                              
                               break;
 
                    case '\0': return NULL;
@@ -442,8 +404,6 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
                  break;
     }
     
-    checkFail();
-
     if (ch == ENDPATTERN) break;
     if (ch == READ_NEXT) ch = pmxGetc(text);
   }
