@@ -102,7 +102,7 @@ exceptions:
   ['|<r>|]  (isprint)	matches a printable character, including the space character.
   ['|<s>|]  (isspace)	matches a space character
   ['|<u>|]  (isupper)	matches an uppercase character
-  ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_'
+  ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_|'
   ['|<x>|]  (isxdigit) matches an hexadecimal digit. Not locale-specific.
   ['|<.>|]  matches any character (except '|'\0'|).
  .. 
@@ -329,8 +329,8 @@ size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
 /* .}} 
 
-.%% Function Scanner
-~~~~~~~~~~~~~~~~~~~~
+.%% Simple Scanners
+~~~~~~~~~~~~~~~~~~~
 
   The function '{pmxScanStr()} can be used to repeatedly match a pattern
 against a text.
