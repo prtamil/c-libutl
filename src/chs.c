@@ -251,10 +251,11 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   chs_blk(dst)->cur = chs_blk(dst)->len ;
   
   if (what == 'A') { /* read rest of the file */
-    while (!feof(f) && k > 0) {
-      k = fread(buf,1,128,f);
+    while ((k = fread(buf,1,128,f)) > 0) {
       dst = chsAddStrL(dst, buf,k);
+      _dbgmsg("READBLK %d\n",chsLen(dst));
     }
+//    dst = chsSet(dst, chsLen(dst), '\0');
   }
   else { /* read line */
     what = '\0';
