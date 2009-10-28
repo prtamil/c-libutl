@@ -12,6 +12,7 @@ all:
 	cd uncomment; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd cxrf; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd scanner; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
+	cd fmt; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 
 clean:
 	cd pmx2c; make clean
@@ -19,4 +20,5 @@ clean:
 	cd uncomment; make clean
 	cd cxrf; make clean
 	cd scanner; make clean
+	cd fmt; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 
