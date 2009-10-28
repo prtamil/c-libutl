@@ -379,7 +379,7 @@ token is encountered in the text.
      pmsTokSet("<+=a-z>",T_LETTERS)
      pmsTokSet("<.>",T_OTHER)
      
-   pmxTokSwitch        <--- This sections is similar to a
+   pmxScannerSwitch    <--- This sections is similar to a
                             regular switch() statement
      pmxTokCase(TK_LETTERS):
        printf("LETTERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
@@ -417,7 +417,7 @@ extern pmxMatches_t pmx_tmpmtc;
 #define pmxScannerBegin(s) do {\
     for (pmx_tmpstr = s, pmx_tmpptrn =  
     
-#define pmxTokSwitch  , \
+#define pmxScannerSwitch  , \
                        pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
          *pmx_tmpstr && pmx_tmpmtc; \
          pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
@@ -439,5 +439,13 @@ extern pmxMatches_t pmx_tmpmtc;
     pmx_tmpstr = ""; \
   } while (pmx_tmpstr == NULL)
 
+
+#define PmxTokEOF x7F 
+
+#define pmxSwitch(s,p) \
+    switch ( (s && *s) ? (pmx_tmpmtc = pmxMatchStr(s,p), \
+             s += pmxLen(pmx_tmpmtc,0),\
+             pmxToken(pmx_tmpmtc)) : 0x7F)
+             
 
 #endif
