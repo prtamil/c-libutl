@@ -369,7 +369,7 @@ token is encountered in the text.
   
 .v
    #define T_LETTERS  xF1     <--- tokens are in the form '|x|'/HH/
-   #define T_NUMBERS  xF2          where HH is an hex number
+   #define T_NUMBERS  xF2          where HH is an hex number >= 128
    #define T_OTHER    xFE
    
    pmxScannerBegin("Text to be scanned ....")  <--- Note: '*NO* semicolon

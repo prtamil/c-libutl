@@ -12,7 +12,7 @@
 =============
 
   One of the main '*fmt* gols is to keep the source code much readable
-as possible.  Using a /real/ typesetting system like TeX or Lout would mean
+as possible.  Using a '/real/ typesetting system like TeX or Lout would mean
 adding a layer of  complexity  to the  comprehension  of the source  code in
 its native (ASCII) form, that's why the markup language offered by *fmt* is
 designed to be "ASCII-friendly".
@@ -186,6 +186,9 @@ won't work!
            
            [Dedication] topic. 
           ..
+          
+          A bibliographic field ends when another one starts or when a new
+          section is encountered 
   ..
                       
 .%% Sections
@@ -210,12 +213,14 @@ be ignored. This allows the title to be adorned as in:
 
   A list is a sequence of items. There are many typese of lists:
   
-  .['|-|]           '/dashed/
-   ['|#|]           '/numbered/
-   ['|o|]           '/bulleted/ with a white circle
-   ['|*|]           '/bulleted/ with a black dot
+  .['|#|]               '/numbered/
+   ['|-|]               '/dashed/
+   ['|o|]               '/bulleted/ with a white circle
+   ['|*|]               '/bulleted/ with a black dot
    [`['/some term/`]]   term definition
   ..
+  
+  Note that the type of dash/bullet might not be honoured by the typesetter. 
   
   Lists end when a double dot '|..| is found at the beginning of a line.
 
@@ -253,23 +258,25 @@ be ignored. This allows the title to be adorned as in:
 explaing the behavior of certain part of code. The tag '|'`$| enters
 math mode. 
 
-  The syntax is the one defined by EzMath (see http://www.w3.org/math).
-The reason for such adoption is that EzMath is so close to standard
-mathematical conventions that is easily readable in ASCII form even if you
+  The syntax is the one used by OpenOffice '(see
+'<http://documentation.openoffice.org/manuals/oooauthors/MathObjects.pdf>).
+
+The reason for such adoption is that it is close to standard
+mathematical conventions and is easily readable in ASCII form even if you
 don't know exactly its syntax.
 
   It can be used inline as in '$pi$ (typeset as '|'`$pi$|) or as a display
 with the '|.$| tag at the beginning of a line as in:
 
 .$
-   integral of sin x from 0 to 2pi wrt x
+   int from a to b { x^2 + 1 over x dx }
 ..  
 
 produced by:
 
 .v
   .$
-     integral of sin x from 0 to 2pi wrt x
+     int from a to b { x^2 + 1 over x dx }
   ..  
 ..
 
@@ -365,7 +372,7 @@ or (equivalently) by:
   ..
 ..
 
-  .        ======== ======= =======
+  .        <======= ======= ======>
              hcol1   hcol2   hcol3
   -------- -------- ------- -------
    hrow1    cell 1   cell    third
@@ -490,7 +497,7 @@ cross references and modify it if needed.
 followed by a label and closed by '|>|. 
 
   A label can be any sequence of lowercase or upper case alfanumeric
-characters. ([0-9A-Za-z])
+characters. ('|[0-9A-Za-z]|)
 
   Here is an example:
 .v
@@ -512,7 +519,7 @@ The '|`'| is not needed in a '|.| tag:
               
 .%%% Referring to marks
 '''''''''''''''''''''''
-    Summarizing, you can mark a section, an equation, a verbatim block,
+  Summarizing, you can mark a section, an equation, a verbatim block,
 a figure, a table, or a generic point in the text.
 
   Once a mark has been set, you can refer to it with the following syntax:
@@ -571,8 +578,9 @@ reference:
   To summarize, the general form for reference is:
 
 .v  
-    '<text=file#mark:attr>
+    '<file#mark:attr>
 ..
+
   There may be spaces around '|=|, '|#| and '|:| and they will be ignored.
 
   
@@ -592,7 +600,8 @@ to.
   ..
   
 .%%%% Predefined counters
-' ' ' ' ' ' ' ' ' ' ' ' ' 
+      '''''''''''''''''''
+ 
   There are 8 predefined counters that can only be read:
   
   .[fn] last footnote number. Is incremented each time '|'`(| is used;
@@ -653,32 +662,35 @@ defined.
   Every time you want to refer to an identifier in your source code, you can
 enclose it between '|'`{| and '|}|. This produces an hit in the identifier
 index. If you use '|=}| to close the reference, it means that you are defining
-that identifier. After the '|=| you can insert a '/tag/ that specifies in which
-index the identifier should be inserted.
+that identifier. You can insert a '/tag/ after the variable name, separated by
+a colon ''|:|', that specifies in which index the identifier should be inserted.
+Multiple indexes can be specified separating them with a comma ''|,|'.
 
   For example, in the following code:
 
 .verbatim
-  /* Each '{day} has a value of type '{days=types} */
+  /* Each '{day:vars,} has a value of type '{days:types=} */
   typedef days = enum {Sun,Mon,Tue,Wed,Thu,Fri,Sat};
 ..
 
-  We are talking about the '|day| identifier and are defining the '|days|
+  We are talking about the '|day| identifier which usage will be reported in 
+the main, unnamed, index and in the '|vars| index, and are defining the '|days|
 identifier that will be inserted in the '/types/ index.
 
-  If the '/types/ index does not exist, it will be created usign the '/types/
-as its title. To change an index title, you can use the following syntax:
+  If an index does not exist, it will be created usign tha tag ('/var/ or 
+'/types/ in this case) as title. To define an index title, you can use the
+following syntax:
  
 .verbatim
-   '{=ndxid=Index title}
+   '{:ndxtag=Index title}
 ..
 
-  Where ndxid is the tag (a string of lowercase alphabetic characters) and
-'|Index Title| is the title that will appear before the index in the document.
+  Where '|ndxtag| is the tag (a string of lowercase alphabetic characters) and
+'|Index Title| is the title of the index in the document.
 
   The idiom
 .verbatim
-   '{==Index title}
+   '{:=Index title}
 ..
   defines the title of the main index.
 
@@ -717,35 +729,42 @@ for cross reference:
 .% Quick reference
 ==================
 
-.[.T]  document title (breaks other .)
- [.A]  document author(s) (breaks other .)
- [.D]  document date (breaks other .)
- [.:]  section with a given style (breaks other .)
- [.%]  Section (number of '|%| matters!) (breaks other .)
- [.{{]  code outline (breaks other .)
+Structural tags (end any other structural tags)
 
- [.f]  figure (doesn't break other .)
- [.t]  table (doesn't break other .)
- [.v]  verbatim (doesn't break other .)
- [.$]  equation  (doesn't break other .)
- [.[]  List (doesn't break other .)
- [.#]  List (doesn't break other .)
- [.*]  List (doesn't break other .)
- [.o]  List (doesn't break other .)
- [.-]  List (doesn't break other .)
- [.>]  indented text (number of '|>| matters!) (doesn't break other .)
+.['|.T|]  document title (breaks other .)
+ ['|.A|]  document author(s) (breaks other .)
+ ['|.D|]  document date (breaks other .)
+ ['|.:|]  section with a given style (breaks other .)
+ ['|.%|]  Section (number of '|%| matters!) (breaks other .)
+..
 
- [..]  end of text block
+Block tags
 
- [`'/] italic
- [`'*] bold
- [`'|] teletype
- [`'_] underline
- [`'(] footnote
- [`'<] mark & reference
- [`'#] a counter
- [`'$] math mode
- [`'{] An identifier (will be included in cross references!)
+.['|.{{|] code outline
+ ['|.f|]  figure
+ ['|.t|]  table
+ ['|.v|]  verbatim
+ ['|.$|]  equation
+ ['|.[|]  List
+ ['|.#|]  List
+ ['|.*|]  List
+ ['|.o|]  List
+ ['|.-|]  List
+ ['|.>|]  indented text (number of '|>| matters)
+ ['|..|]  end of text block
+..
+
+Inline tags
+
+.['|`'/|] italic
+ ['|`'*|] bold
+ ['|`'||] teletype
+ ['|`'_|] underline
+ ['|`'(|] footnote
+ ['|`'<|] mark & reference
+ ['|`'#|] a counter
+ ['|`'$|] math mode
+ ['|`'{|] An identifier to be included in indexes and cross references
 ..
 
 .% License
