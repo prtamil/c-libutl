@@ -12,6 +12,7 @@
 
 #define T_HEADER    x81
 #define T_VERBATIM  x82
+#define T_NL        x83
 #define T_ANY       xF0
 
 int main(int argc, char *argv[])
@@ -33,22 +34,41 @@ int main(int argc, char *argv[])
     fclose(f);
     
     curchar = source;
-dbgmsg("xxx\n");
-      STATE(scan) :  
+    
+    FSM {
+      STATE(linestart):
           pmxSwitch (curchar,
-            pmxTokSet("&K.(<+=&%>)&K(&L)",T_HEADER)
-            pmxTokSet("&K.v  &N..",T_HEADER)
-            pmxTokSet("<.>",T_ANY)
+            pmxTokSet("&K.(<+=&%>)&K(&L)&N",T_HEADER)
           ) {
             pmxTokCase(T_HEADER):
                   k = pmxTokLen(1);
-                  fprintf(out,"<H%d>%.*s</H%d>\n",k,pmxTokLen(2),pmxTokStart(2),k);
-                  GOTO(scan);
+                  fprintf(out,"<h%d>%.*s</h%d>\n",k,pmxTokLen(2),pmxTokStart(2),k);
+                  GOTO(linestart);
             
-             pmxTokCase(T_ANY): fputc(*pmxTokStart(0),out);
-                  GOTO(scan);
+             pmxTokCase(pmxTokNONE) : GOTO(midline);
+                  
+             pmxTokCase(pmxTokEOF)  : GOTO(done);
           }
-
+          fprintf(stderr,"EEEKK\n");      
+      
+      STATE(midline) :  
+          pmxSwitch (curchar,
+            pmxTokSet("&n",T_NL)
+            pmxTokSet("<.>",T_ANY)
+          ) {
+            pmxTokCase(T_NL):
+                  GOTO(linestart);
+            
+             pmxTokCase(T_ANY): /*fputc(*pmxTokStart(0),out);*/
+                  GOTO(midline);
+                  
+             pmxTokCase(pmxTokEOF) : GOTO(done);
+          }
+          fprintf(stderr,"EEEKK2\n");
+          
+       STATE(done) :
+         break;
+     }
   }
   else utlError(2,"Unable to open input file\n");
 

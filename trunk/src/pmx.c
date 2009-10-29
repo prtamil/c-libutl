@@ -1,4 +1,4 @@
-/* 
+/*-
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
 ** This software is distributed under the terms of the BSD license:
@@ -32,8 +32,36 @@ typedef struct {
 #define pmxSeek(s,o,w) (SB(s)->text = SB(s)->start + o, SB(s)->eof = 0) 
 #define pmxEof(s)      (SB(s)->eof)
 
-/* }} *************************/
 
+
+/* .%% The '|pmxMatches| structure '<matchinfo>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The '{=pmxMatches} structure contains the following information: 
+ 
+.v
+                   0                           1
+    +-----------------------------+-----------------------------+
+  0 | start index of matched text | end index of matched text   |
+    +-----------------------------+-----------------------------+
+  1 | start index of capture 1    | end index of capture 1      | 
+   ...                           ...                           ...
+  8 | start index of capture 8    | end index of capture 8      |
+    +-----------------------------+-----------------------------+
+  9 | start index of capture 9    | end index of capture 9      |
+    +=============================+=============================+
+ 10 | matched pattern             | token of matched pattern    |
+    +-----------------------------+-----------------------------+
+..
+ 
+  Start/end index are offset with respect to the start of the string
+that has been matched.
+
+  This structure is not to be used directly, an opaque pointer
+type ('{pmxMatches_t}) is provided for passing information from a 
+function to another. 
+ 
+*/
 
 static pmxMatches capt;
 
@@ -63,7 +91,7 @@ int pmxMatched(pmxMatches_t mtc)
 
 unsigned char pmxToken(pmxMatches_t mtc)
 {
-  return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0);
+  return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0x00);
 }
 
 /* {{ Checks on characters **/
@@ -493,7 +521,7 @@ pmxMatches_t pmxMatchStr(char *txt, char *ptrn)
   sbuf *text = &sb;
   
   if (!txt || !ptrn || !*ptrn ) return NULL;
- 
+  
   sb.start = txt;
   sb.text  = txt;
   sb.eof   = 0;

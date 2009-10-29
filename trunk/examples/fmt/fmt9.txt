@@ -570,7 +570,7 @@ reference:
   Marks can be referred across files using the following syntax:
 
 .v 
-  ... '{day} is defined at '<defs.h#types:page> ...
+  ... '{day} is defined in the file '<defs.h=defs.h#types:page> ...
 ..
   
   Note that it is similar to HTML ('|<a href="defs.h#types">|)
@@ -578,7 +578,7 @@ reference:
   To summarize, the general form for reference is:
 
 .v  
-    '<file#mark:attr>
+    '<text=file#mark:attr>
 ..
 
   There may be spaces around '|=|, '|#| and '|:| and they will be ignored.
@@ -650,19 +650,14 @@ sorted/". '(The idea was borrowed by an example in the AWK manual.)
 
 
 .%% Identifier indexes '<cndx>
-----------------------
+------------------------------
+  A sorted index of identifier can be generated for each file.
 
-  If the '|autoxref| is turned on, a global index will be produced that will
-contain all the identifiers along with a reference to the lines where
-they appear.
-
-  If  '|autoxref|  is off, an  index  will  be  generated  only if  explicitly
-defined.
- 
   Every time you want to refer to an identifier in your source code, you can
-enclose it between '|'`{| and '|}|. This produces an hit in the identifier
-index. If you use '|=}| to close the reference, it means that you are defining
-that identifier. You can insert a '/tag/ after the variable name, separated by
+enclose it between ''|'`{|'' and ''|}|'.  Adding ''|=|' at the beginning (i.e
+using ''|{=|') means that it's a reference to the definition of that identifier.
+
+ You can insert a '/tag/ after the variable name, separated by
 a colon ''|:|', that specifies in which index the identifier should be inserted.
 Multiple indexes can be specified separating them with a comma ''|,|'.
 
@@ -693,6 +688,18 @@ following syntax:
    '{:=Index title}
 ..
   defines the title of the main index.
+
+  If the '|autoxref| is turned on, a global index will be produced that will
+contain all the identifiers along with a reference to the lines where
+they appear.
+
+  If  '|autoxref|  is off, an  index  will  be  generated  only if  explicitly
+defined.
+ 
+
+.v
+    {=varname:type=index}
+..
 
 .%% Code blocks
 

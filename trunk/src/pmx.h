@@ -295,45 +295,56 @@ over an alternative expressions that failed.
 */
 
 /*
-.% pmx API
+.% pmx API '<pmxapi>
 """"""""""
 
+   pmx functions use objects of type '{pmxMatches_t} to keep track of 
+what's has been matched. From and API perspective, it has to be treated
+as an '/opaque/ pointer; inner details can be found in the '<pmx.c=pmx.c#matchinfo>
+file.
+  
 */
-
 #define pmxCaptMax 10
 
 typedef size_t pmxMatches[pmxCaptMax+1][2];
-
 typedef pmxMatches *pmxMatches_t;
+
 
 /*
 .%% Matching on a string
 ''''''''''''''''''''''''
-.{{
+
+  The simplest way to match a string against a pattern is to use the
+'{=pmxMatchStr()} function.
+  Upon a successuful match, it returns a pointer of type '|pmxMatches_t| that
+can be used to retrieve information on the match. 
+  If no the string desn't match, '|NULL| is returned.
 */
+
 pmxMatches_t pmxMatchStr(char *text, char *p);
 
 /*
-.}}
 
-.%% Get matched text
+
+.%% Get matched text '<gettxt>
 ''''''''''''''''''''
-.{{ */
+*/
 
 int           pmxMatched (pmxMatches_t mtc);
 unsigned char pmxToken(pmxMatches_t mtc);
-pmxMatches_t  pmxMatchStr(char *text, char *p);
+
+
 size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
 size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
 size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
-/* .}} 
+/* 
 
-.%% Simple Scanners
+.%% Callback Scanners
 ~~~~~~~~~~~~~~~~~~~
 
-  The function '{pmxScanStr()} can be used to repeatedly match a pattern
-against a text.
+  The function '{=pmxScanStr()} can be used to repeatedly match a pattern
+against a text and call a function each time a match is found.
   
   The pattern is usually made by a list of expression joined with the '|&`||' 
 operator.
@@ -343,21 +354,47 @@ results as parameters.
 
   If the callback function returns zero, the pattern is matched again
 starting from the first character after the end of the previous match, 
-otherwise '{pmxScanStr()} returns that value. 
+otherwise  the scanner stops and '{pmxScanStr()} returns that value. 
 
-  Look at the '|pmxshell.pmx| example for more details on how to use this function 
+  Look at the '<pmxshell.pmx#> for an example of how to use this function. 
 
-.{{ */
+  Callback functions must be of type '{=pmxScanFun_t:types}. 
+*/
 
 typedef int (*pmxScanFun_t)(char *txt, pmxMatches_t mtc);
+
+/*
+  Within a call back, you can pass the '|txt| and '|mtc| arguments to the functions
+de 
+*/
+
+
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
-/* .}} */
+/**/
 
 
 /*
-.%% Complex scanners
+.%% Token scanners '<tokscanner>
 ~~~~~~~~~~~~~~~~~~~~
+*/
+
+#define pmxTok_defcase(y) 0##y 
+#define pmxTok_defstr(y)  #y 
+#define pmxTokCase(y) case pmxTok_defcase(y)
+
+extern char *pmx_tmpstr;
+extern char *pmx_tmpptrn;
+extern pmxMatches_t pmx_tmpmtc;
+
+#define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
+#define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
+#define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
+#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+
+/*
+.%%% Loop scanners
+'''''''''''''''''''
 
   To ease the definition of more complex scanners, the following
 alternative is provided. The syntax makes use of conventions that 
@@ -400,19 +437,6 @@ is found or a break is executed within the '|pmxTokSwitch| section.
 
 */
 
-#define pmxTok_defcase(y) 0##y 
-#define pmxTok_defstr(y)  #y 
-#define pmxTokCase(y) case pmxTok_defcase(y)
-
-extern char *pmx_tmpstr;
-extern char *pmx_tmpptrn;
-extern pmxMatches_t pmx_tmpmtc;
-
-
-#define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
-#define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
-#define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
-#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
 
 #define pmxScannerBegin(s) do {\
     for (pmx_tmpstr = s, pmx_tmpptrn =  
@@ -440,12 +464,14 @@ extern pmxMatches_t pmx_tmpmtc;
   } while (pmx_tmpstr == NULL)
 
 
-#define PmxTokEOF x7F 
+#define pmxTokEOF  x7F
+#define pmxTokNONE x00
 
 #define pmxSwitch(s,p) \
-    switch ( (s && *s) ? (pmx_tmpmtc = pmxMatchStr(s,p), \
-             s += pmxLen(pmx_tmpmtc,0),\
-             pmxToken(pmx_tmpmtc)) : 0x7F)
+    switch ( ((pmx_tmpstr = s) && *s ) \
+                 ? (pmx_tmpmtc = pmxMatchStr(pmx_tmpstr,p), \
+                           s += pmxLen(pmx_tmpmtc,0), pmxToken(pmx_tmpmtc))\
+                 : 0x7F )
              
 
 #endif
