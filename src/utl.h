@@ -508,13 +508,12 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 **        ....
 **
 **        STATE(y) : ...
-**                   ...
+**                   break;  // exit from the FSM
 **      }
 ** ..
 **
 **   It's a good practice to include a graphic of the FSM in the technical
-** documentation. I often use to include the GraphViz description as 
-** comment.
+** documentation (e.g including the GraphViz description in comments).
 */
 
 #define FSM for(;;)
