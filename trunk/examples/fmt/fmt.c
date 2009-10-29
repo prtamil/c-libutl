@@ -15,6 +15,14 @@
 #define T_NL        x83
 #define T_ANY       xF0
 
+
+#define MAX_SEC_NEST 20
+
+int section[MAX_SEC_NEST];
+int sec_curlvl=0;
+
+
+
 int main(int argc, char *argv[])
 {
   int k;
