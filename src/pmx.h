@@ -1,9 +1,11 @@
 /* 
-**  (C) by Remo Dentato (rdentato@gmail.com)
+** .: (C) by Remo Dentato (rdentato@gmail.com)
 ** 
 ** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
-**   http://opensource.org/licenses/bsd-license.php 
+**   http://opensource.org/licenses/bsd-license.php
+**
+** ..
 */
 
 
@@ -328,16 +330,75 @@ pmxMatches_t pmxMatchStr(char *text, char *p);
 
 .%% Get matched text '<gettxt>
 ''''''''''''''''''''
+
+  Upon a successful match, the following functions will retrieve details
+of the match. Their first argument is of type '{pmxMatch_t} and is 
+typically the value returned by a '{pmxMatchStr()} function call.
+ 
+  .['{=pmxMatched(mtc)}] 
+                       Which sub pattern matched. Assuming a pattern is
+                       made of a sequence of "'|...&`|...&`|...|", this
+                       function will return which of the alternatives 
+                       matched. The alternatives are numbered starting
+                       with 1. It returns 0 if none matched.
+                       
+   ['{=pmxToken(mtc)}]
+                       Returns the token associated with the alternative
+                       that matched.
+                       It can also return two special values:
+                       .['{=pmxTokNONE}]  No token associated or no match (0x00).
+                        ['{=pmxTokEOF}]   The string to match was empty (0x7F).
+                       ..
+                       Tokens can be associated to each alternative. 
+                       The pattern "'|&|'/x/" where '/x/ is an ASCII
+                       character greater or equal to 0x80 set the token
+                       value to '/x/.
+                       This function is normally used in conjunction with
+                       the '<token scanners=tokscanner>, more information
+                       on tokens can be found in that section.
+                         
+   ['{=pmxLen(mtc,n)}]
+                       The length of the capture '{n}. The entire match is
+                       considered the capture 0.
+                         
+   ['{=pmxStart(mtc,n)}]
+                       The start of the capture '{n}. The entire match is
+                       considered the capture 0.
+                       This is an integer offset from the start of the string
+                       that was passed to '{pmxMatchStr()}'. 
+                         
+   ['{=pmxEnd(mtc,n)}]
+                       The end of the capture '{n}. The entire match is
+                       considered the capture 0.
+                       This is an integer offset from the start of the string
+                       that was passed to '{pmxMatchStr()}'. 
+
+  ..  
 */
 
 int           pmxMatched (pmxMatches_t mtc);
-unsigned char pmxToken(pmxMatches_t mtc);
 
+unsigned char pmxToken(pmxMatches_t mtc);
 
 size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
 size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
 size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
+#define pmxTokEOF  x7F
+#define pmxTokNONE x00
+
+/*
+*/
+#define pmxTok_defcase(y) 0##y 
+#define pmxTok_defstr(y)  #y 
+#define pmxTokCase(y) case pmxTok_defcase(y)
+
+#define pmxSwitch(s,p) \
+    switch ( ((pmx_tmpstr = s) && *s ) \
+                 ? (pmx_tmpmtc = pmxMatchStr(pmx_tmpstr,p), \
+                           s += pmxLen(pmx_tmpmtc,0), pmxToken(pmx_tmpmtc))\
+                 : 0x7F )
+             
 /* 
 
 .%% Callback Scanners
@@ -346,7 +407,7 @@ size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
   The function '{=pmxScanStr()} can be used to repeatedly match a pattern
 against a text and call a function each time a match is found.
   
-  The pattern is usually made by a list of expression joined with the '|&`||' 
+  The pattern is usually made of a list of expression joined with the '|&`||' 
 operator.
   
   On a successful match, the callback function is called passing the matching
@@ -358,34 +419,37 @@ otherwise  the scanner stops and '{pmxScanStr()} returns that value.
 
   Look at the '<pmxshell.pmx#> for an example of how to use this function. 
 
-  Callback functions must be of type '{=pmxScanFun_t:types}. 
+  Callback functions must be of type '{=pmxScanFun_t types}. 
 */
 
 typedef int (*pmxScanFun_t)(char *txt, pmxMatches_t mtc);
 
+int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
+
 /*
-  Within a call back, you can pass the '|txt| and '|mtc| arguments to the functions
-de 
+  Within a call back, you can pass the '|txt| and '|mtc| arguments to the
+functions to get the <matched text=gettxt>.
 */
 
 
-int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
-/**/
+/*
+.%% Scanners variables
+~~~~~~~~~~~~~~~~~~~
 
+  These global variables are used by the macros that implement the 
+different types of scanners. 
+*/
+
+extern char *pmx_tmpstr;
+extern char *pmx_tmpptrn;
+extern pmxMatches_t pmx_tmpmtc;
 
 /*
 .%% Token scanners '<tokscanner>
 ~~~~~~~~~~~~~~~~~~~~
 */
 
-#define pmxTok_defcase(y) 0##y 
-#define pmxTok_defstr(y)  #y 
-#define pmxTokCase(y) case pmxTok_defcase(y)
-
-extern char *pmx_tmpstr;
-extern char *pmx_tmpptrn;
-extern pmxMatches_t pmx_tmpmtc;
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
@@ -464,14 +528,5 @@ is found or a break is executed within the '|pmxTokSwitch| section.
   } while (pmx_tmpstr == NULL)
 
 
-#define pmxTokEOF  x7F
-#define pmxTokNONE x00
-
-#define pmxSwitch(s,p) \
-    switch ( ((pmx_tmpstr = s) && *s ) \
-                 ? (pmx_tmpmtc = pmxMatchStr(pmx_tmpstr,p), \
-                           s += pmxLen(pmx_tmpmtc,0), pmxToken(pmx_tmpmtc))\
-                 : 0x7F )
-             
 
 #endif
