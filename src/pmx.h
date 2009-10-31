@@ -328,8 +328,8 @@ pmxMatches_t pmxMatchStr(char *text, char *p);
 /*
 
 
-.%% Get matched text '<gettxt>
-''''''''''''''''''''
+.%% Got a matched? '<gettxt>
+''''''''''''''''''
 
   Upon a successful match, the following functions will retrieve details
 of the match. Their first argument is of type '{pmxMatch_t} and is 
@@ -342,21 +342,6 @@ typically the value returned by a '{pmxMatchStr()} function call.
                        matched. The alternatives are numbered starting
                        with 1. It returns 0 if none matched.
                        
-   ['{=pmxToken(mtc)}]
-                       Returns the token associated with the alternative
-                       that matched.
-                       It can also return two special values:
-                       .['{=pmxTokNONE}]  No token associated or no match (0x00).
-                        ['{=pmxTokEOF}]   The string to match was empty (0x7F).
-                       ..
-                       Tokens can be associated to each alternative. 
-                       The pattern "'|&|'/x/" where '/x/ is an ASCII
-                       character greater or equal to 0x80 set the token
-                       value to '/x/.
-                       This function is normally used in conjunction with
-                       the '<token scanners=tokscanner>, more information
-                       on tokens can be found in that section.
-                         
    ['{=pmxLen(mtc,n)}]
                        The length of the capture '{n}. The entire match is
                        considered the capture 0.
@@ -373,25 +358,46 @@ typically the value returned by a '{pmxMatchStr()} function call.
                        This is an integer offset from the start of the string
                        that was passed to '{pmxMatchStr()}'. 
 
+   ['{=pmxToken(mtc)}]
+                       Returns the token associated with the alternative
+                       that matched.
+                       It can also return two special values:
+                       .['{=pmxTokNONE}]  No token associated or no match (0x00).
+                        ['{=pmxTokEOF}]   The string to match was empty (0x7F).
+                       ..
+                       Tokens can be associated to each alternative. 
+                       The pattern "'|&|'/x/" where '/x/ is an ASCII
+                       character greater or equal to 0x80 set the token
+                       value to '/x/.                         
   ..  
 */
 
 int           pmxMatched (pmxMatches_t mtc);
 
-unsigned char pmxToken(pmxMatches_t mtc);
 
 size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
 size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
 size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
+unsigned char pmxToken(pmxMatches_t mtc);
+
+
+
+#define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
+#define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
+#define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
+#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+
 #define pmxTokEOF  x7F
 #define pmxTokNONE x00
 
-/*
-*/
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
 #define pmxTokCase(y) case pmxTok_defcase(y)
+
+
+/*
+*/
 
 #define pmxSwitch(s,p) \
     switch ( ((pmx_tmpstr = s) && *s ) \
@@ -450,11 +456,6 @@ extern pmxMatches_t pmx_tmpmtc;
 ~~~~~~~~~~~~~~~~~~~~
 */
 
-
-#define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
-#define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
-#define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
-#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
 
 /*
 .%%% Loop scanners

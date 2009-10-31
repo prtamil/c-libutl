@@ -51,9 +51,7 @@ nextsate = "->" state_name
 
 replace = "=" (value | func)+
 
-value = var | STRING | NUMBER
-
-var = "$" (var_name | DIGIT)
+value = "$" var_name | $ DIGIT | STRING | NUMBER
 
 func = add | sub | cat | set | div | mul | mod
 

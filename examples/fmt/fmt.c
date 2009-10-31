@@ -21,7 +21,7 @@
 int section[MAX_SEC_NEST];
 int sec_curlvl=0;
 
-
+int curline=0;
 
 int main(int argc, char *argv[])
 {
