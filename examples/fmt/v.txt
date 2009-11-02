@@ -1,0 +1,7 @@
+.v -end- :html <myverb>
+xxxx
+ ..
+ -end-
+-end-
+..
+yy

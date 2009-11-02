@@ -2,7 +2,8 @@
 .Author Remo Dentato
 .Date 
 
-.: abstract
+.% :Abstract
+============
 
   This document describes the markup language that fmt recognize
   in comments.
@@ -75,7 +76,7 @@ tags that do not break the line in which they are.
   Examples are font style changes ('|`'*| for bold), footnotes ('|`'(|), etc ...
 
   
-.%% Escape sequence '<qleft>
+.%% <qleft> Escape sequence 
 ----------------------------
 
   The '|quoteleft| '|``| (ASCII 96) is used to escape a character so that
@@ -163,16 +164,12 @@ won't work!
   [Date and time] The date and time to be associated with the document
            '|.D|. If it's missing it will be replaced by the current date.
 
-  [Bibliographic fields] Other document informations may be associated using
+  [Information fields] Other document informations may be associated using
            the '|.:| tag. Whatever follows on the line is the type of
            information. Commonly used information are:
            
-          .[Abstract] Is a block of text that contains a short summary for
-                      the document. It is generally typeset on the front
-                      page or at the very beginning of the document.
-
-           [Organization] The organization or company the document has been
-                      written for or within.
+          .[Organization] The organization or company the document has been
+                          written for or within.
                       
            [Contact] How to contact the author(s). 
            
@@ -187,7 +184,7 @@ won't work!
            [Dedication] topic. 
           ..
           
-          A bibliographic field ends when another one starts or when a new
+          An information field ends when another one starts or when a new
           section is encountered 
   ..
                       
@@ -207,6 +204,15 @@ be ignored. This allows the title to be adorned as in:
    .%% Sections
    ============
 ..
+
+  Sections can also have a '/class/. This can be used to deal with special 
+sections like the "abstract".
+
+.v -end-verb- <abstr>
+  .% :abstract
+    .....
+-end-verb-
+
    
 .%% Lists
 ---------
@@ -649,7 +655,7 @@ sorted/". '(The idea was borrowed by an example in the AWK manual.)
   The main purpose of '/fmt/ is to talk about code.
 
 
-.%% Identifier indexes '<cndx>
+.%% <cndx> Identifier indexes 
 ------------------------------
   A sorted index of identifier can be generated for each file.
 

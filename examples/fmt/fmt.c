@@ -11,8 +11,19 @@
 #include "libutl.h"
 
 #define T_HEADER    x81
+#define T_HDR_MARK  x81
+#define T_HDR_CLASS x82
+#define T_HDR_TITLE x83
+
 #define T_VERBATIM  x82
+#define T_VRB_MARK  x81
+#define T_VRB_FMT   x82
+#define T_VRB_END   x84
+#define T_VRB_BODY  x85
+#define T_VRB_LINE  x85
+
 #define T_NL        x83
+
 #define T_ANY       xF0
 
 
@@ -21,7 +32,7 @@
 int section[MAX_SEC_NEST];
 int sec_curlvl=0;
 
-int curline=0;
+char verb_end[16];
 
 int main(int argc, char *argv[])
 {
@@ -41,23 +52,106 @@ int main(int argc, char *argv[])
     source = chsRead(source,f,'a');
     fclose(f);
     
+    chsAddChr(source,'\n');
+    
     curchar = source;
     
     FSM {
       STATE(linestart):
           pmxSwitch (curchar,
-            pmxTokSet("&K.(<+=&%>)&K(&L)&N",T_HEADER)
+            pmxTokSet("&K.(<+=%>)",  T_HEADER)
+            pmxTokSet("&K.v<?$erbatim$erb>", T_VERBATIM)
           ) {
             pmxTokCase(T_HEADER):
-                  k = pmxTokLen(1);
-                  fprintf(out,"<h%d>%.*s</h%d>\n",k,pmxTokLen(2),pmxTokStart(2),k);
-                  GOTO(linestart);
+                  fprintf(out,"<h lvl=\"%d\"",pmxTokLen(1));
+                  GOTO(header);
             
-             pmxTokCase(pmxTokNONE) : GOTO(midline);
+            pmxTokCase(T_VERBATIM):
+                  fprintf(out,"<v");
+                  verb_end[0] = '.'; verb_end[1] = '.'; verb_end[2] = '\0';
+                  k=2;   
+                  GOTO(verbatim);
+            
+            pmxTokCase(pmxTokNONE) : GOTO(midline);
                   
-             pmxTokCase(pmxTokEOF)  : GOTO(done);
+            pmxTokCase(pmxTokEOF)  : GOTO(done);
           }
-          fprintf(stderr,"EEEKK\n");      
+          fprintf(stderr,"EEEKK\n"); break;      
+
+      STATE(verbatim) :
+          pmxSwitch (curchar,
+            pmxTokSet("&K&<(<*!&>>)&>",  T_VRB_MARK)
+            pmxTokSet("&K:&K(<*S>)",     T_VRB_FMT)
+            pmxTokSet("&K(<+S>)",       T_VRB_END)
+            pmxTokSet("<*!\n\r>&n",      T_VRB_BODY)
+          ) {
+            pmxTokCase(T_VRB_BODY):
+                  fprintf(out,">");
+                  GOTO(verb_body);
+                  
+            pmxTokCase(T_VRB_FMT):
+                  fprintf(out," fmt=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                  GOTO(verbatim);
+            
+            pmxTokCase(T_VRB_MARK):
+                  fprintf(out," mark=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                  GOTO(verbatim);
+
+            pmxTokCase(T_VRB_END): 
+                  k = pmxTokLen(1); if (k>15) k=15;
+                  strncpy(verb_end,pmxTokStart(1),k);
+                  verb_end[k] = '\0';
+                  GOTO(verbatim);
+                  
+            pmxTokCase(pmxTokNONE) : GOTO(midline);
+                  
+            pmxTokCase(pmxTokEOF)  : GOTO(done);
+          }
+          fprintf(stderr,"EEEKK3\n"); break;      
+
+      STATE(verb_body) :
+          pmxSwitch (curchar,
+            pmxTokSet("&L&n",T_VRB_LINE)
+          ) {
+            pmxTokCase(T_VRB_LINE):
+                  if (strncmp(pmxTokStart(0),verb_end,k) == 0) {
+                    fprintf(out,"</v>\n");
+                    GOTO(linestart);                  
+                  }
+                  fprintf(out,"%.*s",pmxTokLen(0),pmxTokStart(0));
+                  GOTO(verb_body);
+                  
+            pmxTokCase(pmxTokNONE) : GOTO(verb_body);
+                  
+            pmxTokCase(pmxTokEOF)  :
+                  utlError(5,"File ended within a verbatim section\n");
+                  GOTO(done);
+          }
+          fprintf(stderr,"EEEKK3\n"); break;      
+      
+      STATE(header) :
+          pmxSwitch (curchar,
+            pmxTokSet("&K:&K(<*S>)",T_HDR_CLASS)
+            pmxTokSet("&K&<(<*!&>>)&>",T_HDR_MARK)
+            pmxTokSet("&K(&L)&n",T_HDR_TITLE)
+          ) {
+            pmxTokCase(T_HDR_CLASS):
+                  fprintf(out," class=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                  GOTO(header);
+                  
+            pmxTokCase(T_HDR_MARK):
+                  fprintf(out," mark=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                  GOTO(header);
+
+            pmxTokCase(T_HDR_TITLE):
+                  fprintf(out,">%.*s</h>\n",pmxTokLen(1),pmxTokStart(1));
+                  GOTO(linestart);
+                  
+            pmxTokCase(pmxTokNONE) : GOTO(midline);
+                  
+            pmxTokCase(pmxTokEOF)  : GOTO(done);
+          }
+          fprintf(stderr,"EEEKK3\n"); break;      
       
       STATE(midline) :  
           pmxSwitch (curchar,
@@ -67,12 +161,12 @@ int main(int argc, char *argv[])
             pmxTokCase(T_NL):
                   GOTO(linestart);
             
-             pmxTokCase(T_ANY): /*fputc(*pmxTokStart(0),out);*/
+            pmxTokCase(T_ANY): /*fputc(*pmxTokStart(0),out);*/
                   GOTO(midline);
                   
-             pmxTokCase(pmxTokEOF) : GOTO(done);
+            pmxTokCase(pmxTokEOF) : GOTO(done);
           }
-          fprintf(stderr,"EEEKK2\n");
+          fprintf(stderr,"EEEKK2\n"); break;      
           
        STATE(done) :
          break;
