@@ -22,6 +22,28 @@
 #define T_VRB_BODY  x85
 #define T_VRB_LINE  x85
 
+#define T_ESCAPED   x93
+#define T_REF       x94
+#define T_MONOSP    x95
+#define T_MATH      x96
+#define T_BOLD      x97
+#define T_ITALIC    x98
+#define T_ULINE     x99
+#define T_NOTE      x9A
+#define T_VAR       x9B
+#define T_TICK      x9C
+
+#define T_REF_END       xA4
+#define T_MONOSP_END    xA5
+#define T_MATH_END      xA6
+#define T_BOLD_END      xA7
+#define T_ITALIC_END    xA8
+#define T_ULINE_END     xA9
+#define T_NOTE_END      xAA
+#define T_VAR_END       xAB
+
+
+
 #define T_NL        x83
 
 #define T_ANY       xF0
@@ -43,7 +65,15 @@ char verb_end[16];
 #define VAR     0x0040
 #define ULINE   0x0080
 
-unsigned short env;
+unsigned short style;
+
+int curln;
+
+void fmterr(int errnum, char *msg)
+{
+  fprintf(stderr,"** %d: ",curln) ;
+  utlError(errnum,msg); 
+}
 
 int main(int argc, char *argv[])
 {
@@ -67,20 +97,22 @@ int main(int argc, char *argv[])
     
     curchar = source;
     
-    env = 0;
-    
+    style = 0;
+    curln = 0;
+        
     FSM {
-      STATE(linestart):
+      STATE(linestart):            
+          curln++; 
           pmxSwitch (curchar,
             pmxTokSet("&K.(<+=%>)",  T_HEADER)
             pmxTokSet("&K.v<?$erb><?$atim>", T_VERBATIM)
           ) {
             pmxTokCase(T_HEADER):
-                  fprintf(out,"<h lvl=\"%d\"",pmxTokLen(1));
+                  fprintf(out,"<h lvl=\"%d\" ln=\"%d\"",pmxTokLen(1),curln);
                   GOTO(header);
             
             pmxTokCase(T_VERBATIM):
-                  fprintf(out,"<v");
+                  fprintf(out,"<v ln=\"%d\"",curln);
                   verb_end[0] = '.'; verb_end[1] = '.'; verb_end[2] = '\0';
                   k=2;   
                   GOTO(verbatim);
@@ -95,7 +127,7 @@ int main(int argc, char *argv[])
           pmxSwitch (curchar,
             pmxTokSet("&K&<(<*!&>>)&>",  T_VRB_MARK)
             pmxTokSet("&K:&K(<*S>)",     T_VRB_FMT)
-            pmxTokSet("&K(<+S>)",       T_VRB_END)
+            pmxTokSet("&K(<+S>)",        T_VRB_END)
             pmxTokSet("<*!\n\r>&n",      T_VRB_BODY)
           ) {
             pmxTokCase(T_VRB_BODY):
@@ -127,11 +159,12 @@ int main(int argc, char *argv[])
             pmxTokSet("&L&n",T_VRB_LINE)
           ) {
             pmxTokCase(T_VRB_LINE):
+                  curln++;
                   if (strncmp(pmxTokStart(0),verb_end,k) == 0) {
                     fprintf(out,"</v>\n");
                     GOTO(linestart);                  
                   }
-                  fprintf(out,"%.*s",pmxTokLen(0),pmxTokStart(0));
+                  fprintf(out,"%.*s",pmxTokLen(0),pmxTokStart(0));                  
                   GOTO(verb_body);
                   
             pmxTokCase(pmxTokNONE) : GOTO(verb_body);
@@ -169,19 +202,46 @@ int main(int argc, char *argv[])
       
       STATE(midline) :  
           pmxSwitch (curchar,
-            pmxTokSet("&n",  T_NL)
-            pmxTokSet("<.>", T_ANY)
-            pmxTokSet("`.",  T_ESCAPED)
-            pmxTokSet("'<",  T_REF)
-            pmxTokSet("'|",  T_MONOSP)
-            pmxTokSet("'$",  T_MATH)
-            pmxTokSet("'*",  T_BOLD)
-            pmxTokSet("'/",  T_ITALIC)
-            pmxTokSet("'_",  T_ULINE)
-            pmxTokSet("'(",  T_NOTE)
-            pmxTokSet("'{",  T_VAR)
-            
-          ) {
+            pmxTokSet("&n",   T_NL)
+            pmxTokSet("`&n",  T_TICK)
+            pmxTokSet("`<.>", T_ESCAPED)
+            pmxTokSet("'&<",   T_REF)
+            pmxTokSet("'|",   T_MONOSP)
+            pmxTokSet("'$",   T_MATH)
+            pmxTokSet("'*",   T_BOLD)
+            pmxTokSet("'/",   T_ITALIC)
+            pmxTokSet("'_",   T_ULINE)
+            pmxTokSet("'&(",   T_NOTE)
+            pmxTokSet("'{",   T_VAR)
+            pmxTokSet("&>",   T_REF_END)
+            pmxTokSet("|",   T_MONOSP_END)
+            pmxTokSet("$",   T_MATH_END)
+            pmxTokSet("*",   T_BOLD_END)
+            pmxTokSet("/",   T_ITALIC_END)
+            pmxTokSet("_",   T_ULINE_END)
+            pmxTokSet(")",   T_NOTE_END)
+            pmxTokSet("}",   T_VAR_END)
+            pmxTokSet("<.>",  T_ANY)            
+          ) {                           
+
+            pmxTokCase(T_TICK):    fputc('`',out); GOTO(midline);            
+            pmxTokCase(T_ESCAPED):  fputc(*pmxTokStart(0)+1,out); GOTO(midline);            
+
+            pmxTokCase(T_BOLD):            
+                 if (style & BOLD) fmterr(11, "Bold already enabled.");                 
+                 style |= BOLD;                 
+                 fprintf(out,"<b>");
+                 GOTO(midline);
+
+            pmxTokCase(T_BOLD_END):            
+                 if (style & BOLD) {                  
+                   style &= ~BOLD;                 
+                   fprintf(out,"</b>");                   
+                 }                 
+                 else 
+                   fputc('*',out);                   
+                 GOTO(midline);
+
             pmxTokCase(T_NL):
                   GOTO(linestart);
             
@@ -190,7 +250,7 @@ int main(int argc, char *argv[])
                   
             pmxTokCase(pmxTokEOF) : GOTO(done);
           }
-          fprintf(stderr,"EEEKK2\n"); break;      
+          fprintf(stderr,"EEEKKX %d\n", pmxToken(pmx_tmpmtc));;break;      
           
        STATE(done) :
          break;
