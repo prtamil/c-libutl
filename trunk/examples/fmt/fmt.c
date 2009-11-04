@@ -34,6 +34,17 @@ int sec_curlvl=0;
 
 char verb_end[16];
 
+#define BOLD    0x0001
+#define ITALIC  0x0002
+#define MONOSP  0x0004
+#define NOTE    0x0008
+#define REF     0x0010
+#define MATH    0x0020
+#define VAR     0x0040
+#define ULINE   0x0080
+
+unsigned short env;
+
 int main(int argc, char *argv[])
 {
   int k;
@@ -56,11 +67,13 @@ int main(int argc, char *argv[])
     
     curchar = source;
     
+    env = 0;
+    
     FSM {
       STATE(linestart):
           pmxSwitch (curchar,
             pmxTokSet("&K.(<+=%>)",  T_HEADER)
-            pmxTokSet("&K.v<?$erbatim$erb>", T_VERBATIM)
+            pmxTokSet("&K.v<?$erb><?$atim>", T_VERBATIM)
           ) {
             pmxTokCase(T_HEADER):
                   fprintf(out,"<h lvl=\"%d\"",pmxTokLen(1));
@@ -137,6 +150,7 @@ int main(int argc, char *argv[])
           ) {
             pmxTokCase(T_HDR_CLASS):
                   fprintf(out," class=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                  k = 1;
                   GOTO(header);
                   
             pmxTokCase(T_HDR_MARK):
@@ -155,8 +169,18 @@ int main(int argc, char *argv[])
       
       STATE(midline) :  
           pmxSwitch (curchar,
-            pmxTokSet("&n",T_NL)
-            pmxTokSet("<.>",T_ANY)
+            pmxTokSet("&n",  T_NL)
+            pmxTokSet("<.>", T_ANY)
+            pmxTokSet("`.",  T_ESCAPED)
+            pmxTokSet("'<",  T_REF)
+            pmxTokSet("'|",  T_MONOSP)
+            pmxTokSet("'$",  T_MATH)
+            pmxTokSet("'*",  T_BOLD)
+            pmxTokSet("'/",  T_ITALIC)
+            pmxTokSet("'_",  T_ULINE)
+            pmxTokSet("'(",  T_NOTE)
+            pmxTokSet("'{",  T_VAR)
+            
           ) {
             pmxTokCase(T_NL):
                   GOTO(linestart);
