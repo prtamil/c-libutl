@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include "libutl.h"
 
-#define T_HEADER    x81
-#define T_HDR_MARK  x81
-#define T_HDR_CLASS x82
-#define T_HDR_TITLE x83
+#define T_HEADER     x81
+#define T_HDR_MARK   x81
+#define T_HDR_CLASS  x82
+#define T_HDR_TITLE  x83
 
 #define T_VERBATIM  x82
 #define T_VRB_MARK  x81
@@ -41,7 +41,6 @@
 #define T_ULINE_END     xA9
 #define T_NOTE_END      xAA
 #define T_VAR_END       xAB
-
 
 
 #define T_NL        x83
@@ -81,7 +80,9 @@ int main(int argc, char *argv[])
   FILE *f;
   FILE *out = stdout;
   chs_t source = NULL;
-  char *curchar;
+  char *curchar;  
+
+  chs_t tmps=NULL;
 
   if (argc <= 1)
     utlError(1,"Usage: fmt filename\n");
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
                   GOTO(header);
 
             pmxTokCase(T_VERBATIM):
-                  fprintf(out,"<v ln=\"%d\"",curln);
+                  fprintf(out,"<v ln=\"%d\"",curln);                  
                   verb_end[0] = '.'; verb_end[1] = '.'; verb_end[2] = '\0';
                   k=2;
                   GOTO(verbatim);
@@ -227,6 +228,8 @@ int main(int argc, char *argv[])
             pmxTokCase(T_TICK):     fputc('`',out); GOTO(midline);
             pmxTokCase(T_ESCAPED):  fputc(*pmxTokStart(0)+1,out); GOTO(midline);
 
+            pmxTokCase(T_REF):            
+
             pmxTokCase(T_BOLD):
                  if (style & BOLD) fmterr(11, "Bold already enabled.");
                  style |= BOLD; fprintf(out,"<b>");
@@ -304,5 +307,7 @@ int main(int argc, char *argv[])
   else utlError(2,"Unable to open input file\n");
 
   if (source) source = chsFree(source);
+  if (tmps) tmps = cshFree(tmps);
+  
   exit(0);
 }

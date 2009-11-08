@@ -517,7 +517,7 @@ The '|`'| is not needed in a '|.| tag:
 .verb
   Euler's formula:
 
-  .$ '<euler> 
+  .$ <euler> 
       e ^(i*pi) + 1 = 0
   ..
 ..
