@@ -9,6 +9,7 @@
 
 #include "libutl.h"
 #include <ctype.h>
+#include <stdarg.h>
 
 chsBlk *chs_blk_;
 chs_t   chs_tmp_;
@@ -283,6 +284,34 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   return dst;
 }
 
+
+static char FMTBUF[1024];
+chs_t chsAddFmt(chs_t dest, char *fmt, ...)
+{
+  va_list args;
+  
+  if (fmt && *fmt) {  
+    va_start(args, fmt);
+    vsprintf (FMTBUF, fmt, args);
+    va_end(args);
+    dest = chsAddStr(dest, FMTBUF);
+  }
+  return dest;
+}
+
+chs_t chsCpyFmt(chs_t dest, char *fmt, ...)
+{
+  va_list args;
+  dest = chsCpy(dest,"");
+  if (fmt && *fmt) {  
+    va_start(args, fmt);
+    vsprintf (FMTBUF, fmt, args);
+    va_end(args);
+    dest = chsAddStr(dest, FMTBUF);
+  }
+  return dest;
+}
+
 pmxMatches_t chsMatch(chs_t s, long from, char *pat)
 {
   pmxMatches_t ret;
@@ -344,9 +373,11 @@ chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
   return s;  
 }
 
+
 static char  *rpl_str;
 static chs_t  rpl_chs;
 static char  *rpl_fun(char *mtc, pmxMatches_t cpt)
+
 {
   char *r, *t;
   long l;

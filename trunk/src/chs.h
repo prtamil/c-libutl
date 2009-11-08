@@ -13,46 +13,47 @@
 .v
                      __        
                     |  |        
-                 ___|  |__  ______
-                /  _|  __ \/ ____/
+                 ___|_ |__  ____
+                /  __/ __ \/ ___)
                (  (_|  || |\___ \
-                \___\__||_/_____/
+                \___/__||_|/____/
 ..
 
-.         ===============================
+         ===============================
 .T             Character strings 
-.         ===============================
+         ===============================
             
-.A      Remo Dentato (rdentato@gmail.com)
+.A       Remo Dentato (rdentato@gmail.com)
 
 
 .% Overview
 ===========
 
  C strings have two major drawbacks:
+ 
   .- They cannot easily resized 
    - They are zero-terminated (meaning that getting the
      lenght of a strings costs O(n))
   ..
 
- This functions help handling variable lenght string
+ This functions help handling variable lenght string. 
 
-.% Usage
-========
-
-  There is a key concept to bear in mind when using '|chs|: '/the string 
-address may change any time the string is modified/.  This makes address
-of chs strings unsuitable to being stored in two different variable at
-the same time.
-
-  It may require some time to get used to this but in practice it doesn't
-cause too many issues.
-
-  The common idiom is to write something like: '|str = chsXXX(str, ...)| 
-whenever the function '|XXXX| modifies the string itself 
 
 .% The "block"
 ==================
+
+.v 
+    __ this is the start of memory block
+   |   allocated for each chs string
+   v
+  +------+------+------+-------------------------
+  | size | len  | cur  |  ....
+  +------+------+------+-------------------------
+                        ^
+                        |__ this is the "string" pointer that is
+                            returned and by the chs functions
+..
+
 
  
 */
@@ -68,9 +69,31 @@ typedef struct {
 
 typedef char *chs_t ;
 
+/*
+  The '{=chs_blk} takes the string pointer returned by the 
+  '|chsXXX| functions and returns the pointer to the chs block.
+*/
+
 #define chs_blk(s) ((chsBlk *)(((char*)(s)) - offsetof(chsBlk,chs)))
 
-/* .% API
+/*
+.% Usage
+========
+
+  There is a key concept to bear in mind when using '|chs|: '/the string 
+address may change any time the string is modified/.  This makes address
+of chs strings unsuitable to being stored in two different variable at
+the same time.
+
+  It may require some time to get used to this but in practice it doesn't
+cause too many issues.
+
+  The common idiom is to write something like: '|str = chsXXX(str, ...)| 
+whenever the function '|XXXX| modifies the string itself 
+
+
+
+.% API
 =========
 */
 
@@ -106,6 +129,9 @@ chs_t chsInsStrL (chs_t dst, long ndx, char *src, long len) ;
 chs_t chsInsStr  (chs_t dst, long ndx, char *src) ;
 
 chs_t chsDel (chs_t dst, long from, long to) ;
+
+chs_t chsCpyFmt(chs_t dest, char *fmt, ...);
+chs_t chsAddFmt(chs_t dest, char *fmt, ...);
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 
