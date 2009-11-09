@@ -1,0 +1,18 @@
+case sensitive
+rem0 //
+rem0 /*,*/
+num0 &d<?=lL>
+num0 0x&x<?=lL>
+num0 &f<?=eE>&F<?=lL>
+str0 \e\\&b""
+str1 \e\\&b''
+ids0 
+key0 
+ops0 <+=+&-*/&&?^!|%&<&>=>
+blk0 {,}
+
+blk0 then,end
+blk0 do,end
+bl
+
+

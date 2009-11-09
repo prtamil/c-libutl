@@ -9,10 +9,10 @@
 
 #include "libutl.h"
 #include <ctype.h>
-#include <stdarg.h>
 
 chsBlk *chs_blk_;
 chs_t   chs_tmp_;
+char FMTBUF[1024];
 
 static long fixndx(chs_t s, long n)
 {
@@ -41,7 +41,7 @@ static chs_t chs_setsize(chs_t s, long ndx)
     if (!cb) utlError(8911,utlErrInternal);
     cb->size = sz + chsBlksz;
   }
-  if (!s) {
+  if (s == NULL) {  /* created a fresh string */
     cb->cur    = 0;
     cb->len    = 0;
     cb->chs[0] = '\0';
@@ -282,34 +282,6 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   }  
   _dbgmsg("READ: %s\n",dst);
   return dst;
-}
-
-
-static char FMTBUF[1024];
-chs_t chsAddFmt(chs_t dest, char *fmt, ...)
-{
-  va_list args;
-  
-  if (fmt && *fmt) {  
-    va_start(args, fmt);
-    vsprintf (FMTBUF, fmt, args);
-    va_end(args);
-    dest = chsAddStr(dest, FMTBUF);
-  }
-  return dest;
-}
-
-chs_t chsCpyFmt(chs_t dest, char *fmt, ...)
-{
-  va_list args;
-  dest = chsCpy(dest,"");
-  if (fmt && *fmt) {  
-    va_start(args, fmt);
-    vsprintf (FMTBUF, fmt, args);
-    va_end(args);
-    dest = chsAddStr(dest, FMTBUF);
-  }
-  return dest;
 }
 
 pmxMatches_t chsMatch(chs_t s, long from, char *pat)
