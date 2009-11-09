@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
       STATE(verbatim) :
           pmxSwitch (curchar,
             pmxTokSet("&K&<(<*!&>>)&>",  T_VRB_MARK)
-            pmxTokSet("&K:(<*S>)",     T_VRB_FMT)
+            pmxTokSet("&K:(<*S>)",       T_VRB_FMT)
             pmxTokSet("&K(<+S>)",        T_VRB_END)
             pmxTokSet("<*!\n\r>&n",      T_VRB_BODY)
           ) {
