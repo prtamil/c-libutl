@@ -1,5 +1,5 @@
 [Config]
-Compilator.FileName=D:\99Personal\c-libutl\mk.bat
+Compilator.FileName=%ProjectDir%\mk.bat
 Compilator.PSPar=%Dir% %Input%
 Compilator.SaveAll=0
 Compilator.Capture=1
@@ -37,7 +37,7 @@ vec
 				examples\fmt\fmt.pmx
 				examples\fmt\fmt9.txt
 				examples\fmt\fmt.c
-			-pmx2c
+			+pmx2c
 				examples\pmx2c\pmx2c.pmx
 				examples\pmx2c\pmx2c_boot.c
 				examples\pmx2c\makefile
@@ -53,7 +53,7 @@ vec
 				examples\utl_h\Jamfile
 				examples\utl_h\utlh.c
 			examples\makefile
-		+src
+		-src
 			src\pmx.c
 			src\pmx.h
 			src\utl.h
@@ -87,9 +87,13 @@ vec
 8=examples\fmt\v.txt
 9=examples\fmt\fmtsrc.c
 10=mk.bat
+11=Nuovo2.c
+12=examples\macro\macro.c
+13=C:\Program Files\PSPad editor\Context\Txt.DEF
+14=examples\pmx2c\pmx2c.pmx
 [Selected Project Files]
 Main=
-Selected=mk.bat
+Selected=C:\Program Files\PSPad editor\Context\Txt.DEF
 [examples\utl_h\utlh.c]
 TopLine=9
 Caret=1,1
@@ -100,8 +104,8 @@ Caret=70,516
 TopLine=29
 Caret=4,43
 [src\chs.h]
-TopLine=105
-Caret=15,105
+TopLine=123
+Caret=1,140
 [src\pmx.h]
 TopLine=208
 Caret=27,208
@@ -109,8 +113,8 @@ Caret=27,208
 TopLine=560
 Caret=12,586
 [examples\fmt\fmt.c]
-TopLine=114
-Caret=33,129
+TopLine=19
+Caret=1,37
 [examples\fmt\fmt9.txt]
 TopLine=731
 Caret=3,752
@@ -123,3 +127,15 @@ Caret=1,13
 [mk.bat]
 TopLine=1
 Caret=1,5
+[Nuovo2.c]
+TopLine=1
+Caret=34,15
+[examples\macro\macro.c]
+TopLine=30
+Caret=1,48
+[C:\Program Files\PSPad editor\Context\Txt.DEF]
+TopLine=1
+Caret=8,5
+[examples\pmx2c\pmx2c.pmx]
+TopLine=83
+Caret=14,109
