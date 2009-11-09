@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
  
   str = chsCpyFmt(str,"value: %f %s 0x%04X\n",1.4,"LLLo",124);
   str = chsAddFmt(str,"and so %-10d on\n",34);
+  str = chsInsFmt(str,6,"<%c>",64);
 
   printf("%s",str);
   exit(0);

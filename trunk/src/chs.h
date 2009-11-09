@@ -130,13 +130,23 @@ chs_t chsInsStr  (chs_t dst, long ndx, char *src) ;
 
 chs_t chsDel (chs_t dst, long from, long to) ;
 
-chs_t chsCpyFmt(chs_t dest, char *fmt, ...);
-chs_t chsAddFmt(chs_t dest, char *fmt, ...);
+extern char FMTBUF[1024];
+
+#define chsCpyFmt(d,f,...)   (sprintf(FMTBUF,f,__VA_ARGS__),chsCpy(d,FMTBUF)) 
+#define chsAddFmt(d,f,...)   (sprintf(FMTBUF,f,__VA_ARGS__),chsAddStr(d,FMTBUF)) 
+#define chsInsFmt(d,n,f,...) (sprintf(FMTBUF,f,__VA_ARGS__),chsInsStr(d,n,FMTBUF)) 
+
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 
 #define chsRead(s,f,h)   chs_read(s,f,h,'A')
 #define chsReadln(s,f,h) chs_read(s,f,h,'L')
+
+#define chsCpyFile(s,f) chs_read(s,f,'w','A')
+#define chsCpyLine(s,f) chs_read(s,f,'w','L')
+
+#define chsAddFile(s,f) chs_read(s,f,'a','A')
+#define chsAddLine(s,f) chs_read(s,f,'a','L')
 
 #define chsForLines(l,f)  for (l=chsReadln(l,f, 'w'); chsLen(l) > 0;\
                                                      l = chsReadln(l,f,'w'))

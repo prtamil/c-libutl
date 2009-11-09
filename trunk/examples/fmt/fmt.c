@@ -90,11 +90,10 @@ int main(int argc, char *argv[])
   f = fopen(argv[1],"r");
 
   if (f) {
-    source = chsNew();
-    source = chsRead(source,f,'a');
+    source = chsCpyFile(NULL,f);
     fclose(f);
 
-    chsAddChr(source,'\n');
+    source = chsAddChr(source,'\n');
 
     curchar = source;
 
@@ -307,7 +306,7 @@ int main(int argc, char *argv[])
   else utlError(2,"Unable to open input file\n");
 
   if (source) source = chsFree(source);
-  if (tmps) tmps = cshFree(tmps);
+  if (tmps) tmps = chsFree(tmps);
   
   exit(0);
 }

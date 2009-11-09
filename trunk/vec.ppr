@@ -1,7 +1,6 @@
 [Config]
-Compilator.FileName=D:\0_Proj\c-libutl\mk.bat
-Compilator.PSPar=%ProjectDir% %Input%
-Compilator.DefaultDir=%Dir%
+Compilator.FileName=D:\99Personal\c-libutl\mk.bat
+Compilator.PSPar=%Dir% %Input%
 Compilator.SaveAll=0
 Compilator.Capture=1
 Compilator.ParsLog=%F:%L:*
@@ -20,21 +19,25 @@ vec
 		-doc
 			doc\stk.gif
 		+examples
+			+scanner
+				examples\scanner\mpnotes.c
+				examples\scanner\makefile
 			-uncomment
 				examples\uncomment\uncomment.pmx
 				examples\uncomment\makefile
 			-cxrf
-				examples\uncomment\uncomment.pmx
-				examples\uncomment\makefile.mk
-			+fsm
-				examples\cxref\Jamfile.mk
+				examples\cxrf\cxrf.pmx
+				examples\cxrf\makefile
+			-fsm
 				examples\fsm\fsm.txt
 				examples\fsm\fsm.pmx
+				examples\fsm\makefile
+				examples\fsm\fsm.c
 			+fmt
+				examples\fmt\fmt.pmx
 				examples\fmt\fmt9.txt
 				examples\fmt\fmt.c
-				examples\fmt\makefile
-			+pmx2c
+			-pmx2c
 				examples\pmx2c\pmx2c.pmx
 				examples\pmx2c\pmx2c_boot.c
 				examples\pmx2c\makefile
@@ -46,7 +49,7 @@ vec
 				examples\macro\m2.txt
 				examples\macro\macro.c
 				examples\macro\mm.txt
-			+utl_h
+			-utl_h
 				examples\utl_h\Jamfile
 				examples\utl_h\utlh.c
 			examples\makefile
@@ -73,38 +76,50 @@ vec
 		targets.mk
 		config.mk
 [Open project files]
-0=src\pmx.h
-1=src\chs.c
-2=src\chs.h
-3=src\utl.h
-4=examples\fmt\fmt.c
+0=examples\utl_h\utlh.c
+1=src\utl.h
+2=src\chs.c
+3=src\chs.h
+4=src\pmx.h
 5=src\pmx.c
-6=examples\fmt\fmt9.txt
-7=examples\fmt\f.t
+6=examples\fmt\fmt.c
+7=examples\fmt\fmt9.txt
+8=examples\fmt\v.txt
+9=examples\fmt\fmtsrc.c
+10=mk.bat
 [Selected Project Files]
 Main=
-Selected=examples\fmt\fmt.c
-[src\pmx.h]
-TopLine=378
-Caret=31,404
-[src\chs.c]
-TopLine=235
-Caret=49,248
-[src\chs.h]
-TopLine=87
-Caret=1,126
+Selected=mk.bat
+[examples\utl_h\utlh.c]
+TopLine=9
+Caret=1,1
 [src\utl.h]
-TopLine=485
-Caret=18,502
-[examples\fmt\fmt.c]
-TopLine=202
-Caret=17,30
+TopLine=486
+Caret=70,516
+[src\chs.c]
+TopLine=29
+Caret=4,43
+[src\chs.h]
+TopLine=105
+Caret=15,105
+[src\pmx.h]
+TopLine=208
+Caret=27,208
 [src\pmx.c]
-TopLine=313
-Caret=3,42
+TopLine=560
+Caret=12,586
+[examples\fmt\fmt.c]
+TopLine=114
+Caret=33,129
 [examples\fmt\fmt9.txt]
-TopLine=8
-Caret=1,786
-[examples\fmt\f.t]
+TopLine=731
+Caret=3,752
+[examples\fmt\v.txt]
 TopLine=1
-Caret=9,3
+Caret=11,1
+[examples\fmt\fmtsrc.c]
+TopLine=1
+Caret=1,13
+[mk.bat]
+TopLine=1
+Caret=1,5
