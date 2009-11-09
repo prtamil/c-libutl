@@ -130,7 +130,8 @@ chs_t chsInsStr  (chs_t dst, long ndx, char *src) ;
 
 chs_t chsDel (chs_t dst, long from, long to) ;
 
-extern char FMTBUF[1024];
+#define chs_buf_size 1024
+extern char chs_buf[chs_buf_size];
 
 #define chsCpyFmt(d,f,...)   (sprintf(FMTBUF,f,__VA_ARGS__),chsCpy(d,FMTBUF)) 
 #define chsAddFmt(d,f,...)   (sprintf(FMTBUF,f,__VA_ARGS__),chsAddStr(d,FMTBUF)) 

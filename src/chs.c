@@ -12,7 +12,8 @@
 
 chsBlk *chs_blk_;
 chs_t   chs_tmp_;
-char FMTBUF[1024];
+
+char chs_buf[chs_buf_size];
 
 static long fixndx(chs_t s, long n)
 {
@@ -239,8 +240,7 @@ chs_t chsDel(chs_t dst, long from, long to)
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what)
 {
-  int k = 128;
-  char buf[128];
+  int k = chs_buf_size;
   
   _dbgmsg("READ = %p,%p,%c,%c",dst,f,how,what);
 
@@ -252,8 +252,8 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   chs_blk(dst)->cur = chs_blk(dst)->len ;
   
   if (what == 'A') { /* read rest of the file */
-    while ((k = fread(buf,1,128,f)) > 0) {
-      dst = chsAddStrL(dst, buf,k);
+    while ((k = fread(chs_buf,1,chs_buf_size,f)) > 0) {
+      dst = chsAddStrL(dst, chs_buf,k);
       _dbgmsg("READBLK %d\n",chsLen(dst));
     }
 //    dst = chsSet(dst, chsLen(dst), '\0');
@@ -261,18 +261,18 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   else { /* read line */
     what = '\0';
     while (1) {
-      buf[0]='\0';
-      if (!fgets(buf,128,f) || buf[0] == '\0') break;
+      chs_buf[0]='\0';
+      if (!fgets(chs_buf,chs_buf_size,f) || chs_buf[0] == '\0') break;
       k=0;
-      while(k<128 && buf[k] && buf[k] != '\n')
+      while(k<chs_buf_size && chs_buf[k] && chs_buf[k] != '\n')
         k++; 
-      if (buf[k] == '\0') {
-        dst = chsAddStrL(dst, buf,k);
+      if (chs_buf[k] == '\0') {
+        dst = chsAddStrL(dst, chs_buf,k);
         what = 'L';
         continue;
       } 
-      if (buf[k] == '\n') {
-        dst = chsAddStrL(dst, buf,k+1);
+      if (chs_buf[k] == '\n') {
+        dst = chsAddStrL(dst, chs_buf,k+1);
         break;
       }
       utlError(8313,utlErrInternal);
@@ -349,7 +349,6 @@ chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
 static char  *rpl_str;
 static chs_t  rpl_chs;
 static char  *rpl_fun(char *mtc, pmxMatches_t cpt)
-
 {
   char *r, *t;
   long l;
