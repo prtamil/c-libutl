@@ -10,7 +10,7 @@
 #include "libutl.h"
 #include <ctype.h>
 
-chsBlk *chs_blk_;
+chs_blk_t *chs_blk_;
 chs_t   chs_tmp_;
 
 char chs_buf[chs_buf_size];
@@ -31,16 +31,16 @@ static long fixndx(chs_t s, long n)
 static chs_t chs_setsize(chs_t s, long ndx)
 {
   long sz;
-  chsBlk *cb;
+  chs_blk_t *cb;
   
   cb = s?  chs_blk(s) : NULL;
   sz = cb? cb->size   : 0;
     
   if (ndx >= sz) {
-    sz = (ndx / chsBlksz) * chsBlksz;
-    cb = realloc(cb, sizeof(chsBlk) + sz);
+    sz = (ndx / chs_blk_inc) * chs_blk_inc;
+    cb = realloc(cb, sizeof(chs_blk_t) + sz);
     if (!cb) utlError(8911,utlErrInternal);
-    cb->size = sz + chsBlksz;
+    cb->size = sz + chs_blk_inc;
   }
   if (s == NULL) {  /* created a fresh string */
     cb->cur    = 0;
@@ -57,7 +57,7 @@ chs_t chsNew()
 
 chs_t chsSet(chs_t s, long ndx, char c)
 {
-  chsBlk *cb;
+  chs_blk_t *cb;
 
   s = chs_setsize(s,ndx+1);
   s[ndx] = c;
@@ -86,7 +86,7 @@ char chsChrAt(chs_t s, long ndx)
 
 int chsGetChr(chs_t s)
 {
-  chsBlk *cb;
+  chs_blk_t *cb;
   
   if (!s) return EOF;
 

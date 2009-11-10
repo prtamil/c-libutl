@@ -14,7 +14,6 @@
 int main(int argc, char *argv[])
 {
   chs_t str = NULL;
-
  
   str = chsCpyFmt(str,"value: %f %s 0x%04X\n",1.4,"LLLo",124);
   str = chsAddFmt(str,"and so %-10d on\n",34);
