@@ -54,11 +54,11 @@
 ** ================================
 **
 **    When used with the rest of the '|libutl| library, the global variables
-**  needed (and provided) by '|utl.h| will be defined in the <'|utl.c|=utl.c#> 
+**  needed (and provided) by '|utl.h| will be defined in the '<'|utl.c|=utl.c#> 
 **  file but when it used as an header, those globals will have to be defined
 **  and initialized somewhere else. 
 **
-**    The '{:UTL_EXTERN} macro takes care of this. You will see in the rest of
+**    The '{=UTL_EXTERN} macro takes care of this. You will see in the rest of
 **  the code that it is used as follows:
 ** .v
 **      UTL_EXTERN (int x, = 0);
