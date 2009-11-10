@@ -25,7 +25,7 @@ vec
 			+uncomment
 				examples\uncomment\uncomment.pmx
 				examples\uncomment\makefile
-			-cxrf
+			+cxrf
 				examples\cxrf\cxrf.pmx
 				examples\cxrf\makefile
 			+fsm
@@ -76,29 +76,21 @@ vec
 		targets.mk
 		config.mk
 [Open project files]
-0=examples\utl_h\utlh.c
-1=src\utl.h
-2=src\chs.c
-3=src\chs.h
-4=src\pmx.h
-5=src\pmx.c
-6=examples\fmt\fmt.c
-7=examples\fmt\fmt9.txt
-8=examples\fmt\v.txt
-9=examples\fmt\fmtsrc.c
-10=mk.bat
-11=examples\macro\macro.c
-12=examples\fsm\fsm.c
-13=src\makefile
+0=src\utl.h
+1=src\chs.c
+2=src\chs.h
+3=src\pmx.h
+4=src\pmx.c
+5=examples\fmt\fmt.c
+6=examples\fmt\fmt9.txt
+7=examples\fmt\fmtsrc.c
+8=examples\cxrf\cxrf.pmx
 [Selected Project Files]
 Main=
-Selected=src\makefile
-[examples\utl_h\utlh.c]
-TopLine=34
-Caret=6,46
+Selected=examples\cxrf\cxrf.pmx
 [src\utl.h]
-TopLine=472
-Caret=70,516
+TopLine=55
+Caret=63,105
 [src\chs.c]
 TopLine=87
 Caret=16,109
@@ -117,21 +109,9 @@ Caret=1,37
 [examples\fmt\fmt9.txt]
 TopLine=731
 Caret=3,752
-[examples\fmt\v.txt]
-TopLine=1
-Caret=11,1
 [examples\fmt\fmtsrc.c]
 TopLine=1
 Caret=1,13
-[mk.bat]
-TopLine=1
-Caret=1,5
-[examples\macro\macro.c]
-TopLine=30
-Caret=1,48
-[examples\fsm\fsm.c]
-TopLine=1
-Caret=1,25
-[src\makefile]
-TopLine=3
-Caret=43,28
+[examples\cxrf\cxrf.pmx]
+TopLine=36
+Caret=1,1
