@@ -26,6 +26,7 @@
 **              /  /_/  //  (__/  /
 **             (____,__/(_____(__/
 ** ..
+**
 **   This file ('|utl.h|) provide the following basic elements:
 **
 ** .[Debugging]    To print debug tracing during development.
@@ -45,7 +46,7 @@
 **
 **   To use '|utl.h| without linking to libutl.a, you have simply to define
 ** the symbol '{:UTL_MAIN} '/before/ including it. 
-**   The <'|utlh.c| = ../examples/utlh.c#> is a more detailed example of
+**   The '<'|utlh.c| = ../examples/utlh.c#> is a more detailed example of
 ** how this can be done.
 ** 
 */
@@ -348,7 +349,7 @@ static const char *TSTKO  = "not ok";
 #include <time.h>
 
 /* .%% Logging levels
-** ==================
+** ~~~~~~~~~~~~~~~~~~
 **
 **   Logging levels are hierarchical and structured as in log4j. The variable 
 ** '{:logLevel} contains the current logging level.  Logging is off by default.
@@ -384,7 +385,7 @@ UTL_EXTERN(int logLevel , = logOFF) ;
 */
 
 /* .%% Logging format
-** ==================
+** ~~~~~~~~~~~~~~~~~~
 ** 
 ** Log files have the following format:
 ** .v
@@ -419,7 +420,7 @@ UTL_EXTERN(time_t log_time, = 0) ;
 
 
 /* .%% Setting the log file
-** ========================
+** ~~~~~~~~~~~~~~~~~~~~~~~~
 **
 **   By default, logging messages will be sent to stderr. The internal
 ** variable '{:log_file} holds the file descriptor of the file the log
@@ -495,9 +496,11 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 */
 #define logIndent     "                        "                            
 
-#endif /* UTL_LOGGING */
+#endif /*- UTL_LOGGING */
 
-/* .% Finite state machine
+
+/*  .% Finite state machine
+**  =======================
 **
 **  Three quick macros to embed Finite state machine into C programs.
 **
@@ -520,5 +523,5 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 #define STATE(x) x##_s 
 #define GOTO(x)  goto x##_s
 
-#endif /* UTL_H */
+#endif /*- UTL_H */
 
