@@ -28,7 +28,7 @@ vec
 			-cxrf
 				examples\cxrf\cxrf.pmx
 				examples\cxrf\makefile
-			-fsm
+			+fsm
 				examples\fsm\fsm.txt
 				examples\fsm\fsm.pmx
 				examples\fsm\makefile
@@ -53,7 +53,7 @@ vec
 				examples\utl_h\Jamfile
 				examples\utl_h\utlh.c
 			examples\makefile
-		-src
+		+src
 			src\pmx.c
 			src\pmx.h
 			src\utl.h
@@ -87,33 +87,31 @@ vec
 8=examples\fmt\v.txt
 9=examples\fmt\fmtsrc.c
 10=mk.bat
-11=Nuovo2.c
-12=examples\macro\macro.c
-13=C:\Program Files\PSPad editor\Context\Txt.DEF
-14=examples\pmx2c\pmx2c.pmx
+11=examples\macro\macro.c
+12=examples\fsm\fsm.c
 [Selected Project Files]
 Main=
-Selected=C:\Program Files\PSPad editor\Context\Txt.DEF
+Selected=src\chs.h
 [examples\utl_h\utlh.c]
-TopLine=9
-Caret=1,1
+TopLine=34
+Caret=6,46
 [src\utl.h]
-TopLine=486
+TopLine=472
 Caret=70,516
 [src\chs.c]
-TopLine=29
-Caret=4,43
+TopLine=87
+Caret=16,109
 [src\chs.h]
-TopLine=123
-Caret=1,140
+TopLine=299
+Caret=1,343
 [src\pmx.h]
 TopLine=208
 Caret=27,208
 [src\pmx.c]
-TopLine=560
+TopLine=552
 Caret=12,586
 [examples\fmt\fmt.c]
-TopLine=19
+TopLine=37
 Caret=1,37
 [examples\fmt\fmt9.txt]
 TopLine=731
@@ -127,15 +125,9 @@ Caret=1,13
 [mk.bat]
 TopLine=1
 Caret=1,5
-[Nuovo2.c]
-TopLine=1
-Caret=34,15
 [examples\macro\macro.c]
 TopLine=30
 Caret=1,48
-[C:\Program Files\PSPad editor\Context\Txt.DEF]
+[examples\fsm\fsm.c]
 TopLine=1
-Caret=8,5
-[examples\pmx2c\pmx2c.pmx]
-TopLine=83
-Caret=14,109
+Caret=1,25
