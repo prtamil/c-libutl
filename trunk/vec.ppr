@@ -22,7 +22,7 @@ vec
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
-			-uncomment
+			+uncomment
 				examples\uncomment\uncomment.pmx
 				examples\uncomment\makefile
 			-cxrf
@@ -89,9 +89,10 @@ vec
 10=mk.bat
 11=examples\macro\macro.c
 12=examples\fsm\fsm.c
+13=src\makefile
 [Selected Project Files]
 Main=
-Selected=src\chs.h
+Selected=src\makefile
 [examples\utl_h\utlh.c]
 TopLine=34
 Caret=6,46
@@ -102,8 +103,8 @@ Caret=70,516
 TopLine=87
 Caret=16,109
 [src\chs.h]
-TopLine=299
-Caret=1,343
+TopLine=285
+Caret=41,298
 [src\pmx.h]
 TopLine=208
 Caret=27,208
@@ -131,3 +132,6 @@ Caret=1,48
 [examples\fsm\fsm.c]
 TopLine=1
 Caret=1,25
+[src\makefile]
+TopLine=3
+Caret=43,28

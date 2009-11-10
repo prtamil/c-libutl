@@ -297,17 +297,17 @@ chs_t chsDel (chs_t dst, long from, long to) ;
     ['|chsForLines(l,f)|] Reads the content of the file f one lines at the
                           time in the string l and executes the next
                           instruction until the end of file is reached.
-                          Example:
+                          For example to print lines in a file:
 .v
-                          chs_t ln;
-                          FILE *f;
-                            ...
-                          f = fopen("myfile.txt","r");  
-                          chsForLines(l,f) {
-                            printf("<%%s>\n",l);
-                          }
-                          if (f) fclose(f);
-                            ...
+                             chs_t ln;
+                             FILE *f;
+                               ...
+                             f = fopen("myfile.txt","r");  
+                             chsForLines(l,f) {
+                               printf("<%%s>\n",l);
+                             }
+                             if (f) fclose(f);
+                               ...
 ..  
    
    ..
