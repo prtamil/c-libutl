@@ -10,9 +10,9 @@ TOP=../
 
 include $(TOP)config.mk
 
-LIBSRC = chs.c pmx.c tbl.c utl.c obj.c
-LIBHDR = utl.h pmx.h chs.h tbl.h obj.h
-LIBOBJ = chs$(_OBJ) pmx$(_OBJ) tbl$(_OBJ) utl$(_OBJ) obj$(_OBJ)
+LIBSRC = chs.c pmx.c tbl.c utl.c
+LIBHDR = utl.h pmx.h chs.h tbl.h
+LIBOBJ = chs$(_OBJ) pmx$(_OBJ) tbl$(_OBJ) utl$(_OBJ)
 
 libutl$(_LIB) : $(LIBOBJ) 
 	$(AR) $@ $(LIBOBJ)

@@ -48,11 +48,24 @@ http://opensource.org/licenses/bsd-license.php
 ================================================================================
 ..
 
-.% Install
 
+.% Install
+==========
+
+.%% Configure
+~~~~~~~~~~~~~
+
+The '<config.mk> file contains two configuration parameters:
+
+.['|NO_ASM|]  The library contains small portions of Assembler code for i386.
+              To use plain C equivalent, just uncomment the row.
+              
+ ['|SYS|]     It can be '|MINGW| or '|LINUX|.  It is usually autoconfigured
+              by make but it can also be configured manually.
+..
 
 .%% Building the library
-    ''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~
     
 From the root directory type: '|make release| to build the library and 
 the pmx tools.  The '|dist| directory will contain all that you need 
