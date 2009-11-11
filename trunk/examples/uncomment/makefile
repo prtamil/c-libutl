@@ -7,15 +7,16 @@
 #
  
 TOP=../../
+NAME=unc
 
 include $(TOP)config.mk
 
-uncomment$(_EXE): $(CHKLIB) uncomment$(_OBJ)
-	$(LN)$@ uncomment$(_OBJ) -lutl
+$(NAME)$(_EXE): $(CHKLIB) $(NAME)$(_OBJ)
+	$(LN)$@ $(NAME)$(_OBJ) -lutl
 
 clean:
-	$(RM) uncomment$(_EXE)
-	$(RM) uncomment$(_OBJ)
+	$(RM) $(NAME)$(_EXE)
+	$(RM) $(NAME)$(_OBJ)
 	$(RM) gmon.out
 
 include $(TOP)targets.mk
