@@ -14,7 +14,6 @@ all: FORCE
 	cd src ; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd examples/pmx2c ; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
 	cd examples/pmxshell ; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)"
-
         
 release: FORCE
 	cd src ; make release
@@ -35,7 +34,7 @@ clean:
 	cd src ; make clean
 	cd examples ; make clean
 
-distribution:
+dist: FORCE
 	make clean
 	cd src ; make release
 	cd examples/pmx2c ; make release
@@ -44,7 +43,7 @@ distribution:
 	strip dist/pmx2c$(_EXE)
 	strip dist/pmxshell$(_EXE)
 	mv dist/libutl.h dist/l.h
-	examples/uncomment/uncomment < dist/l.h >dist/libutl.h
+	examples/uncomment/unc < dist/l.h >dist/libutl.h
 	$(RM) dist/l.h
 
 FORCE: 

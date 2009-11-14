@@ -7,6 +7,7 @@
 #
 
 TOP=../
+UNC=$(TOP)examples/uncomment
 
 include $(TOP)config.mk
 
