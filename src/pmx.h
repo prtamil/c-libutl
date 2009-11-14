@@ -22,7 +22,6 @@
                |  |
                |__)
 ..
-
             ===============================
 .T            Pattern Matching eXpressions 
             ===============================
@@ -44,7 +43,7 @@ time, there are pmx expressions that can't be matched with regular expressions.
 always /greedy/ and match as much of the string as they can. It is important
 to remind this when you get unexpected results in your match.
 
-  Since RE are very well known, we'll refer sometimes to them to explain
+  Since RE are very well known, I'll refer sometimes to them to explain
 how pmx pattern match.  
 
   The syntax of pmx has been intentionally chosen to be different from RE
@@ -380,12 +379,39 @@ size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
 size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
 
 unsigned char pmxToken(pmxMatches_t mtc);
-
-
-
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
+
+/* .%% pmx switch
+~~~~~~~~~~~~~~~~~
+
+  The macro '{=pmxSwitch()} implements an '/extension/ of the C
+'|switch| instruction.
+
+.v
+   #define T_LETTERS  xF1     <--- tokens are in the form '|x|'/HH/
+   #define T_NUMBERS  xF2          where HH is an hex number >= 128
+   #define T_OTHER    xFE
+   
+   pmxSwitch (s,     <- this must be a '|char *| variable
+     pmxTokSet("<+=0-9>",T_NUMBERS)            <--- Note: '*NO* semicolon   
+     pmsTokSet("<+=A-Z>",T_LETTERS)               at the end of lines     
+     pmsTokSet("<+=a-z>",T_LETTERS)            <---                       
+     pmsTokSet("<.>",T_OTHER)     
+   ) {
+     pmxTokCase(TK_LETTERS):
+       printf("LETTERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       break;
+
+     pmxTokCase(TK_NUMBERS):
+       printf("NUMBERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
+       break;
+   }   
+..
+
+*/
+
 #define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
 
 #define pmxTokEOF  x7F
@@ -396,8 +422,6 @@ unsigned char pmxToken(pmxMatches_t mtc);
 #define pmxTokCase(y) case pmxTok_defcase(y)
 
 
-/*
-*/
 
 #define pmxSwitch(s,p) \
     switch ( ((pmx_tmpstr = s) && *s ) \
@@ -408,7 +432,7 @@ unsigned char pmxToken(pmxMatches_t mtc);
 /* 
 
 .%% Callback Scanners
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
   The function '{=pmxScanStr()} can be used to repeatedly match a pattern
 against a text and call a function each time a match is found.
