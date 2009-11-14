@@ -37,10 +37,11 @@ int main(int argc, char *argv[])
       switch (state) {
         case CODE :    pmxSwitch (cur,
                          pmxTokSet("&K&n",         T_EMPTY)
+                         pmxTokSet("&k",           T_SKIP)
                          pmxTokSet("&e\\&B\"\"",   T_SKIP)
                          pmxTokSet("/*",           T_COMMENT)
                          pmxTokSet("/",            T_SKIP)
-                         pmxTokSet("<+!/>",        T_SKIP)
+                         pmxTokSet("<+!/ \t\r\n>",      T_SKIP)
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = COMMENT;
@@ -52,7 +53,7 @@ int main(int argc, char *argv[])
                            break;
                            
                          pmxTokCase(T_EMPTY):
-                           if (startline>0) putchar('\n');
+                           if (startline <= 0) putchar('\n');
                            break;
                        }
                        break;
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = CODE;
-                           if (pmxTokStart(1) != NULL && 
+                           if (pmxTokLen(1) != 0 && 
                                startline <= 0)          putchar('\n');
                            break;
                        }

@@ -18,7 +18,7 @@ vec
 	+vec
 		-doc
 			doc\stk.gif
-		+examples
+		-examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -38,6 +38,8 @@ vec
 				examples\fmt\fmt.pmx
 				examples\fmt\fmt9.txt
 				examples\fmt\fmt.c
+				examples\fmt\fmtsrc.c
+				examples\fmt\makefile
 			+pmx2c
 				examples\pmx2c\pmx2c.pmx
 				examples\pmx2c\pmx2c_boot.c
@@ -54,7 +56,7 @@ vec
 				examples\utl_h\Jamfile
 				examples\utl_h\utlh.c
 			examples\makefile
-		+src
+		-src
 			src\pmx.c
 			src\pmx.h
 			src\utl.h
@@ -77,66 +79,5 @@ vec
 		targets.mk
 		config.mk
 [Open project files]
-0=src\utl.h
-1=src\chs.c
-2=src\chs.h
-3=src\pmx.h
-4=src\pmx.c
-5=examples\fmt\fmt.c
-6=examples\fmt\fmt9.txt
-7=examples\fmt\fmtsrc.c
-8=examples\uncomment\unc.c
-9=examples\uncomment\uncomment.pmx
-10=examples\uncomment\makefile
-11=makefile
-12=examples\uncomment\l.h
-13=examples\uncomment\New1.h
-14=New2.c
 [Selected Project Files]
 Main=
-Selected=examples\uncomment\unc.c
-[src\utl.h]
-TopLine=69
-Caret=63,105
-[src\chs.c]
-TopLine=87
-Caret=16,109
-[src\chs.h]
-TopLine=289
-Caret=41,298
-[src\pmx.h]
-TopLine=208
-Caret=27,208
-[src\pmx.c]
-TopLine=552
-Caret=12,586
-[examples\fmt\fmt.c]
-TopLine=124
-Caret=25,142
-[examples\fmt\fmt9.txt]
-TopLine=731
-Caret=3,752
-[examples\fmt\fmtsrc.c]
-TopLine=1
-Caret=1,13
-[examples\uncomment\unc.c]
-TopLine=56
-Caret=19,35
-[examples\uncomment\uncomment.pmx]
-TopLine=27
-Caret=1,1
-[examples\uncomment\makefile]
-TopLine=1
-Caret=54,4
-[makefile]
-TopLine=27
-Caret=19,20
-[examples\uncomment\l.h]
-TopLine=228
-Caret=61,400
-[examples\uncomment\New1.h]
-TopLine=1
-Caret=21,10
-[New2.c]
-TopLine=1
-Caret=1,1
