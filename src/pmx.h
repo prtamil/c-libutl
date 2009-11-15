@@ -394,7 +394,7 @@ unsigned char pmxToken(pmxMatches_t mtc);
    #define T_NUMBERS  xF2          where HH is an hex number >= 128
    #define T_OTHER    xFE
    
-   pmxSwitch (s,     <- this must be a '|char *| variable
+   pmxSwitch (s,     <- this '*must* be a '|char *| variable
      pmxTokSet("<+=0-9>",T_NUMBERS)            <--- Note: '*NO* semicolon   
      pmsTokSet("<+=A-Z>",T_LETTERS)               at the end of lines     
      pmsTokSet("<+=a-z>",T_LETTERS)            <---                       
@@ -410,6 +410,19 @@ unsigned char pmxToken(pmxMatches_t mtc);
    }   
 ..
 
+  This behaves like a switch (with '{=pmxTokCase} used instead of
+'|case|).
+
+  The '|s| argument must be a char * variable that points to to thext
+to be scanned. Upon successful match, it will be advanced to the end of
+the match.
+
+  There are two special tokens that are always defined:
+  
+  .['|pmxTokEOF|]    returned at the end of the text to parse;
+   ['|pkxTokNONE|]   returned if none of the defined patterns matches
+  ..
+
 */
 
 #define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
@@ -420,8 +433,6 @@ unsigned char pmxToken(pmxMatches_t mtc);
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
 #define pmxTokCase(y) case pmxTok_defcase(y)
-
-
 
 #define pmxSwitch(s,p) \
     switch ( ((pmx_tmpstr = s) && *s ) \
@@ -460,7 +471,6 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
   Within a call back, you can pass the '|txt| and '|mtc| arguments to the
 functions to get the <matched text=gettxt>.
 */
-
 
 
 /*
