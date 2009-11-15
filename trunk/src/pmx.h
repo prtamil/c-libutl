@@ -327,9 +327,8 @@ pmxMatches_t pmxMatchStr(char *text, char *p);
 /*
 
 
-.%% Got a matched? '<gettxt>
-''''''''''''''''''
-
+.%% Got a match '<gettxt>
+'''''''''''''''
   Upon a successful match, the following functions will retrieve details
 of the match. Their first argument is of type '{pmxMatch_t} and is 
 typically the value returned by a '{pmxMatchStr()} function call.

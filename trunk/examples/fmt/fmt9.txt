@@ -179,7 +179,7 @@ won't work!
            
            [Status] Draft, approved, confidential, ... . 
            
-           [Copyright] copyright. 
+           [Copyright or (C)] copyright. 
            
            [Dedication] topic. 
           ..
