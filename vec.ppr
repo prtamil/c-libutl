@@ -18,7 +18,7 @@ vec
 	+vec
 		-doc
 			doc\stk.gif
-		-examples
+		+examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -79,18 +79,18 @@ vec
 		targets.mk
 		config.mk
 [Open project files]
-0=Nuovo1.txt
-1=src\pmx.h
-2=src\pmx.c
+0=src\pmx.h
+1=src\pmx.c
+2=examples\fmt\fmt9.txt
 [Selected Project Files]
 Main=
 Selected=src\pmx.h
-[Nuovo1.txt]
-TopLine=1
-Caret=1,1
 [src\pmx.h]
-TopLine=409
-Caret=68,464
+TopLine=343
+Caret=54,211
 [src\pmx.c]
 TopLine=1
 Caret=6,7
+[examples\fmt\fmt9.txt]
+TopLine=143
+Caret=29,182
