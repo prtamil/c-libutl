@@ -54,7 +54,7 @@
 ** ================================
 **
 **    When used with the rest of the '|libutl| library, the global variables
-**  needed (and provided) by '|utl.h| will be defined in the '<'|utl.c|=utl.c#> 
+**  needed (and provided) by '|utl.h| will be defined in the '|'<utl.c=utl.c#>| 
 **  file but when it used as an header, those globals will have to be defined
 **  and initialized somewhere else. 
 **
@@ -65,7 +65,7 @@
 ** ..
 ** where the second argument is the initializer.
 **
-**   The file that defines '{UTL_MAIN}' before including '|utl.h| will expand
+**   The file that defines '{=UTL_MAIN}' before including '|utl.h| will expand
 ** '|UTL_EXTERN (int x, = 0);| to '|int x = 0;|' while the others will expand
 ** it to '|extern int x;|.
 **

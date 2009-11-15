@@ -28,10 +28,9 @@ libutl.h : $(LIBHDR)
 
 clean:
 	$(RM) libutl.h
-	$(RM) $(DIST)/libutl.h
 	$(RM) libutl$(_LIB)
-	$(RM) $(DIST)/libutl$(_LIB)
 	$(RM) $(LIBOBJ)
+	$(RM) $(DIST)/*
 	$(RM) gmon.out
 
 include $(TOP)targets.mk
