@@ -278,7 +278,7 @@ chs_t chsDel (chs_t dst, long from, long to) ;
 
 /*  .%% Reading from files
     ''''''''''''''''''''''
-  This functions read content of a FILE * into a string.
+  This functions read content of a '|FILE *| into a string.
 
    .['|chsCpyFile(s,f)|]  Copies the content of the file from the current
                           position to the end of file into the string s.
@@ -299,15 +299,15 @@ chs_t chsDel (chs_t dst, long from, long to) ;
                           instruction until the end of file is reached.
                           For example to print lines in a file:
 .v
-                             chs_t ln;
-                             FILE *f;
-                               ...
-                             f = fopen("myfile.txt","r");  
-                             chsForLines(l,f) {
-                               printf("<%%s>\n",l);
-                             }
-                             if (f) fclose(f);
-                               ...
+           chs_t ln;
+           FILE *f;
+             ...
+           f = fopen("myfile.txt","r");  
+           chsForLines(l,f) {
+             printf("<%s>\n",l);
+           }
+           if (f) fclose(f);
+             ...
 ..  
    
    ..

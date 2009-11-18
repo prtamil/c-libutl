@@ -305,11 +305,11 @@ pmxMatches_t chsMatch(chs_t s, long from, char *pat)
 
 chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
 {
-  chs_t mtc = NULL;
-  char *rpl;
-  long l = 0;
-  pmxMatches_t ret;
-  int repeat = 0;
+  chs_t  mtc = NULL;
+  char  *rpl;
+  long   l = 0;
+  int    repeat = 0;
+  pmxMatches_t  ret;
   
   pos = fixndx(s,pos);
   

@@ -1,1 +1,1 @@
-m$a(aaa)Fusce $a vestibulum $b. m$b(bbb) m$c Nam.
+m$a(aaa)Fusce $a()vestibulum $b(). m$b(bbb) m$c Nam.

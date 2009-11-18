@@ -68,7 +68,8 @@ char *getmacro(char *str, pmxMatches_t capt)
   macros = tblSetSS(macros,name,body);
   
   name[pmxLen(capt,2)] = c;
-
+  
+/*  return (pmxLen(capt,4)  ? utlEmptyString : " "); */
   return utlEmptyString;
 }
 
@@ -79,18 +80,17 @@ char *submacro(char *str, pmxMatches_t capt)
   
   char c;
   
-  name = str+pmxStart(capt,0);
-  c = name[pmxLen(capt,0)];
-  
-  name[pmxLen(capt,0)] = 0;
+  name = str+pmxStart(capt,1);
+  c = name[pmxLen(capt,1)]; 
+  name[pmxLen(capt,1)] = '\0';
   
   while (*name) { 
     *name = tolower(*name);
     name++;    
   }    
-  name = str+pmxStart(capt,0);
+  name = str+pmxStart(capt,1);
   
-  bd = tblGetSS(macros,name+1,NULL);
+  bd = tblGetSS(macros,name,NULL);
    
   if (!bd) {
     fprintf(stderr,"Unknown macro: '%s'\n",name);
@@ -99,7 +99,7 @@ char *submacro(char *str, pmxMatches_t capt)
     while (*bd && *bd++ != '$');
   }
   
-  name[pmxLen(capt,0)] = c;
+  name[pmxLen(capt,1)] = c;
   return bd;
 }
 
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
   fputs("-----------------\n",stdout);
 
   /* the |&B| recognizer will get a balanced parenthesis*/
-  text = chsSubFun(text, 0,">m(<*a>)$(<+a>)(&B())",getmacro);
+  text = chsSubFun(text, 0,">&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
 
   tblForeach(macros,k) {
     printf("[%s] = \"%s\"\n",tblKeyS(macros,k),tblValS(macros,k)); 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
   ** searched again looking for other occurence of the search
   ** pattern.    
   **/
-  text = chsSubFun(text, 0,"&*>$<+a>",submacro);
+  text = chsSubFun(text, 0,"&*>$(<+a>)(&B())",submacro);
   
   fputs(text,stdout);
   fputs("-----------------\n",stdout);
