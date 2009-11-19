@@ -8,6 +8,7 @@
 
 
 #include "libutl.h"
+
 #include <ctype.h>
 
 chs_blk_t *chs_blk_;
@@ -262,9 +263,9 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
     what = '\0';
     while (1) {
       chs_buf[0]='\0';
-      if (!fgets(chs_buf,chs_buf_size,f) || chs_buf[0] == '\0') break;
+      if (!fgets(chs_buf,chs_buf_size,f)  ||  chs_buf[0] == '\0') break;
       k=0;
-      while(k<chs_buf_size && chs_buf[k] && chs_buf[k] != '\n')
+      while (k < chs_buf_size  &&  chs_buf[k]  &&  chs_buf[k] != '\n')
         k++; 
       if (chs_buf[k] == '\0') {
         dst = chsAddStrL(dst, chs_buf,k);
@@ -277,7 +278,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
       }
       utlError(8313,utlErrInternal);
     }
-    if (what == 'L' && chsChrAt(dst,-1) != '\n')
+    if (what == 'L'  &&  chsChrAt(dst,-1) != '\n')
       dst = chsAddChr(dst, '\n');
   }  
   _dbgmsg("READ: %s\n",dst);

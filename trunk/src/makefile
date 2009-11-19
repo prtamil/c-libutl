@@ -23,7 +23,10 @@ libutl$(_LIB) : $(LIBOBJ)
 $(LIBSRC) : libutl.h
 
 libutl.h : $(LIBHDR)
-	$(CAT) $(LIBHDR) > $@
+	echo "#ifndef LIBUTL_H" > $@
+	echo "#define LIBUTL_H" >> $@
+	$(CAT) $(LIBHDR) >> $@
+	echo "#endif " >> $@
 	$(CP) $@ $(DIST)
 
 clean:

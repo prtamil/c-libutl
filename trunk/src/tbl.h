@@ -10,7 +10,6 @@
 #ifndef TBL_H
 #define TBL_H
 
-
 /*
 .v
              _    _      _
@@ -246,7 +245,8 @@ vec_t vec_new(long nslots);
 vec_t vecDel(vec_t vt, long kfrom, long kto);
 vec_t vecMove(vec_t vt, long kfrom, long kto);
 
-vec_t vecFree(vec_t vt);
+vec_t vec_free(vec_t vt, char wipe);
+#define vecFree(vt) vec_free(vt,1)
 
 #define vecSetN(tb,k,v)  vec_set(tb, k, 'N', v, NULL)
 #define vecSetS(tb,k,v)  vec_set(tb, k, 'S', 0, chsDup(v))
@@ -273,5 +273,12 @@ vec_t vecFree(vec_t vt);
 #define vecInsO(tb,k,v)  vec_ins(tb,  k, 'O', 0, v)
 
 #define vecType(tb,k)  ()
+
+
+/* .%% Other functions
+   '''''''''''''''''''
+*/
+
+vec_t vecSplitStr(char *s, char *sep,char *trim);
 
 #endif

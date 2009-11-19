@@ -60,8 +60,9 @@ tbl_t tbl_free(tbl_t tb, char wipe)
       for (k = 0; k< tb->size; k++, cur_slot++) {
         if (isnotempty(cur_slot)) {
           if (tbl_keytype(cur_slot) == 'S') chsFree(cur_slot->key.p);
+          else if (tbl_keytype(cur_slot) == 'T') tblFree(cur_slot->key.p);
           if (tbl_valtype(cur_slot) == 'S') chsFree(cur_slot->val.p);
-          if (tbl_valtype(cur_slot) == 'T') tblFree(cur_slot->val.p);
+          else if (tbl_valtype(cur_slot) == 'T') tblFree(cur_slot->val.p);
         }
       }
     }  
@@ -616,9 +617,8 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
   if (kto >= vt->count) kto = vt->count -1;
   if (kfrom >= vt->count || kfrom > kto) return vt;
   
-  if (vec_valtype(vt->slot+kfrom) == 'S') {
-    chsFree(vt->slot[kfrom].val.p);
-  }
+  if (vec_valtype(vt->slot+kfrom) == 'S')      chsFree(vt->slot[kfrom].val.p);
+  else if (vec_valtype(vt->slot+kfrom) == 'T') tblFree(vt->slot[kfrom].val.p);
   
   if (kto < vt->count-1)
     memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
@@ -626,6 +626,22 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
   vt->count -= (kto - kfrom) +1;
   return vt;
 }
+
+vec_t vec_free(vec_t vt, char wipe)
+{
+  int k = 0;
+  if (vt) {
+    if (wipe) {  
+      for (k = 0; k < vt->count; k++) {
+        if (vec_valtype(vt->slot+k) == 'S')      chsFree(vt->slot[k].val.p);
+        else if (vec_valtype(vt->slot+k) == 'T') tblFree(vt->slot[k].val.p);
+      }
+    }  
+    free(vt);
+  }
+  return NULL;
+}
+
 
 vec_t vecMove(vec_t vt, long kfrom, long kto)
 {
@@ -648,6 +664,31 @@ vec_t vecMove(vec_t vt, long kfrom, long kto)
   }
   vt->slot[kto] = slot;
   return vt;
+}
+
+vec_t vecSplitStr(char *s, char *sep,char *trim)
+{
+   char *p,*q,*pp;
+   vec_t t = NULL;
+   int k = 0;
+   
+   if (!s || !*s) return t;
+ 
+   p = s; 
+   while (*p) {
+     if (trim)
+       while (strchr(trim,*p)) ++p;
+     q = p;
+     while (*p && !strchr(sep,*p)) ++p;
+     pp = p;
+     if (trim)
+       while (pp > q  &&  strchr(trim,pp[-1])) --pp;
+     
+     t = vec_set(t, k++, 'S', 0, chsCpyL(NULL, q, pp-q));
+     if (*p) p++;
+   }
+    
+   return t;  
 }
 
 /*****************/
