@@ -107,8 +107,18 @@ int main(int argc, char *argv[])
 {
   FILE *f;
   int k;
+  vec_t t;
   
   if (argc < 2) usage(); 
+  
+  
+  t = vecSplitStr(argv[1],","," \t");
+  for (k=0; k< vecCount(t);k++) 
+    printf("[%s]\n",vecGetS(t,k,"??"));
+    
+  vecFree(t);
+  exit(1);
+  
   
   macros = tblNew();
   if (!macros) merr("Unable to create table for macro");

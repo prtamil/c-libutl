@@ -13,6 +13,9 @@
 #define PMX_H
 
 
+#include <stddef.h>
+
+
 /*
 .v
                 __ __  __ __ __ ___  ___ 
