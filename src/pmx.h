@@ -313,6 +313,11 @@ file.
 typedef size_t pmxMatches[pmxCaptMax+1][2];
 typedef pmxMatches *pmxMatches_t;
 
+extern int pmx_capt_cur;
+
+#define pmxMatchesPush()  (pmx_capt_cur = (pmx_capt_cur +1) & 0x07)
+#define pmxMatchesPop()   (pmx_capt_cur = (pmx_capt_cur +7) & 0x07)
+
 
 /*
 .%% Matching on a string

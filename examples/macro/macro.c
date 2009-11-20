@@ -1,7 +1,7 @@
 /* 
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
-** This sofwtare is distributed under the terms of the BSD license:
+** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
 **   http://opensource.org/licenses/bsd-license.php 
 */
@@ -44,6 +44,9 @@ void merr(char *msg)
 chs_t text = NULL;
 tbl_t macros = NULL;
 chs_t body = NULL;
+chs_t rpl  = NULL;
+vec_t args = NULL;
+
 
 char *getmacro(char *str, pmxMatches_t capt)
 {
@@ -73,11 +76,22 @@ char *getmacro(char *str, pmxMatches_t capt)
   return utlEmptyString;
 }
 
+
+char *subargs(char *str, pmxMatches_t capt)
+{ 
+  int k;
+  char *r;
+
+  k = str[pmxStart(capt,0)+1]-'1';
+  r = vecGetS(args, k, NULL);
+  
+  return (r? r : utlEmptyString);
+}
+
 char *submacro(char *str, pmxMatches_t capt)
 {
   char *name;
   char *bd;
-  
   char c;
   
   name = str+pmxStart(capt,1);
@@ -94,32 +108,37 @@ char *submacro(char *str, pmxMatches_t capt)
    
   if (!bd) {
     fprintf(stderr,"Unknown macro: '%s'\n",name);
-  }
-  else {  
-    while (*bd && *bd++ != '$');
+    return "";
   }
   
+  while (*bd && *bd++ != '$');
+  rpl = chsCpy(rpl,bd);
+  
   name[pmxLen(capt,1)] = c;
-  return bd;
+
+  args = vecFree(args);
+  if (pmxLen(capt,2)>2) {  
+    name = str+pmxStart(capt,2);
+    c = name[pmxLen(capt,2)]; 
+    name[pmxLen(capt,2)] = '\0';
+    
+    args = vecSplit(name,","," \t()");
+    name[pmxLen(capt,2)] = c;
+  }
+  
+  /* replace args */
+  rpl = chsSubFun(rpl,0,">$<=1-9>",subargs);
+  
+  return rpl;
 }
 
 int main(int argc, char *argv[])
 {
   FILE *f;
   int k;
-  vec_t t;
   
   if (argc < 2) usage(); 
-  
-  
-  t = vecSplitStr(argv[1],","," \t");
-  for (k=0; k< vecCount(t);k++) 
-    printf("[%s]\n",vecGetS(t,k,"??"));
     
-  vecFree(t);
-  exit(1);
-  
-  
   macros = tblNew();
   if (!macros) merr("Unable to create table for macro");
   

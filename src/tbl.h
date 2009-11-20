@@ -278,7 +278,9 @@ vec_t vec_free(vec_t vt, char wipe);
 /* .%% Other functions
    '''''''''''''''''''
 */
+vec_t vec_split(char *s, char *sep,char *trim, int dup);
 
-vec_t vecSplitStr(char *s, char *sep,char *trim);
+#define vecSplit(s, sep, trim) vec_split(s,sep,trim,1)
+#define vecSplitP(s, sep, trim) vec_split(s,sep,trim,0)
 
 #endif
