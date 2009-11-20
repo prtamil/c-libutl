@@ -25,7 +25,14 @@ $(LIBSRC) : libutl.h
 libutl.h : $(LIBHDR)
 	echo "#ifndef LIBUTL_H" > $@
 	echo "#define LIBUTL_H" >> $@
-	$(CAT) $(LIBHDR) >> $@
+	echo "#line 1 \"utl.h\"" >> $@
+	$(CAT) utl.h >> $@
+	echo "#line 1 \"pmx.h\"" >> $@
+	$(CAT) pmx.h >> $@
+	echo "#line 1 \"chs.h\"" >> $@
+	$(CAT) chs.h >> $@
+	echo "#line 1 \"tbl.h\"" >> $@
+	$(CAT) tbl.h >> $@
 	echo "#endif " >> $@
 	$(CP) $@ $(DIST)
 

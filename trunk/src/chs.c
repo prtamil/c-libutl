@@ -8,7 +8,6 @@
 
 
 #include "libutl.h"
-
 #include <ctype.h>
 
 chs_blk_t *chs_blk_;
@@ -323,12 +322,17 @@ chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
   }
     
   if (!*pat) return s;
+
+  /* We might be in a  another '|chsSubFun| handle, hence we need to preserve
+     the previous matching result if we want to call another pmx function
+  */
+  pmxMatchesPush();
     
   while ((ret = chsMatch(s, pos, pat))) {
     pos =  pmxStart(ret,0);
     rpl = f(s,ret);
     if (rpl) {
-      chsDel(s, pos, pmxEnd(ret,0)-1);
+      s = chsDel(s, pos, pmxEnd(ret,0)-1);
       l = strlen(rpl);
       if (l>0)
         s = chsInsStrL(s, pos, rpl, l);
@@ -336,13 +340,14 @@ chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
       if (repeat)
         l = 0;
     }
-    else 
-      l = pmxLen(ret,0);
+    else  l = pmxLen(ret,0);
     pos += l;
   }
 
   mtc = chsFree(mtc);
-  
+
+  pmxMatchesPop();
+
   return s;  
 }
 

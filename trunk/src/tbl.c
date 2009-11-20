@@ -598,10 +598,8 @@ val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef)
   val_u v;
   
   if (nkey >= vecCount(vt)) {
-    if (tv == 'N')
-      v.n = ndef; 
-    else
-      v.p = pdef;
+    if (tv == 'N') v.n = ndef; 
+    else           v.p = pdef;
     return v;
   }
   return vt->slot[nkey].val;
@@ -666,7 +664,7 @@ vec_t vecMove(vec_t vt, long kfrom, long kto)
   return vt;
 }
 
-vec_t vecSplitStr(char *s, char *sep,char *trim)
+vec_t vec_split(char *s, char *sep,char *trim, int dup)
 {
    char *p,*q,*pp;
    vec_t t = NULL;
@@ -683,12 +681,21 @@ vec_t vecSplitStr(char *s, char *sep,char *trim)
      pp = p;
      if (trim)
        while (pp > q  &&  strchr(trim,pp[-1])) --pp;
+       
+     if (dup) {
+       t = vec_set(t, k++, 'S', 0, chsCpyL(NULL, q, pp-q));
+       /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
+     }
+     else {
+       t = vecSetP(t, k++, q);
+       t = vecSetP(t, k++, pp);
+     }
      
-     t = vec_set(t, k++, 'S', 0, chsCpyL(NULL, q, pp-q));
      if (*p) p++;
    }
     
    return t;  
 }
+
 
 /*****************/
