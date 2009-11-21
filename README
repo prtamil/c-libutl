@@ -67,7 +67,7 @@ The '<config.mk> file contains two configuration parameters:
   There are several ways to use '|libutl| in your project.
   
   .# Link the static library '|libutl.a| '(or '|libutl.lib| or whatever
-     the extension is in your system) and the header '|libutl.h|.
+     the extension is in your system) and include the header '|libutl.h|.
      
    # Use the object files and headers you may need linking them directly
      in your executable.
@@ -92,7 +92,7 @@ and the header file '|libutl.h| where your compiler/linker can find them.
 ''''''''''''''''''''''
   The makefile has only been tested with  
   
-  he '|dist| directory will contain all that you need to use libutl in
+  The '|dist| directory will contain all that you need to use libutl in
 your project.
    
   From the root directory type: '|make dist| to build the library and 
