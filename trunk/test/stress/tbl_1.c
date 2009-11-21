@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
    tbl_t t = NULL;
    int k=0;
    for (k=0; k<=1000000;k++) {
-     t = tblSetNN(t,k,k);
+     t = tblSetNS(t,k,"test");
    }
    t = tblFree(t);
    

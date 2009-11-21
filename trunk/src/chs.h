@@ -163,7 +163,7 @@ whenever the function '|XXXX| modifies the string itself
   .. 
 */
 
-chs_t chsNew() ;
+chs_t chsNew() ; 
 chs_t chsDup  (char *src);
 #define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)),NULL) : NULL)
 

@@ -104,16 +104,9 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
 
 unsigned long keyhash(tbl_t tb, char tk, val_u key)
 {
-  unsigned long hh = key.n;
-  
-  switch (tk) {
-    case 'N' : hh = hsh_num1(key.n);                 break;
-    case 'S' : hh = hsh_str1(key.p, strlen(key.p));  break;
-    case 'P' : 
-    case 'T' : hh = hsh_ptr1(key.p);                 break;
-  }
-  
-  return hh % tb->size;
+  if (tk == 'N') return (hsh_num1(key.n)                % tb->size);
+  if (tk == 'S') return (hsh_str1(key.p, strlen(key.p)) % tb->size);  
+  return                (hsh_ptr1(key.p)                % tb->size);
 }
 
 static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey,
