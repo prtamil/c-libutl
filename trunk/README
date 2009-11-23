@@ -9,7 +9,69 @@
 ..
 
 
-.% Licence    
+
+.% Building the library
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.%% Using the makefile
+''''''''''''''''''''''
+  The makefile has only been tested with Linux and Win32 Mingw+Msys.  
+  
+  The '<config.mk> file contains two configuration parameters:
+
+.['|NO_ASM|]  The library contains small portions of Assembler code for i386.
+              To use plain C equivalent, just uncomment the row.
+              
+ ['|SYS|]     It can be '|MINGW| or '|LINUX|.  It is usually autoconfigured
+              by make but it can also be configured manually.
+..
+
+  From the root directory type: '|make dist| to build the library and 
+the pmx tools.
+
+  The '|dist| directory will contain all that you need to use libutl in
+your project.
+   
+.%% Using the build scripts
+'''''''''''''''''''''''''''
+  The '|build| directory contains scripts to build the library using other
+compilers.
+
+
+
+.% Using the library
+~~~~~~~~~~~~~~~~~~~~
+
+  There are several ways to use '|libutl| in your project.
+  
+  .# Link the static library '|libutl.a| '(or '|libutl.lib| or whatever
+     the extension is in your system) and include the header '|libutl.h|.
+     
+   # Use the object files and headers you may need linking them directly
+     in your executable.
+     
+   # Use '|utl.h| alone. If you just need macros for logging, debugging,
+     unit tests and error handling, simply include the '|utl.h| header.
+     The example in '|<utlh.c=examples/utl_h/utlh.c#>| shows how to do it. 
+
+   # Use '|pmx| alone. The pattern matching functions have no dependencies
+     on the other functions, you can simply include '|pmx.h| and link
+     '|pmx.o| to your project      
+  ..
+
+  That said, the simplest way to use '|libutl| is just to build the
+distribution files '(see next section) and copy the static library '|libutl.a|
+and the header file '|libutl.h| where your compiler/linker can find them.
+
+.% Documentation
+~~~~~~~~~~~~~~~~
+
+  For the API documentation look at the header files in the '|src| directory.
+
+  
+.% Licence
+~~~~~~~~~~
+    
 This software is distributed under the terms of the BSD license.
 
 .v
@@ -47,56 +109,6 @@ http://opensource.org/licenses/bsd-license.php
 
 ================================================================================
 ..
-
-
-.% Configure
-~~~~~~~~~~~~~
-
-The '<config.mk> file contains two configuration parameters:
-
-.['|NO_ASM|]  The library contains small portions of Assembler code for i386.
-              To use plain C equivalent, just uncomment the row.
-              
- ['|SYS|]     It can be '|MINGW| or '|LINUX|.  It is usually autoconfigured
-              by make but it can also be configured manually.
-..
-
-.% Using the library
-~~~~~~~~~~~~~~~~~~~~
-
-  There are several ways to use '|libutl| in your project.
-  
-  .# Link the static library '|libutl.a| '(or '|libutl.lib| or whatever
-     the extension is in your system) and include the header '|libutl.h|.
-     
-   # Use the object files and headers you may need linking them directly
-     in your executable.
-     
-   # Use '|utl.h| alone. If you just need macros for logging, debugging,
-     unit tests and error handling, simply include the '|utl.h| header.
-     The example in '|<utlh.c=examples/utl_h/utlh.c#>| shows how to do it. 
-
-   # Use '|pmx| alone. The pattern matching functions have no dependencies
-     on the other functions, you can simply include '|pmx.h| and link
-     '|pmx.o| to your project      
-  ..
-
-  That said, the simplest way to use '|libutl| is just to build the
-distribution files '(see next section) and copy the static library '|libutl.a|
-and the header file '|libutl.h| where your compiler/linker can find them.
-  
-.% Building the library
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.%% Using the makefile
-''''''''''''''''''''''
-  The makefile has only been tested with  
-  
-  The '|dist| directory will contain all that you need to use libutl in
-your project.
-   
-  From the root directory type: '|make dist| to build the library and 
-the pmx tools.
 
 
 

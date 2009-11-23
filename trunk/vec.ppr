@@ -84,9 +84,21 @@ vec
 		config.mk
 [Open project files]
 0=src\hif.c
+1=src\h2.c
+2=..\..\AA_axel\tar\compito.txt
+3=README
 [Selected Project Files]
 Main=
-Selected=src\hif.c
+Selected=README
 [src\hif.c]
-TopLine=1
-Caret=1,21
+TopLine=179
+Caret=40,210
+[src\h2.c]
+TopLine=66
+Caret=1,60
+[..\..\AA_axel\tar\compito.txt]
+TopLine=195
+Caret=60,238
+[README]
+TopLine=28
+Caret=78,71
