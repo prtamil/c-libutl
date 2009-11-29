@@ -214,9 +214,6 @@ tbl_t tblMaxSlot(tbl_t tb, long nslots);
 
 /* VEC *****************/
 
-#define vec_valtype(slot)  ((slot)->flg[1])
-#define vecValType(vt,i) (((vt) && (vt->count < (i)))? vec_valtype((vt)->slot+(i)): '\0')
-
 typedef struct {
   unsigned char flg[4];
   val_u  val;
@@ -230,6 +227,15 @@ typedef struct {
 } vec_st_t;
 
 typedef vec_st_t *vec_t;
+
+extern vec_t vec_tmp;
+ 
+#define vec_valtype(slot)  ((slot)->flg[1])
+#define vecValType(vt,i) \
+ (vec_tmp=vt, \
+ ((vec_tmp) && (vec_tmp->count < (i)))    ? \
+         vec_valtype((vec_tmp)->slot+(i)) : \
+         '\0')
 
 val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef);
 vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);

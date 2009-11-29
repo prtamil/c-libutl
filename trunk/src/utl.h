@@ -191,6 +191,8 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 **
 **   They are available only if the symbol |UTL_UNITTEST| is defined before
 ** including the |utl.h| header.
+** 
+**   '{UTL_UNITTEST} implies '{DEBUG}
 */
 
 #ifdef UTL_UNITTEST
@@ -202,21 +204,36 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 
 #define TSTTITLE(s) TSTWRITE("# ** %s **\nTAP version 13\n\n",s)
 
-/* Tests are divided in sections introduced by the '|TSTSECTION(s)| macro.
-** The macro reset the appropriate counters and print the header |s|
+/* Tests are divided in sections introduced by '{=TSTSECTION} macro.
+** The macro reset the appropriate counters and prints the section header 
 */
-
+/*
 #define TSTSECTION(s) (TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
                        TSTWRITE("#\n# * %d. %s\n",TSTSEC, s))
+*/
+
+#define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
+                       TSTWRITE("#\n# * %d. %s\n",TSTSEC, s)),!utlZero)
+
+/* to disable an intere test section, just prepend ''|_|' */
+ 
+#define _TSTSECTION(s) if (utlZero)  
 
 /* In each section, tests can be logically grouped so that different aspects
 ** of related functions can be tested.
 */
-
+/*
 #define TSTGROUP(s) (TSTNUM=0, \
                      TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
                      TSTGRP)
-
+*/
+#define TSTGROUP(s) if ( TSTNUM=0, \
+                     TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
+                     TSTGRP+1)
+                     
+/* to disable an intere test group , just prepend ''|_|' */
+#define _TSTGROUP(s) if (utlZero)  
+                     
 /* The single test is defined  with the '|TST(s,x)| macro.
 **   .['|s|] is a string that defines the test
 **    ['|x|] an assertion that has to be true for the test to succeed.

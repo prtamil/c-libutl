@@ -51,17 +51,47 @@ nextsate = "->" state_name
 
 replace = "=" (value | func)+
 
-value = "$" var_name | $ DIGIT | STRING | NUMBER
+value = "$" var_name | "$" DIGIT | STRING | NUMBER
 
 func = add | sub | cat | set | div | mul | mod
 
-add = "@add" "(" var_name, value ")"
-sub = "@sub" "(" var_name, value ")"
-set = "@set" "(" var_name, value ")"
-div = "@div" "(" var_name, value ")"
-mul = "@mul" "(" var_name, value ")"
-mod = "@mod" "(" var_name, value ")"
-cat = "@cat" "(" var_name, value ")"
+add = "@add" "(" var_name "," value ")"
+sub = "@sub" "(" var_name "," value ")"
+set = "@set" "(" var_name "," value ")"
+div = "@div" "(" var_name "," value ")"
+mul = "@mul" "(" var_name "," value ")"
+mod = "@mod" "(" var_name "," value ")"
+cat = "@cat" "(" var_name "," value ")"
+mid = "@mid" "(" var_name "," value "," value "," value ")"
+len = "@len" "(" var_name "," value ")"
 
-sif = "@if" "(" value op value "," func ("," func)? ")"
-op = "=" | "<" | ">" | "<=" | ">=" | "<>"
+if = "@if" "(" value op value "," func ("," func)? ")"
+op = "=" | "<" | ">" | "<=" | ">=" | "!="
+
+
+    +----+       +----+
+  A |    |     a |    |
+    +----+       +----+
+  X |    |     b |    |
+    +----+       +----+
+  Y |    |         ...
+    +----+       +----+
+  S |    |     z |    |
+    +----+       +----+
+
+
+JMP
+IFZ
+
+STO
+ADD
+SUB
+MUL
+DIV
+MOD
+CAT
+MID
+LEN
+
+OUT
+

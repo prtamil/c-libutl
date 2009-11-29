@@ -20,7 +20,10 @@ libutl$(_LIB) : $(LIBOBJ)
 	$(CP) $@ $(DIST)
 	$(CP) $(LIBOBJ) $(DIST)
 
-$(LIBSRC) : libutl.h
+chs$(_OBJ) : libutl.h
+pmx$(_OBJ) : libutl.h
+tbl$(_OBJ) : libutl.h
+utl$(_OBJ) : libutl.h
 
 libutl.h : $(LIBHDR)
 	echo "#ifndef LIBUTL_H" > $@

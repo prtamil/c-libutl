@@ -1,7 +1,7 @@
 # 
 #  (C) by Remo Dentato (rdentato@gmail.com)
 # 
-# This sofwtare is distributed under the terms of the BSD license:
+# This software is distributed under the terms of the BSD license:
 #   http://creativecommons.org/licenses/BSD/
 #   http://opensource.org/licenses/bsd-license.php
 #
@@ -10,14 +10,13 @@ TOP=../../
 
 include $(TOP)config.mk
 
-pmxshell$(_EXE): $(CHKLIB) pmxshell$(_OBJ)
-	$(LN)$@ pmxshell$(_OBJ) -lutl
-	$(CP) $@ $(DIST)
+RGR_TESTS=rgr_vec$(_EXE)
+
+rgr_vec$(_EXE): $(CHKLIB) rgr_vec$(_OBJ)
+	$(LN)$@ rgr_vec$(_OBJ) -lutl
 
 clean:
-	$(RM) pmxshell$(_EXE)
-	$(RM) pmxshell$(_OBJ)
-	$(RM) $(DIST)/pmxshell$(_EXE)
+	$(RM) rgr_vec$(_EXE) rgr_vec$(_OBJ)
 	$(RM) gmon.out
 
 include $(TOP)targets.mk

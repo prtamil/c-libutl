@@ -68,6 +68,36 @@ and the header file '|libutl.h| where your compiler/linker can find them.
 
   For the API documentation look at the header files in the '|src| directory.
 
+.% Examples
+~~~~~~~~~~~
+
+  I'm firmly convinced that concrete examples are much better than exhaustive
+documentation that's why I provided a set of them in the '|examples| directory.
+
+  .['|pmx2c|]      This is actually a tool that comes with the libraries.
+                   It takes a C source file with embedded pmx switches and 
+                   produces a plain C file ready for compilation.
+                   Uses a '/bootstrap/ technique to build itself.
+                     
+   ['|pmxshell|]   The patterns used by pmx may be not very intuitive. This
+                   tool allows you to define a set of patterns and try to
+                   match a string against them.
+                   A useful function to understand how a pattern works is
+                   "explain" that gives a textual description of a pattern.
+                   
+   ['|uncomment|]  Strips a C source file from comments. It's used in the
+                   build process to remove the documentation comments 
+                   within the library header '|libutl.h|
+                   
+   ['|cxrf|]       Simply collects identifiers from a C source file and counts
+                   the occurence for each.
+                    
+   ['|fmt|]        A light markup text formatter to extract documentation
+                   from the library source file.
+                   
+   ['|macro|]      A simple macro system inspired by '<musicpad:http://l01c.ouvaton.org/musicpad-help.html>
+  .. 
+
   
 .% Licence
 ~~~~~~~~~~
