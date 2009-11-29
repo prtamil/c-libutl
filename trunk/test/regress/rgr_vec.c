@@ -23,28 +23,40 @@ int main(void)
  
   srand(time(0));
 
-  TSTSECTION("vec_basics") {
+  TSTSECTION("vec Basics") {
  
-    _TSTGROUP("Create") {
+    TSTGROUP("Create") {
       vt = vecNew();
       TST("VEC created",(vt != NULL));
     }
     
     TSTGROUP("Values") {
-      jj = 0;            
+    
+      jj = vecGetN(vt,0,-1);
+      TST();
+      jj = 0;                                
       for (kk=0; kk<100; kk++) {
        ii = rand() & 0x3FF;
        _dbgmsg("index: [%ld] = %ld\n",ii,kk);
        if (jj < ii) jj = ii;
-       vt = vecSetN(vt,ii,kk);
+       vt = vecSetN(vt,ii,vecGetN(vt,ii,0)+1);
       }
-      TSTWRITE("max ndx: [%ld] count: %ld\n",jj,vecCount(vt));
-      TST("100 values added",(vecCount(vt) -1 == jj));
+      TSTNOTE("max ndx: [%ld] count: %ld\n",jj,vecCount(vt));
+      TST("Integer values inserted", vecCount(vt) -1 == jj);
+      ii = 0;
+      for (kk = 0; kk < vecCount(vt); kk++) {
+        ii += vecGetN(vt,kk,0); 
+      }
+      TST("sum matched", ii == 100);
       
+    }      
+    
+    TSTGROUP("Dispose") {
       vt = vecFree(vt);
       TST("VEC destroyed",(vt == NULL));
     }
   }
+  
   TSTDONE();
 
   exit(0);
