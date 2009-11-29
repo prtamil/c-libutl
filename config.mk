@@ -41,7 +41,7 @@ LN=gcc $(LNFLAGS) -o
 ##################
 
 DIST=$(TOP)dist
-CHKLIB=$(DIST)/libutl$(_LIB)
+CHKLIB=chklib
 
 CFLAGS=-I. -I$(DIST) -Wall $(CCOPTS) $(NO_ASM)
 LNFLAGS=-L. -L$(DIST) $(LNOPTS)

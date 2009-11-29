@@ -495,6 +495,9 @@ static unsigned short llog2(unsigned long x)
 }
 
 /** VEC *********************/
+
+vec_t vec_tmp;
+
 long vecCount(vec_t vt)
 {
   return (vt ? vt->count: 0);

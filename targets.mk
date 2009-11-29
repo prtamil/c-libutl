@@ -15,6 +15,6 @@ release:
 profile:
 	make CCOPTS="-O2 -pg" LNOPTS="-pg"
 
-$(CHKLIB):
+$(CHKLIB): 
 	cd $(TOP)src ; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)" libutl$(_LIB)
 

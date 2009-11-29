@@ -108,7 +108,7 @@ exceptions:
   ['|<u>|]  (isupper)	matches an uppercase character
   ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_|'
   ['|<x>|]  (isxdigit) matches an hexadecimal digit. Not locale-specific.
-  ['|<.>|]  matches any character (except '|'\0'|).
+  ['|<.>|]  matches any character (except ''|\0|').
  .. 
 
   To match characters that do *not* belong to a given set, use the uppercase
@@ -131,6 +131,7 @@ as follows:
  
  .['|<=xA-Ga-g>|] matches one of the following characters: '|ABCDEFGabcdefgx|
   ['|<!xyz>|]     matches anything except the characters '|x|, '|y| and '|z|
+  ['|&e%<#ab>']   matches "a" "b" "%d" 
  ..
 
   If any of the characters '|&|, '|>| or '|-| are part of the set to be specified,
@@ -143,12 +144,10 @@ they must be preceeded by '|&|.  For example:
 
   The pattern "'|<j...>|" (and its negation "'|<J...>|") is meant to be
 used by tools that generate pmx expressions and not for expressions created
-"by hand". It assumes that the patterns are sorted so that tests is faster.  
+"by hand". It assumes that the patterns are sorted so that testing is faster.  
 
   For example, "'|<jA-Z_a-z>|" will work properly and will be slightly faster
 than "'|<=A-Z_a-z>|"  while "'|<jA-Za-z_>|"  will not work! 
-
-  My advice is to not use it, unless you know exactly what you're doing.
 
   
 .%% Alternative strings
@@ -232,10 +231,10 @@ they must be preceeded by '&'.  For example:
 ''''''''''''''''''''
 
   .['|&e|'/x/] Set the character '/x/ as the escape character. For example,
-              given the string '|"abc!"def"|': 
+              given the string '|"abc%"def"|': 
               
-                  .['|&q|]     matches '|"abc!"| 
-                  .['|&e!&q|]  matches '|"abc!"def"|
+                  .['|&q|]     matches '|"abc%"| 
+                   ['|&e!&q|]  matches '|"abc%"def"|
                   ..
                
    ['|&E|]    Clear the escape character.
