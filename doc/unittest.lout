@@ -1,0 +1,43 @@
+@SysInclude { eq }
+@SysInclude { tab }
+@SysInclude { fig }
+@SysInclude { cprint }
+@SysInclude { report }
+@Report
+    @Title { A simple unit test framework for C}
+    @Author { Remo Dentato}
+    @Institution { @F { rdentato@gmail.com} }
+    @DateLine { 27 December, 2009 }
+    @InitialLanguage { English }
+    @OptimizePages { Yes }
+    @AbstractTitle { SUMMARY }
+    @Abstract
+{
+Unit testing is an essential technique to produce quality code. This
+article illustrate a simple framework to manage unit tests for the C
+language.
+@PP
+The framework is available within the @F libutl library.
+@DP
+{@B Keywords}  unit testing C
+}
+
+//
+
+@Section
+    @Title { Introduction }
+@Begin
+@PP
+@PP
+@End @Section
+
+@Section
+    @Title { Single test }
+@Begin
+@PP
+A @I test is TST(s,x)
+@IndentedDisplay @CP {
+    /* ... @I {test code} ... */
+    TST("Create structure",(data != NULL));
+}
+@End @Section

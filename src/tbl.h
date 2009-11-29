@@ -272,6 +272,12 @@ vec_t vec_free(vec_t vt, char wipe);
 #define vecGetT(tb,k,d)  valGetT(vec_get(tb, k , 'T', 0, d))
 #define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d))
 
+#define vecGetRawN(tb,k)  valGetN(vec_get(tb, k , 'N', d, NULL))
+#define vecGetRawS(tb,k)  valGetS(vec_get(tb, k , 'S', 0, d))
+#define vecGetRawP(tb,k)  valGetP(vec_get(tb, k , 'P', 0, d))
+#define vecGetRawT(tb,k)  valGetT(vec_get(tb, k , 'T', 0, d))
+#define vecGetRawO(tb,k)  valGetP(vec_get(tb, k , 'O', 0, d))
+
 #define vecInsN(tb,k,v)  vec_ins(tb,  k, 'N', v, NULL)
 #define vecInsS(tb,k,v)  vec_ins(tb,  k, 'S', 0, chsDup(v))
 #define vecInsP(tb,k,v)  vec_ins(tb,  k, 'P', 0, v)

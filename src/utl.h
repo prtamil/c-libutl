@@ -271,9 +271,10 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
            TSTTOT = 0))
 
 /* At the end of all the tests, the accumulated stats can be printed out */
-#define TSTDONE() (TSTSTAT(), \
-                   TSTWRITE("#\n# TOTAL PASSED: %d/%d\n",TSTGPAS,TSTGTT),\
-                   TSTWRITE("#\n# END OF TESTS\n1..%d\n",TSTGTT),fflush(utlStderr))
+#define TSTDONE() if (TSTGTT > 0) { TSTSTAT(); \
+                    TSTWRITE("#\n# TOTAL PASSED: %d/%d\n",TSTGPAS,TSTGTT);\
+                    TSTWRITE("#\n# END OF TESTS\n1..%d\n",TSTGTT),fflush(utlStderr);\
+                  }
 
 /* Execute a statement if a test succeeded */
 #define TSTIF_OK  if (TSTRES)
