@@ -25,24 +25,37 @@ int main(void)
 
   TSTSECTION("vec Basics") {
  
+    TSTGROUP("Non existant vector") {
+    
+      jj = vecGetN(vt,323,-1);
+      TST("Non existant value",jj == -1);
+      
+      TST("Count == 0",vecCount(vt) == 0);
+    }
+    
     TSTGROUP("Create") {
       vt = vecNew();
       TST("VEC created",(vt != NULL));
+      TST("Count == 0",vecCount(vt) == 0);
     }
     
     TSTGROUP("Values") {
     
-      jj = vecGetN(vt,0,-1);
-      TST();
+      jj = vecGetN(vt,2230,-342);
+      TST("Non existant value",jj == -342);
+      
+      
       jj = 0;                                
       for (kk=0; kk<100; kk++) {
        ii = rand() & 0x3FF;
        _dbgmsg("index: [%ld] = %ld\n",ii,kk);
        if (jj < ii) jj = ii;
        vt = vecSetN(vt,ii,vecGetN(vt,ii,0)+1);
-      }
-      TSTNOTE("max ndx: [%ld] count: %ld\n",jj,vecCount(vt));
+      } 
+      TSTNOTE("max ndx: [%ld] count: %ld",jj,vecCount(vt));
       TST("Integer values inserted", vecCount(vt) -1 == jj);
+
+      
       ii = 0;
       for (kk = 0; kk < vecCount(vt); kk++) {
         ii += vecGetN(vt,kk,0); 

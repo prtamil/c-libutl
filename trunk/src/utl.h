@@ -260,7 +260,7 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 
 #define TSTENDSKIP  (TSTSKP = NULL)
 
-#define TSTNOTE(...) (TSTWRITE("#     "), TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
+#define TSTNOTE(...) (TSTWRITE("      "), TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
 
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
