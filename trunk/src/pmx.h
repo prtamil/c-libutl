@@ -314,8 +314,9 @@ typedef pmxMatches *pmxMatches_t;
 
 extern int pmx_capt_cur;
 
+#define pmxCaptStkSize (1 << 3)
 #define pmxMatchesPush()  (pmx_capt_cur = (pmx_capt_cur +1) & 0x07)
-#define pmxMatchesPop()   (pmx_capt_cur = (pmx_capt_cur +7) & 0x07)
+#define pmxMatchesPop()   (pmx_capt_cur = (pmx_capt_cur + pmxCaptStkSize -1) & 0x07)
 
 
 /*
@@ -332,7 +333,6 @@ can be used to retrieve information on the match.
 pmxMatches_t pmxMatchStr(char *text, char *p);
 
 /*
-
 
 .%% Got a match '<gettxt>
 '''''''''''''''
@@ -378,7 +378,6 @@ typically the value returned by a '{pmxMatchStr()} function call.
 */
 
 int           pmxMatched (pmxMatches_t mtc);
-
 
 size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
 size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);

@@ -323,7 +323,7 @@ chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
     
   if (!*pat) return s;
 
-  /* We might be in a  another '|chsSubFun| handle, hence we need to preserve
+  /* We might be in a  another '|chsSubFun()| handles, hence we need to preserve
      the previous matching result if we want to call another pmx function
   */
   pmxMatchesPush();
