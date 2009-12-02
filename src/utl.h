@@ -45,7 +45,7 @@
 ** ==============================
 **
 **   To use '|utl.h| without linking to libutl.a, you have simply to define
-** the symbol '{:UTL_MAIN} '/before/ including it. 
+** the symbol '{=UTL_MAIN} '/before/ including it. 
 **   The '<'|utlh.c| = ../examples/utlh.c#> is a more detailed example of
 ** how this can be done.
 ** 
@@ -132,9 +132,9 @@ UTL_EXTERN( int utlZero , = 0) ;
 ** Functions and variables in this section allows you to define where to
 ** redirect those messages.
 **
-**   '{:utl_stderr} is a global variable holding the current file to be
+**   '{=utl_stderr} is a global variable holding the current file to be
 ** used when printing a debug or test message.   It's not intended be used
-** directly, use the macro '{:utlStderr} instead if you need to refer to 
+** directly, use the macro '{=utlStderr} instead if you need to refer to 
 ** the file.
 **
 **   Actually I see no reason why you should need it, nut just in case ... 
@@ -143,7 +143,7 @@ UTL_EXTERN( int utlZero , = 0) ;
 UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 #define utlStderr (utl_stderr? utl_stderr: stderr)
 
-/*   The '/public/ function to set the output file, is '{:utlSetOutput()}
+/*   The '/public/ function to set the output file, is '{=utlSetOutput()}
 ** that takes the filename as input, open the file and and sets '{utl_stderr}
 ** to it.  If a previous file had been opened, it will be closed. 
 **
@@ -162,7 +162,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 **   Support for error handling is veryminimal. Current version only allows
 ** you to exit on error. Future versions will allow you to  set a longjump.
 **
-**   The first parameter of the '{:err()} function is the error code (an
+**   The first parameter of the '{=err()} function is the error code (an
 ** integer) that will be used with '|exit()|. The rest of parameters are 
 ** the same that you would have used for a '|printf()|. 
 **   To properly release resources you should register a cleanup function
@@ -177,7 +177,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
                               fprintf(utlStderr,__VA_ARGS__),\
                               exit(errnum))
                               
-/* '{:utlErrInternal} is provided to avoid repeating the string over
+/* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */
 
@@ -207,10 +207,6 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 /* Tests are divided in sections introduced by '{=TSTSECTION} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
-/*
-#define TSTSECTION(s) (TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
-                       TSTWRITE("#\n# * %d. %s\n",TSTSEC, s))
-*/
 
 #define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
                        TSTWRITE("#\n# * %d. %s\n",TSTSEC, s)),!utlZero)
@@ -222,11 +218,7 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 /* In each section, tests can be logically grouped so that different aspects
 ** of related functions can be tested.
 */
-/*
-#define TSTGROUP(s) (TSTNUM=0, \
-                     TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
-                     TSTGRP)
-*/
+
 #define TSTGROUP(s) if ( TSTNUM=0, \
                      TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
                      TSTGRP+1)
@@ -235,7 +227,7 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
 #define _TSTGROUP(s) if (utlZero)  
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
-**   .['|s|] is a string that defines the test
+**   .['|s|] is a short string that identifies the test
 **    ['|x|] an assertion that has to be true for the test to succeed.
 **   ..
 */
@@ -320,7 +312,7 @@ static const char *TSTKO  = "not ok";
 #endif
 
 #ifdef DEBUG
-/*  You can use '{:dbgmsg()} as if it was a '|printf()| with the only
+/*  You can use '{=dbgmsg()} as if it was a '|printf()| with the only
 ** difference that the output will be directed to '{utlStderr}.
 */
 #define dbgmsg(...) ((stdout?fflush(stdout):0),\
@@ -337,7 +329,7 @@ static const char *TSTKO  = "not ok";
 #endif /* DEBUG */
 
 /*   To disable just one call to '{dbgmsg()}, you can place an underscore
-** before its name as '{:_dbgmsg()} is a macro that always expand to nothing.
+** before its name as '{=_dbgmsg()} is a macro that always expand to nothing.
 ** 
 **   If you are worried about the fact that identifiers beginning with an
 ** underscore may be reserved (as per ISO Stanadard 7.1.3) you can replace
@@ -359,7 +351,7 @@ static const char *TSTKO  = "not ok";
 ** framework but only offers logging to local files.
 */
 
-/* Logging functions are available only if the symbol '{:UTL_LOGGING}
+/* Logging functions are available only if the symbol '{=UTL_LOGGING}
 ** has been defined before including '|utl.h|.
 */
 
@@ -370,9 +362,9 @@ static const char *TSTKO  = "not ok";
 ** ~~~~~~~~~~~~~~~~~~
 **
 **   Logging levels are hierarchical and structured as in log4j. The variable 
-** '{:logLevel} contains the current logging level.  Logging is off by default.
+** '{=logLevel} contains the current logging level.  Logging is off by default.
 **
-**   Use '{:logSetLevel()} to set the desired level of logging.
+**   Use '{=logSetLevel()} to set the desired level of logging.
 */
 
 #define logALL    0
@@ -418,8 +410,8 @@ UTL_EXTERN(int logLevel , = logOFF) ;
 **
 ** These variables are used internally to compose and print log messages:
 **
-**  .['{:log_abbrev}] The string abbreviations for the levels. Note that the 
-**                    macro '{:log_ABR} is defined only to ensure a correct
+**  .['{=log_abbrev}] The string abbreviations for the levels. Note that the 
+**                    macro '{=log_ABR} is defined only to ensure a correct
 **                    macro expansion.
 **  ..
 */
@@ -428,8 +420,8 @@ UTL_EXTERN(int logLevel , = logOFF) ;
 UTL_EXTERN(char *log_abbrev[],  = log_ABR);
 
 /* 
-**  .['{:log_timestr}]  A buffer to compose current time.
-**   ['{:log_time}]     A '|time_t| structure to compose current time. 
+**  .['{=log_timestr}]  A buffer to compose current time.
+**   ['{=log_time}]     A '|time_t| structure to compose current time. 
 **  .. 
 */
 
@@ -441,10 +433,10 @@ UTL_EXTERN(time_t log_time, = 0) ;
 ** ~~~~~~~~~~~~~~~~~~~~~~~~
 **
 **   By default, logging messages will be sent to stderr. The internal
-** variable '{:log_file} holds the file descriptor of the file the log
+** variable '{=log_file} holds the file descriptor of the file the log
 ** messages should be sent to. 
 **   Don't use it in your program, if you need a pointer to the log file,
-** you should use the '{:logFile} macro.
+** you should use the '{=logFile} macro.
 */
 
 UTL_EXTERN(FILE *log_file, = NULL) ;
@@ -452,7 +444,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 #define logFile         (log_file? log_file: stderr) 
 
 /*    Log files can be opened in "write" or "append" mode as any normal file 
-** using the '{:logSetLogFile()} function.
+** using the '{=logSetLogFile()} function.
 ** For example:
 ** .v  
 **   logSetLogFile("file1.log","w") // Delete old log file and create a new one
@@ -466,7 +458,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 #define logSetFile(fname,mode) ((log_file? fclose(log_file) : 0),\
                                 (log_file = fname? fopen(fname,mode) : NULL))
 
-/*   To actually write a message on the log file, use the '{:logWrite()}
+/*   To actually write a message on the log file, use the '{=logWrite()}
 ** function as if it was a '|printf()| with the exception that the first
 ** paratmeter is the level of the message.
 ** Example:
@@ -495,11 +487,11 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 #define logFatal(...)    logWrite(logFATAL,__VA_ARGS__)
 
 /* If you want to add something to the log file without creating a new entry
-** in the log file, you can use the '{:logMessage()} function. 
+** in the log file, you can use the '{=logMessage()} function. 
 */
 #define logMessage(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
 
-/*   To ease text alignment in the log, the string '{:logIndent} contains 
+/*   To ease text alignment in the log, the string '{=logIndent} contains 
 ** the spaces needed to pass the date, time and type field.
 ** For example:
 ** .v

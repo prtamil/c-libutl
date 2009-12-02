@@ -14,6 +14,7 @@ chs_t vars[27];
 
 vec_t states = NULL;
 
+int cur_ln = 1;
 
 /*
 .v
@@ -65,9 +66,8 @@ int parse (char *machine)
             pmxTokSet("&K[&K<+=A-Z_a-z>&K]&K",T_STATE_NAME)
           ) {
             pmxTokCase(T_NEWLINE):
-                  GOTO(state);
-
             pmxTokCase(T_COMMENT):
+                  cur_ln++;
                   GOTO(state);
                   
             pmxTokCase(T_STATE_NAME):
@@ -82,9 +82,8 @@ int parse (char *machine)
             pmxTokSet("&K&e\\(&Q)&K(<?$-&>$=>)",T_PATTERN)
           ) {
             pmxTokCase(T_NEWLINE):
-                  GOTO(rule);
-
             pmxTokCase(T_COMMENT):
+                  cur_ln++;
                   GOTO(rule);
 
             pmxTokCase(T_PATTERN):
@@ -92,7 +91,6 @@ int parse (char *machine)
           }
           fprintf(stderr,"ERROR 102\n"); break;
           
-   
    }
 }
 

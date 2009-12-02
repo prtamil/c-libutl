@@ -65,7 +65,7 @@ function to another.
 */
 int pmx_capt_cur = 0;
 
-static pmxMatches capt_arr[8];
+static pmxMatches capt_arr[pmxCaptStkSize];
 #define capt  capt_arr[pmx_capt_cur]
 
 static short icase = mFALSE;

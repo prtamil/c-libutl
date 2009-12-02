@@ -26,17 +26,17 @@ tbl$(_OBJ) : libutl.h
 utl$(_OBJ) : libutl.h
 
 libutl.h : $(LIBHDR)
-	echo "#ifndef LIBUTL_H" > $@
-	echo "#define LIBUTL_H" >> $@
+	echo "#ifndef LIBUTL_H"   > $@
+	echo "#define LIBUTL_H"  >> $@
 	echo "#line 1 \"utl.h\"" >> $@
-	$(CAT) utl.h >> $@
+	$(CAT) utl.h             >> $@
 	echo "#line 1 \"pmx.h\"" >> $@
-	$(CAT) pmx.h >> $@
+	$(CAT) pmx.h             >> $@
 	echo "#line 1 \"chs.h\"" >> $@
-	$(CAT) chs.h >> $@
+	$(CAT) chs.h             >> $@
 	echo "#line 1 \"tbl.h\"" >> $@
-	$(CAT) tbl.h >> $@
-	echo "#endif " >> $@
+	$(CAT) tbl.h             >> $@
+	echo "#endif "           >> $@
 	$(CP) $@ $(DIST)
 
 clean:
