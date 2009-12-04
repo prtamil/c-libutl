@@ -163,10 +163,12 @@ whenever the function '|XXXX| modifies the string itself
   .. 
 */
 
-chs_t chsNew() ; 
-chs_t chsDup  (char *src);
-#define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)),NULL) : NULL)
+chs_t chs_New() ; 
+#define chsNew(s) (s=chs_New()) 
 
+#define chsDup(s)  (chs_Cpy(NULL,s)
+
+#define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), (s=NULL)) : s)
 
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len  : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
@@ -208,7 +210,8 @@ int    chsEof    (chs_t s) ;
 int    chsGetChr (chs_t s) ;
 
 char   chsChrAt  (chs_t s, long ndx) ;
-chs_t  chsSetChr (chs_t s, long ndx, char c) ;
+chs_t  chs_SetChr (chs_t s, long ndx, char c) ;
+#define chsSetChr (s, n, c) (s = chs_SetChr(s,n,c))
 
 /*  .%% Modifying strings
     '''''''''''''''''''''
@@ -259,16 +262,30 @@ is the last character of the string).
   ..    
 */
 
-chs_t chsCpyL (chs_t dst, char *src, long len) ;
-chs_t chsCpy  (chs_t dst, char *src) ;
+chs_t chs_CpyL (chs_t dst, char *src, long len) ;
+#define chsCpyL (d, s, l) (d = chs_CpyL(d,s,l))
 
-chs_t chsAddChr  (chs_t dst, char c) ;
-chs_t chsAddStrL (chs_t dst, char *src, long len) ;
-chs_t chsAddStr  (chs_t dst, char *src) ;
+chs_t chs_Cpy(chs_t dst, char *src) ;
+#define chsCpy(d, s) (d = chs_Cpy(d,s))
 
-chs_t chsInsChr  (chs_t dst, long ndx, char c) ;
-chs_t chsInsStrL (chs_t dst, long ndx, char *src, long len) ;
-chs_t chsInsStr  (chs_t dst, long ndx, char *src) ;
+chs_t chs_AddChr(chs_t dst, char c) ;
+#define chsAddChr(d, c) (d = chsAddChr(d,c))
+
+chs_t chs_AddStrL(chs_t dst, char *src, long len) ;
+#define chsAddStrL(d, s, l) (d = chs_AddStrL(d,s,l))
+
+chs_t chs_AddStr(chs_t dst, char *src) ;
+#define chsAddStr(d, s) (d = chs_AddStr(d,s))
+
+chs_t chs_InsChr(chs_t dst, long ndx, char c) ;
+#define chsInsChr(d, n, c) (d = chs_InsChr(d,n,c))
+
+chs_t chs_InsStrL(chs_t dst, long ndx, char *src, long len) ;
+#define chsInsStrL(d, n ,l) (d = chs_InsStrL(d,n,l))
+
+chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
+#define chsInsStr(d, n, s) (d = chs_InsStr(d,n,s))
+
 
 #define chsCpyFmt(d,f,...)   (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsCpy(d,chs_buf)) 
 #define chsAddFmt(d,f,...)   (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsAddStr(d,chs_buf)) 
@@ -316,14 +333,14 @@ chs_t chsDel (chs_t dst, long from, long to) ;
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 
-#define chsRead(s,f,h)   chs_read(s,f,h,'A')
-#define chsReadln(s,f,h) chs_read(s,f,h,'L')
+#define chsRead(s,f,h)   (s = chs_read(s,f,h,'A'))
+#define chsReadln(s,f,h) (s = chs_read(s,f,h,'L'))
 
-#define chsCpyFile(s,f) chs_read(s,f,'w','A')
-#define chsCpyLine(s,f) chs_read(s,f,'w','L')
+#define chsCpyFile(s,f) (s = chs_read(s,f,'w','A'))
+#define chsCpyLine(s,f) (s = chs_read(s,f,'w','L'))
 
-#define chsAddFile(s,f) chs_read(s,f,'a','A')
-#define chsAddLine(s,f) chs_read(s,f,'a','L')
+#define chsAddFile(s,f) (s = chs_read(s,f,'a','A'))
+#define chsAddLine(s,f) (s = chs_read(s,f,'a','L'))
 
 #define chsForLines(l,f)  for (l=chsReadln(l,f, 'w'); chsLen(l) > 0;\
                                                      l = chsReadln(l,f,'w'))
@@ -336,7 +353,10 @@ pmxMatches_t chsMatch(chs_t s, long from, char *pat) ;
 
 typedef char *(*chsSubF_t)(char *mtc, pmxMatches_t cpt);
 
-chs_t chsSubStr(chs_t s, size_t pos, char *pat, char *rpl) ;
-chs_t chsSubFun(chs_t s, size_t pos, char *pat, chsSubF_t f);
+chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl) ;
+#define chsSubStr(s, n, p, r) (s = chs_SubStr(s,n,p,r))
+
+chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f);
+#define chsSubFun(s, n, p, f) (s = chs_SubFun(s,n,p,f))
 
 #endif  /* CHS_H */

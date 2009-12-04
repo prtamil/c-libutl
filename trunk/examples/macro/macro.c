@@ -63,10 +63,10 @@ char *getmacro(char *str, pmxMatches_t capt)
   }    
   name = str + pmxStart(capt,2);
   
-  body = chsCpyL(body,str+pmxStart(capt,1),pmxLen(capt,1));
-  body = chsAddChr(body,'$');
+  chsCpyL(body,str+pmxStart(capt,1),pmxLen(capt,1));
+  chsAddChr(body,'$');
   if (pmxLen(capt,3) > 0)
-    body = chsAddStrL(body,str+pmxStart(capt,3)+1,pmxLen(capt,3)-2);   
+    chsAddStrL(body,str+pmxStart(capt,3)+1,pmxLen(capt,3)-2);   
 
   macros = tblSetSS(macros,name,body);
   
@@ -112,7 +112,7 @@ char *submacro(char *str, pmxMatches_t capt)
   }
   
   while (*bd && *bd++ != '$');
-  rpl = chsCpy(rpl,bd);
+  chsCpy(rpl,bd);
   
   name[pmxLen(capt,1)] = c;
 
@@ -127,7 +127,7 @@ char *submacro(char *str, pmxMatches_t capt)
   }
   
   /* replace args */
-  rpl = chsSubFun(rpl,0,">$<=1-9>",subargs);
+  chsSubFun(rpl,0,">$<=1-9>",subargs);
   
   return rpl;
 }
@@ -142,20 +142,20 @@ int main(int argc, char *argv[])
   macros = tblNew();
   if (!macros) merr("Unable to create table for macro");
   
-  body = chsNew();
+  chsNew(body);
   if (!body) merr("Unable to create temporary buffer");
   
   f = fopen(argv[1],"r");
   if (!f) merr("Unable to open file");
   
   /* Load text into the buffer */
-  text = chsRead(text, f, 'w');
+  chsRead(text, f, 'w');
   
   fputs(text,stdout);
   fputs("-----------------\n",stdout);
 
   /* the |&B| recognizer will get a balanced parenthesis*/
-  text = chsSubFun(text, 0,">&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
+  chsSubFun(text, 0,">&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
 
   tblForeach(macros,k) {
     printf("[%s] = \"%s\"\n",tblKeyS(macros,k),tblValS(macros,k)); 
@@ -166,12 +166,12 @@ int main(int argc, char *argv[])
   ** searched again looking for other occurence of the search
   ** pattern.    
   **/
-  text = chsSubFun(text, 0,"&*>$(<+a>)(&B())",submacro);
+  chsSubFun(text, 0,"&*>$(<+a>)(&B())",submacro);
   
   fputs(text,stdout);
   fputs("-----------------\n",stdout);
   
-  text = chsFree(text);
+  chsFree(text);
   macros = tblFree(macros);
   body = chsFree(body);
   
