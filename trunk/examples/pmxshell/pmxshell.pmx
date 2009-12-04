@@ -75,7 +75,7 @@ chs_t unescape(chs_t str)
      }
      if (c) {
        str[from] = c;
-       str = chsDel(str,from+1,to);
+       chsDel(str,from+1,to);
      }
      /* Note that str may have been changed, that's why we recalc t */
      t = str+from+1;
@@ -87,14 +87,14 @@ chs_t get_expr(chs_t expr)
 {
   int k;
   
-  expr = chsDel(expr,0,-1);
+  chsDel(expr,0,-1);
   if (vecCount(patterns) > 0) {
     for (k=0; k< vecCount(patterns); k++) {
-      expr = chsAddStr(expr,vecGetS(patterns,k,""));
-      expr = chsAddStr(expr,"&|");
+      chsAddStr(expr,vecGetS(patterns,k,""));
+      chsAddStr(expr,"&|");
     }
     
-    expr = chsDel(expr,-2,-1);
+    chsDel(expr,-2,-1);
     expr = unescape(expr);
   }
   return expr;     
@@ -400,7 +400,7 @@ void tracex(char *arg, int verbose)
           prterr(71,"File \"%s\" not found",pmx(Start,1));
           return;
         }
-        buf = chsRead(buf, f,'w');
+        chsRead(buf, f,'w');
         text = (char *)buf;
         fclose(f);
       }            
@@ -423,7 +423,7 @@ void tracex(char *arg, int verbose)
     else pmxScanStr(text,expr,do_trace_notverbose);
   }
   
-  buf = chsFree(buf);
+  chsFree(buf);
 }
 
 void cmd_trace(char *arg) {tracex(arg,1);}

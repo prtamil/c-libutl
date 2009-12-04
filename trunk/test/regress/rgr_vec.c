@@ -25,9 +25,9 @@ int main(void)
   TSTSECTION("vec Basics") {
  
     TSTGROUP("Create") {
-      vt = vecNew();
+      vecNew(vt);
       TST("Created: count == 0",vt != NULL && vecCount(vt) == 0);
-      vt = vecFree(vt);
+      vecFree(vt);
       TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
     }
     
@@ -37,15 +37,15 @@ int main(void)
       
       TST("Count == 0", vt == NULL && vecCount(vt) == 0);
       
-      vt = vecSetN(vt,4,1);
+      vecSetN(vt,4,1);
       TST("Count == 1", vt != NULL && vecCount(vt) == 5);
       TSTIF_NOTOK {
-        TSTNOTE("vt=%p count:%d",vt,vecCount(vt));
+        TSTNOTE("vt=%p count:%ld",vt,vecCount(vt));
       }
     }
     
     TSTGROUP("Integer Values") {
-      vt = vecFree(vt);
+      vecFree(vt);
       TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
     
       jj = 0;                                
@@ -53,7 +53,7 @@ int main(void)
         ii = rand() & 0x3FF;
        _dbgmsg("index: [%ld] = %ld\n",ii,kk);
         if (jj < ii) jj = ii;
-        vt = vecSetN(vt,ii,vecGetN(vt,ii,0)+1);
+        vecSetN(vt,ii,vecGetN(vt,ii,0)+1);
       }
        
       TSTNOTE("max ndx: [%ld] count: %ld", jj, vecCount(vt));
@@ -71,34 +71,34 @@ int main(void)
     }      
     
     TSTGROUP("String Values") {
-      vt = vecFree(vt);
+      vecFree(vt);
       TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
     
       jj = 0;                                
       for (kk=0; kk < 100; kk++) {
         ii = (rand() & 0x3F) | 0x040;
         fstr[0]=ii;
-        vt = vecSetS(vt,kk,fstr);
+        vecSetS(vt,kk,fstr);
       }
        
       TST("String values inserted", vecCount(vt) == kk);
       TSTIF_NOTOK {
-        TSTNOTE("vt=%p count:%d", vt,vecCount(vt));
+        TSTNOTE("vt=%p count:%ld", vt,vecCount(vt));
       }
 
       ss = vecGetS(vt,2230,"?");
-      TST("Non existant value", vt != NULL && ss[0] == '?');
+      TST("Non existant value", vt != NULL && ss[0] == '?'); 
             
     }      
 
     _TSTGROUP("print strings") {
        for (kk=0; kk<vecCount(vt); kk++) {
          ss = vecGetS(vt,kk,NULL);
-         if (ss) TSTNOTE("%4d %s",kk,ss);
+         if (ss) TSTNOTE("%4ld %s",kk,ss);
        }
     }
 
-    vt = vecFree(vt);
+    vecFree(vt);
     TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
   }
   

@@ -679,12 +679,12 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup)
        while (pp > q  &&  strchr(trim,pp[-1])) --pp;
        
      if (dup) {
-       t = vec_set(t, k++, 'S', 0, chs_CpyL(NULL, q, pp-q));
+       t = vec_set(t, k++, 'S', 0, chsDupL(q, pp-q));
        /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
      }
      else {
-       t = vecSetP(t, k++, q);
-       t = vecSetP(t, k++, pp);
+       vecSetP(t, k++, q);
+       vecSetP(t, k++, pp);
      }
      
      if (*p) p++;

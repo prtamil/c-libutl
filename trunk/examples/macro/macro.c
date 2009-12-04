@@ -61,7 +61,7 @@ char *getmacro(char *str, pmxMatches_t capt)
     *name = tolower(*name);
     name++;    
   }    
-  name = str + pmxStart(capt,2);
+  name = str + pmxStart(capt,2); 
   
   chsCpyL(body,str+pmxStart(capt,1),pmxLen(capt,1));
   chsAddChr(body,'$');
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   
   chsFree(text);
   macros = tblFree(macros);
-  body = chsFree(body);
+  chsFree(body);
   
   exit(0);
 }
