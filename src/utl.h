@@ -159,7 +159,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 /* .% Errors Handling
 ** ==================
 **
-**   Support for error handling is veryminimal. Current version only allows
+**   Support for error handling is very minimal. Current version only allows
 ** you to exit on error. Future versions will allow you to  set a longjump.
 **
 **   The first parameter of the '{=err()} function is the error code (an
@@ -172,11 +172,15 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 ** be printed.
 */
 
-#define utlError(errnum,...)  (stdout?fflush(stdout):0, \
-                              fprintf(utlStderr,"ERR%d - ",errnum),\
-                              fprintf(utlStderr,__VA_ARGS__),\
-                              exit(errnum))
-                              
+#define utlError(errnum,...)  do { \
+                                if (stdout) fflush(stdout);\
+                                if (utlStderr) {\
+                                  fprintf(utlStderr,"ERR%d - ",errnum);\
+                                  fprintf(utlStderr,__VA_ARGS__);\
+                                }\
+                                exit(errnum);\
+                              } while (0)
+
 /* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */

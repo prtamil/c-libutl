@@ -139,17 +139,14 @@ is to be considered as reserved for internal use.
 change when the string is modified.  This makes address of '|chs| strings 
 unsuitable to being stored in two different variable at the same time.
 
-  It may require some time to get used to this but in practice it doesn't
-cause too many issues.
-
-  The common idiom is to write something like: '|str = chsXXX(str, ...)| 
-whenever the function '|XXXX| modifies the string itself 
-
+  The creation/modification functions take the chs string as first parameter
+and can modify its value
 */
 
 /*  .%% Creating/disposing strings
     ''''''''''''''''''''''''''''''
-  .['|chsNew()|]    Returns a freshly created, empty '|chs| string.
+  .['|chsNew(s)|]   Set s to a freshly created, empty '|chs| string and
+                    returns it.
   
    ['|chsDup(s)|]   Returns a freshly created '|chs| string, filled with
                     the content of the string '|s|.
@@ -166,7 +163,8 @@ whenever the function '|XXXX| modifies the string itself
 chs_t chs_New() ; 
 #define chsNew(s) (s=chs_New()) 
 
-#define chsDup(s)  (chs_Cpy(NULL,s)
+#define chsDup(s)     chs_Cpy(NULL,s)
+#define chsDupL(s,l)  chs_CpyL(NULL,s,l)
 
 #define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), (s=NULL)) : s)
 
@@ -211,7 +209,7 @@ int    chsGetChr (chs_t s) ;
 
 char   chsChrAt  (chs_t s, long ndx) ;
 chs_t  chs_SetChr (chs_t s, long ndx, char c) ;
-#define chsSetChr (s, n, c) (s = chs_SetChr(s,n,c))
+#define chsSetChr(s, n, c) (s = chs_Set(s,n,c))
 
 /*  .%% Modifying strings
     '''''''''''''''''''''
@@ -263,13 +261,13 @@ is the last character of the string).
 */
 
 chs_t chs_CpyL (chs_t dst, char *src, long len) ;
-#define chsCpyL (d, s, l) (d = chs_CpyL(d,s,l))
+#define chsCpyL(d, s, l) (d = chs_CpyL(d,s,l))
 
 chs_t chs_Cpy(chs_t dst, char *src) ;
 #define chsCpy(d, s) (d = chs_Cpy(d,s))
 
 chs_t chs_AddChr(chs_t dst, char c) ;
-#define chsAddChr(d, c) (d = chsAddChr(d,c))
+#define chsAddChr(d, c) (d = chs_AddChr(d,c))
 
 chs_t chs_AddStrL(chs_t dst, char *src, long len) ;
 #define chsAddStrL(d, s, l) (d = chs_AddStrL(d,s,l))
@@ -281,7 +279,7 @@ chs_t chs_InsChr(chs_t dst, long ndx, char c) ;
 #define chsInsChr(d, n, c) (d = chs_InsChr(d,n,c))
 
 chs_t chs_InsStrL(chs_t dst, long ndx, char *src, long len) ;
-#define chsInsStrL(d, n ,l) (d = chs_InsStrL(d,n,l))
+#define chsInsStrL(d, n , s, l) (d = chs_InsStrL(d,n,s,l))
 
 chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
 #define chsInsStr(d, n, s) (d = chs_InsStr(d,n,s))
@@ -291,7 +289,8 @@ chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
 #define chsAddFmt(d,f,...)   (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsAddStr(d,chs_buf)) 
 #define chsInsFmt(d,n,f,...) (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsInsStr(d,n,chs_buf)) 
 
-chs_t chsDel (chs_t dst, long from, long to) ;
+chs_t chs_Del (chs_t dst, long from, long to) ;
+#define chsDel(d, f, t) (d = chs_Del(d,f,t))
 
 /*  .%% Reading from files
     ''''''''''''''''''''''
@@ -343,7 +342,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 #define chsAddLine(s,f) (s = chs_read(s,f,'a','L'))
 
 #define chsForLines(l,f)  for (l=chsReadln(l,f, 'w'); chsLen(l) > 0;\
-                                                     l = chsReadln(l,f,'w'))
+                                                        chsReadln(l,f,'w'))
 
 /* .%% Matching strings
    ''''''''''''''''''''

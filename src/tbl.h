@@ -89,7 +89,8 @@ typedef struct {
 typedef tbl_ht_t *tbl_t;
 
 tbl_t tbl_new(long nslots);
-#define tblNew() tbl_new(4)
+
+#define tblNew(t) (t=tbl_new(4))
 
 val_u tbl_get(tbl_t tb, char tk, long nkey, void *pkey,
                         char tv, long ndef, void *pdef);
@@ -169,46 +170,50 @@ long tbl_find(tbl_t tb, char tk, long nkey, void *pkey);
 tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey,
                         char tv, long nval, void *pval);
 
-#define tblSetNN(tb,k,v)  tbl_set(tb, 'N', k, NULL,      'N', v, NULL)
-#define tblSetSN(tb,k,v)  tbl_set(tb, 'S', 0, chsDup(k), 'N', v, NULL)
-#define tblSetPN(tb,k,v)  tbl_set(tb, 'P', 0, k,         'N', v, NULL)
-#define tblSetTN(tb,k,v)  tbl_set(tb, 'T', 0, k,         'N', v, NULL)
-#define tblSetON(tb,k,v)  tbl_set(tb, 'O', 0, k,         'N', v, NULL)
+#define tbl_Set(t,tk,nk,pk,tv,nv,pv) (t = tbl_set(t,tk,nk,pk,tv,nv,pv))
+
+#define tblSetNN(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      'N', v, NULL)
+#define tblSetSN(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 'N', v, NULL)
+#define tblSetPN(tb,k,v)  tbl_Set(tb, 'P', 0, k,         'N', v, NULL)
+#define tblSetTN(tb,k,v)  tbl_Set(tb, 'T', 0, k,         'N', v, NULL)
+#define tblSetON(tb,k,v)  tbl_Set(tb, 'O', 0, k,         'N', v, NULL)
                                    
-#define tblSetNS(tb,k,v)  tbl_set(tb, 'N', k, NULL,      'S', 0, chsDup(v))
-#define tblSetSS(tb,k,v)  tbl_set(tb, 'S', 0, chsDup(k), 'S', 0, chsDup(v))
-#define tblSetPS(tb,k,v)  tbl_set(tb, 'P', 0, k,         'S', 0, chsDup(v))
-#define tblSetTS(tb,k,v)  tbl_set(tb, 'T', 0, k,         'S', 0, chsDup(v))
-#define tblSetOS(tb,k,v)  tbl_set(tb, 'O', 0, k,         'S', 0, chsDup(v))
+#define tblSetNS(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      'S', 0, chsDup(v))
+#define tblSetSS(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 'S', 0, chsDup(v))
+#define tblSetPS(tb,k,v)  tbl_Set(tb, 'P', 0, k,         'S', 0, chsDup(v))
+#define tblSetTS(tb,k,v)  tbl_Set(tb, 'T', 0, k,         'S', 0, chsDup(v))
+#define tblSetOS(tb,k,v)  tbl_Set(tb, 'O', 0, k,         'S', 0, chsDup(v))
 
-#define tblSetNT(tb,k,v)  tbl_set(tb, 'N', k, NULL,      'T', 0, v)
-#define tblSetST(tb,k,v)  tbl_set(tb, 'S', 0, chsDup(k), 'T', 0, v)
-#define tblSetPT(tb,k,v)  tbl_set(tb, 'P', 0, k   ,      'T', 0, v)
-#define tblSetTT(tb,k,v)  tbl_set(tb, 'T', 0, k   ,      'T', 0, v)
-#define tblSetOT(tb,k,v)  tbl_set(tb, 'O', 0, k   ,      'T', 0, v)
+#define tblSetNT(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      'T', 0, v)
+#define tblSetST(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 'T', 0, v)
+#define tblSetPT(tb,k,v)  tbl_Set(tb, 'P', 0, k   ,      'T', 0, v)
+#define tblSetTT(tb,k,v)  tbl_Set(tb, 'T', 0, k   ,      'T', 0, v)
+#define tblSetOT(tb,k,v)  tbl_Set(tb, 'O', 0, k   ,      'T', 0, v)
 
-#define tblSetNP(tb,k,v)  tbl_set(tb, 'N', k, NULL,      'P', 0, v)
-#define tblSetSP(tb,k,v)  tbl_set(tb, 'S', 0, chsDup(k), 'P', 0, v)
-#define tblSetPP(tb,k,v)  tbl_set(tb, 'P', 0, k,         'P', 0, v)
-#define tblSetTP(tb,k,v)  tbl_set(tb, 'T', 0, k,         'P', 0, v)
-#define tblSetOP(tb,k,v)  tbl_set(tb, 'O', 0, k,         'P', 0, v)
+#define tblSetNP(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      'P', 0, v)
+#define tblSetSP(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 'P', 0, v)
+#define tblSetPP(tb,k,v)  tbl_Set(tb, 'P', 0, k,         'P', 0, v)
+#define tblSetTP(tb,k,v)  tbl_Set(tb, 'T', 0, k,         'P', 0, v)
+#define tblSetOP(tb,k,v)  tbl_Set(tb, 'O', 0, k,         'P', 0, v)
 
-#define tblSetNO(tb,k,v)  tbl_set(tb, 'N', k, NULL,      'O', 0, v)
-#define tblSetSO(tb,k,v)  tbl_set(tb, 'S', 0, chsDup(k), 'O', 0, v)
-#define tblSetPO(tb,k,v)  tbl_set(tb, 'P', 0, k,         'O', 0, v)
-#define tblSetTO(tb,k,v)  tbl_set(tb, 'T', 0, k,         'O', 0, v)
-#define tblSetOO(tb,k,v)  tbl_set(tb, 'O', 0, k,         'O', 0, v)
+#define tblSetNO(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      'O', 0, v)
+#define tblSetSO(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 'O', 0, v)
+#define tblSetPO(tb,k,v)  tbl_Set(tb, 'P', 0, k,         'O', 0, v)
+#define tblSetTO(tb,k,v)  tbl_Set(tb, 'T', 0, k,         'O', 0, v)
+#define tblSetOO(tb,k,v)  tbl_Set(tb, 'O', 0, k,         'O', 0, v)
 
 tbl_t tbl_free(tbl_t tb,char wipe);
-#define tblFree(tb) tbl_free(tb,'w')
+#define tblFree(tb) (tb=tbl_free(tb,'w'))
 
 tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey);
 
-#define tblDelN(tb,k) tbl_del(tb, 'N', k, NULL)
-#define tblDelS(tb,k) tbl_del(tb, 'S', 0, k)
-#define tblDelP(tb,k) tbl_del(tb, 'P', 0, k)
-#define tblDelT(tb,k) tbl_del(tb, 'T', 0, k)
-#define tblDelO(tb,k) tbl_del(tb, 'O', 0, k)
+#define tbl_Del(t,tk,nk,pk) (t = tbl_del(t,tk,nk,pk))
+
+#define tblDelN(tb,k) tbl_Del(tb, 'N', k, NULL)
+#define tblDelS(tb,k) tbl_Del(tb, 'S', 0, k)
+#define tblDelP(tb,k) tbl_Del(tb, 'P', 0, k)
+#define tblDelT(tb,k) tbl_Del(tb, 'T', 0, k)
+#define tblDelO(tb,k) tbl_Del(tb, 'O', 0, k)
 
 tbl_t tblMaxSlot(tbl_t tb, long nslots);
 
@@ -238,33 +243,33 @@ extern vec_t vec_tmp;
          '\0')
 
 val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef);
-vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
-vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval);
-vec_t vec_del(vec_t tb, long kfrom, long kto);
 
 vec_t vecSetCount(vec_t vt, long max);
 long vecCount(vec_t vt);
 
 vec_t vec_new(long nslots);
-#define vecNew() vec_new(2)
+#define vecNew(v) (v=vec_new(2))
 
 vec_t vecDel(vec_t vt, long kfrom, long kto);
 vec_t vecMove(vec_t vt, long kfrom, long kto);
 
 vec_t vec_free(vec_t vt, char wipe);
-#define vecFree(vt) vec_free(vt,1)
+#define vecFree(vt) (vt=vec_free(vt,1))
 
-#define vecSetN(tb,k,v)  vec_set(tb, k, 'N', v, NULL)
-#define vecSetS(tb,k,v)  vec_set(tb, k, 'S', 0, chsDup(v))
-#define vecSetP(tb,k,v)  vec_set(tb, k, 'P', 0, v)
-#define vecSetT(tb,k,v)  vec_set(tb, k, 'T', 0, v)
-#define vecSetO(tb,k,v)  vec_set(tb, k, 'O', 0, v)
+vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
+#define vec_Set(t,n,tv,nv,pv) (t = vec_set(t,n,tv,nv,pv))
 
-#define vecAddN(tb,v)    vec_set(tb, vecCount(tb), 'N', v, NULL)
-#define vecAddS(tb,v)    vec_set(tb, vecCount(tb), 'S', 0, chsDup(v))
-#define vecAddP(tb,v)    vec_set(tb, vecCount(tb), 'P', 0, v)
-#define vecAddT(tb,v)    vec_set(tb, vecCount(tb), 'T', 0, v)
-#define vecAddO(tb,v)    vec_set(tb, vecCount(tb), 'O', 0, v)
+#define vecSetN(tb,k,v)  vec_Set(tb, k, 'N', v, NULL)
+#define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v))
+#define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v)
+#define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
+#define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v)
+
+#define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL)
+#define vecAddS(tb,v)    vec_Set(tb, vecCount(tb), 'S', 0, chsDup(v))
+#define vecAddP(tb,v)    vec_Set(tb, vecCount(tb), 'P', 0, v)
+#define vecAddT(tb,v)    vec_Set(tb, vecCount(tb), 'T', 0, v)
+#define vecAddO(tb,v)    vec_Set(tb, vecCount(tb), 'O', 0, v)
 
 #define vecGetN(tb,k,d)  valGetN(vec_get(tb, k , 'N', d, NULL))
 #define vecGetS(tb,k,d)  valGetS(vec_get(tb, k , 'S', 0, d))
@@ -278,13 +283,16 @@ vec_t vec_free(vec_t vt, char wipe);
 #define vecGetRawT(tb,k)  valGetT(vec_get(tb, k , 'T', 0, d))
 #define vecGetRawO(tb,k)  valGetP(vec_get(tb, k , 'O', 0, d))
 
-#define vecInsN(tb,k,v)  vec_ins(tb,  k, 'N', v, NULL)
-#define vecInsS(tb,k,v)  vec_ins(tb,  k, 'S', 0, chsDup(v))
-#define vecInsP(tb,k,v)  vec_ins(tb,  k, 'P', 0, v)
-#define vecInsT(tb,k,v)  vec_ins(tb,  k, 'T', 0, v)
-#define vecInsO(tb,k,v)  vec_ins(tb,  k, 'O', 0, v)
+vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval);
+#define vec_Ins(t,nk,tv,nv,pv) (t = vec_ins(t,nk,tv,nv,pv))
 
-#define vecType(tb,k)  ()
+#define vecInsN(tb,k,v)  vec_Ins(tb,  k, 'N', v, NULL)
+#define vecInsS(tb,k,v)  vec_Ins(tb,  k, 'S', 0, chsDup(v))
+#define vecInsP(tb,k,v)  vec_Ins(tb,  k, 'P', 0, v)
+#define vecInsT(tb,k,v)  vec_Ins(tb,  k, 'T', 0, v)
+#define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v)
+
+vec_t vec_del(vec_t tb, long kfrom, long kto);
 
 
 /* .%% Other functions

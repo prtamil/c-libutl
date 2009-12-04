@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
                          pmxTokSet("&e\\&B\"\"",   T_SKIP)
                          pmxTokSet("/*",           T_COMMENT)
                          pmxTokSet("/",            T_SKIP)
-                         pmxTokSet("<+!/ \t\r\n>",      T_SKIP)
+                         pmxTokSet("<+!/ \t\r\n>", T_SKIP)
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = COMMENT;
@@ -75,6 +75,6 @@ int main(int argc, char *argv[])
     }
   }
   
-  ln = chsFree(ln);
+  chsFree(ln);
   exit (0);  
 }
