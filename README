@@ -15,7 +15,8 @@
 
 .%% Using the makefile
 ''''''''''''''''''''''
-  The makefile has only been tested with Linux and Win32 Mingw+Msys.  
+  The makefile has only been tested with Linux and Win32 Mingw+Msys but should
+work for any unix-like environment (e.g. cygwin) with the GCC toolchain.  
   
   The '<config.mk> file contains two configuration parameters:
 
@@ -36,6 +37,11 @@ your project.
 '''''''''''''''''''''''''''
   The '|build| directory contains scripts to build the library using other
 compilers.
+  .[PellesC]
+   [Visual C++ Express]
+   [Borland C++ 5.1]
+   [Open Watcom]
+  ..
 
 
 
