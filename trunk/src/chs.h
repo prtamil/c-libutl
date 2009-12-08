@@ -153,20 +153,18 @@ and can modify its value
                     '|s| can be a '|chs| string or a regular C string.
    
    ['|chsFree(s)|]  Frees the memory allocated for the string '|s| and
-                    returns NULL. It is good habit to dispose of'|chs|
-                    strings as follows: '|s=chsFree(s)| to ensure that
-                    '|s| is reset to NULL and avoid the risk of accessing
-                    de-allocated memory.
+                    returns NULL. '|s| is reset to NULL and avoid the
+                    risk of accessing de-allocated memory.
   .. 
 */
 
-chs_t chs_New() ; 
-#define chsNew(s) (s=chs_New()) 
+chs_t chs_setsize(chs_t s, long ndx);
+#define chsNew(s) (s = chs_setsize(NULL,0)) 
 
 #define chsDup(s)     chs_Cpy(NULL,s)
 #define chsDupL(s,l)  chs_CpyL(NULL,s,l)
 
-#define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), (s=NULL)) : s)
+#define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), (s=NULL)) : NULL)
 
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len  : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
@@ -202,12 +200,13 @@ chs_t chs_New() ;
   .. 
 */
 
-int    chsSeek   (chs_t dst, long pos, int whence) ;
-size_t chsTell   (chs_t dst) ;
-int    chsEof    (chs_t s) ;
-int    chsGetChr (chs_t s) ;
+int    chsSeek   (chs_t dst, long pos, int whence);
+size_t chsTell   (chs_t dst);
+int    chsEof    (chs_t s);
+int    chsGetChr (chs_t s);
 
-char   chsChrAt  (chs_t s, long ndx) ;
+char   chsChrAt  (chs_t s, long ndx);
+
 chs_t  chs_SetChr (chs_t s, long ndx, char c) ;
 #define chsSetChr(s, n, c) (s = chs_Set(s,n,c))
 
@@ -315,13 +314,14 @@ chs_t chs_Del (chs_t dst, long from, long to) ;
                           instruction until the end of file is reached.
                           For example to print lines in a file:
 .v
-           chs_t ln;
+           chs_t l;
            FILE *f;
              ...
            f = fopen("myfile.txt","r");  
            chsForLines(l,f) {
              printf("<%s>\n",l);
            }
+           chsFree(l);
            if (f) fclose(f);
              ...
 ..  

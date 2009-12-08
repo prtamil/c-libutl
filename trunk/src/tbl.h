@@ -57,6 +57,7 @@ typedef union {
 #define valGetS(v) ((v).s)
 #define valGetP(v) ((v).p)
 #define valGetT(v) ((tbl_t)((v).p))
+#define valGetV(v) ((vec_t)((v).p))
 #define valGetO(v) ((v).p)
 
 /* TBL *****************/
@@ -247,8 +248,10 @@ val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef);
 vec_t vecSetCount(vec_t vt, long max);
 long vecCount(vec_t vt);
 
+extern vec_t vec_tmp;
+#define vecNULL ((vec_t)utlEmptyString)
 vec_t vec_new(long nslots);
-#define vecNew(v) (v=vec_new(2))
+#define vecNew(v) (v == vecNULL? vec_new(2) : v = vec_new(2))
 
 vec_t vecDel(vec_t vt, long kfrom, long kto);
 vec_t vecMove(vec_t vt, long kfrom, long kto);
@@ -263,18 +266,21 @@ vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
 #define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v))
 #define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v)
 #define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
+#define vecSetV(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
 #define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v)
 
 #define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL)
 #define vecAddS(tb,v)    vec_Set(tb, vecCount(tb), 'S', 0, chsDup(v))
 #define vecAddP(tb,v)    vec_Set(tb, vecCount(tb), 'P', 0, v)
 #define vecAddT(tb,v)    vec_Set(tb, vecCount(tb), 'T', 0, v)
+#define vecAddV(tb,v)    vec_Set(tb, vecCount(tb), 'V', 0, v)
 #define vecAddO(tb,v)    vec_Set(tb, vecCount(tb), 'O', 0, v)
 
 #define vecGetN(tb,k,d)  valGetN(vec_get(tb, k , 'N', d, NULL))
 #define vecGetS(tb,k,d)  valGetS(vec_get(tb, k , 'S', 0, d))
 #define vecGetP(tb,k,d)  valGetP(vec_get(tb, k , 'P', 0, d))
 #define vecGetT(tb,k,d)  valGetT(vec_get(tb, k , 'T', 0, d))
+#define vecGetV(tb,k,d)  valGetV(vec_get(tb, k , 'V', 0, d))
 #define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d))
 
 #define vecGetRawN(tb,k)  valGetN(vec_get(tb, k , 'N', d, NULL))
@@ -290,6 +296,7 @@ vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval);
 #define vecInsS(tb,k,v)  vec_Ins(tb,  k, 'S', 0, chsDup(v))
 #define vecInsP(tb,k,v)  vec_Ins(tb,  k, 'P', 0, v)
 #define vecInsT(tb,k,v)  vec_Ins(tb,  k, 'T', 0, v)
+#define vecInsV(tb,k,v)  vec_Ins(tb,  k, 'V', 0, v)
 #define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v)
 
 vec_t vec_del(vec_t tb, long kfrom, long kto);

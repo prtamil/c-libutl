@@ -28,7 +28,7 @@ static long fixndx(chs_t s, long n)
   return n;
 }
 
-static chs_t chs_setsize(chs_t s, long ndx)
+chs_t chs_setsize(chs_t s, long ndx)
 {
   long sz;
   chs_blk_t *cb;
@@ -50,16 +50,10 @@ static chs_t chs_setsize(chs_t s, long ndx)
   return cb->chs;  
 }
 
-chs_t chs_New()
-{
-  return chs_setsize(NULL,0);
-}
-
 chs_t chs_Set(chs_t s, long ndx, char c)
 {
   chs_blk_t *cb;
 
-  s = chs_setsize(s,ndx+1);
   s[ndx] = c;
   cb = chs_blk(s);
   cb->cur = ndx;
