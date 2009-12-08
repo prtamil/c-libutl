@@ -135,6 +135,16 @@ int main(void)
       tt = tblFree(tt);
     }
   }    
+  
+  
+  TSTSECTON ("Vectors") {
+    vec_t vt;
+    TSTGROUP ("Create") {
+      vecNew(vt);
+      vecSetV(vt,7,vecNew(vecNULL));
+      
+    }
+  }
   TSTDONE();
   
   exit(0);

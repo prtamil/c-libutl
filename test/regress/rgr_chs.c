@@ -105,48 +105,58 @@ int main(void)
       TST("CHS destroyed", buf == NULL);
     }
       
-    _TSTGROUP("Basic Read/writing into a CHS") {
+    TSTGROUP("Basic file reading") {
       f = fopen("txt.txt","r");
       if (f) {
-        TST("File reading", 1);
-        chsRead(buf,f,'r');
+        chsCpyFile(buf,f);
         TSTWRITE("[[**************************\n");
         TSTWRITE("%s\n",buf);
         TSTWRITE("]]**************************\n");
         fclose(f);
+        k = chsLen(buf);
+        TST("File reading [1]", buf && k > 0);
       }
-      else  TST("File reading", 0);
+      else  TST("File reading [1]", 0);
       
       f = fopen("txt.txt","r");
       if (f) {
-        TST("File reading", 1);
-        chsRead(buf,f,'a');
+        chsAddFile(buf,f);
         TSTWRITE("[[**************************\n");
         TSTWRITE("%s\n",buf);
         TSTWRITE("]]**************************\n");
         fclose(f);
+        TST("File reading [2]", buf && k *2 == chsLen(buf));
       }
-      else  TST("File reading", 0);
+      else  TST("File reading [2]", 0);
       
-     #if 10
       f = fopen("txt.txt","r");
       if (f) {
-        TST("File reading", 1);
         TSTWRITE("[[**************************\n");
         do {
-          chsReadln(buf,f,'w');
+          chsCpyLine(buf,f);
           if (chsLen(buf) == 0) break;
           TSTWRITE("{%s}",buf);
         } while (1);
         TSTWRITE("]]**************************\n");
         fclose(f);
+        TST("File reading [3]", 1);
       } 
-      else  TST("File reading", 0);
-      #endif
+      else  TST("File reading [3]", 0);
+
       assert(buf != NULL);  
       chsFree(buf);
       assert(buf == NULL);  
     }
+    
+    _TSTGROUP("chs as a stream") {
+      f = fopen("txt.txt","r");
+      if (f) {
+        chsCpyFile(buf,f);
+        fclose(f);
+        
+      }
+    }
+    
   }  
   TSTDONE();
   

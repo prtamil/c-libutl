@@ -10,6 +10,7 @@
 #define UTL_UNITTEST
 #include "libutl.h"
 #include <time.h>
+#include <assert.h>
 
 int main(void)
 {
@@ -102,6 +103,17 @@ int main(void)
     TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
   }
   
+  TSTSECTION("Vectors of vectors") {
+    vec_t vt2;
+    vecFree(vt);
+    assert(vt==NULL);
+    TSTGROUP ("Create") {
+      vecSetV(vt,7,vecNew(vecNULL));
+      vt2 = vecGetV(vt,7,NULL);
+      TST("v of v created", vt2 != NULL && vt2 != vecNULL);
+      
+    }
+  }
   TSTDONE();
 
   exit(0);
