@@ -249,9 +249,10 @@ vec_t vecSetCount(vec_t vt, long max);
 long vecCount(vec_t vt);
 
 extern vec_t vec_tmp;
-#define vecNULL ((vec_t)utlEmptyString)
+#define vecVoid ((vec_t)utlEmptyString)
+
 vec_t vec_new(long nslots);
-#define vecNew(v) (v == vecNULL? vec_new(2) : v = vec_new(2))
+#define vecNew(v) (v = vec_new(2))
 
 vec_t vecDel(vec_t vt, long kfrom, long kto);
 vec_t vecMove(vec_t vt, long kfrom, long kto);
@@ -266,7 +267,7 @@ vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
 #define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v))
 #define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v)
 #define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
-#define vecSetV(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
+#define vecSetV(tb,k,v)  vec_Set(tb, k, 'V', 0, v)
 #define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v)
 
 #define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL)

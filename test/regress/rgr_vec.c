@@ -12,13 +12,14 @@
 #include <time.h>
 #include <assert.h>
 
+char fstr[] = "abcdefghijklm";
+  
 int main(void)
 {
   vec_t vt = NULL;
   char *ss;
   long   ii, kk, jj;
   long  mm, ll;
-  char fstr[] = {"abcdefghijklm"};
   chs_t str;
  
   srand(time(0));
@@ -31,7 +32,7 @@ int main(void)
       vecFree(vt);
       TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
     }
-    
+
     TSTGROUP("NULL vector") {
       jj = vecGetN(vt,323,-1);
       TST("Default value", jj == -1);
@@ -70,21 +71,22 @@ int main(void)
       TST("sum matched", ii == 100);
       
     }      
-    
+     
     TSTGROUP("String Values") {
       vecFree(vt);
       TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
-    
+      vecNew(vt);
       jj = 0;                                
       for (kk=0; kk < 100; kk++) {
         ii = (rand() & 0x3F) | 0x040;
         fstr[0]=ii;
+        _dbgmsg("%ld ins: %s\n",kk,fstr);
         vecSetS(vt,kk,fstr);
       }
        
       TST("String values inserted", vecCount(vt) == kk);
       TSTIF_NOTOK {
-        TSTNOTE("vt=%p count:%ld", vt,vecCount(vt));
+        TSTNOTE("vt=%p count:%ld", vt,vecCount(vt)); 
       }
 
       ss = vecGetS(vt,2230,"?");
@@ -108,12 +110,11 @@ int main(void)
     vecFree(vt);
     assert(vt==NULL);
     TSTGROUP ("Create") {
-      vecSetV(vt,7,vecNew(vecNULL));
-      vt2 = vecGetV(vt,7,NULL);
-      TST("v of v created", vt2 != NULL && vt2 != vecNULL);
-      
+      vecSetV(vt,7,vecNew(vt2));
+      TST("v of v created", vt2 != NULL && vt2 == vecGetV(vt,7,NULL));
     }
   }
+  
   TSTDONE();
 
   exit(0);
