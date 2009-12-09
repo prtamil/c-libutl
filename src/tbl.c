@@ -92,21 +92,26 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
                                   ? (void)((x).n = (nv)) \
                                   : (void)((x).p = (pv))) 
 
-#define val_del(v,tv) do { switch (tv) { \
-                             case 'S' : (v).p = chsFree((v).p); break; \
-                             case 'T' : (v).p = tblFree((v).p); break; \
+#define val_del(tv,v) do { switch (tv) { \
+                             case 'S' : chsFree((v).p); break; \
+                             case 'T' : tblFree((v).p); break; \
+                             case 'V' : vecFree((v).p); break; \
                              case 'P' : (v).p = NULL; \
                              case 'N' : (v).n = 0; \
                            }\
-                      } while (0)
+                      } while (utlZero)
 
 #define isnotpow2(x)  ((x) & ((x)-1))
 
 unsigned long keyhash(tbl_t tb, char tk, val_u key)
 {
-  if (tk == 'N') return (hsh_num1(key.n)                % tb->size);
-  if (tk == 'S') return (hsh_str1(key.p, strlen(key.p)) % tb->size);  
-  return                (hsh_ptr1(key.p)                % tb->size);
+  switch (tk) {
+    case 'N' : return (hsh_num1(key.n) % tb->size);
+    
+    case 'S' : return (hsh_str1(key.p, strlen(key.p)) % tb->size);
+  } 
+   
+  return (hsh_ptr1(key.p)                % tb->size);
 }
 
 static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey,
@@ -173,7 +178,7 @@ long tblNext(tbl_t tb, long cur)
 #define two_raised(n) (1<<(n))
 #define div_by_two(n) ((n)>>1)
                 
-tbl_t tblMaxSlot(tbl_t tb, long nslots)
+tbl_t tbl_MaxSlot(tbl_t tb, long nslots)
 {
   unsigned short lg;
   long n;
@@ -324,9 +329,22 @@ tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey)
       linkedslot(parent_slot) = linkedslot(cur_slot);      
     }
     
-    if (tbl_keytype(cur_slot) == 'S') chsFree(cur_slot->key.p);
-    if (tbl_valtype(cur_slot) == 'S') chsFree(cur_slot->val.p);
-
+    val_del(tbl_keytype(cur_slot),cur_slot->key);
+/*
+    switch (tbl_keytype(cur_slot)) {
+      case 'S' : chsFree(cur_slot->key.p); break;
+      case 'T' : tblFree(cur_slot->key.p); break;
+      case 'V' : vecFree(cur_slot->key.p); break;
+    }
+*/    
+    val_del(tbl_valtype(cur_slot),cur_slot->val);
+/*    
+    switch (tbl_valtype(cur_slot)) {
+      case 'S' : chsFree(cur_slot->val.p); break;
+      case 'T' : tblFree(cur_slot->val.p); break;
+      case 'V' : vecFree(cur_slot->val.p); break;
+    }
+*/
     isnotempty(cur_slot) = 0;
     properslot(cur_slot) = 0;
     
@@ -614,12 +632,14 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
   if (kto >= vt->count) kto = vt->count -1;
   if (kfrom >= vt->count || kfrom > kto) return vt;
   
+  val_del(vec_valtype(vt->slot+kfrom),vt->slot[kfrom].val);
+/*
   switch(vec_valtype(vt->slot+kfrom)) {
     case 'S': chsFree(vt->slot[kfrom].val.p); break;
     case 'T': tblFree(vt->slot[kfrom].val.p); break;
     case 'V': vecFree(vt->slot[kfrom].val.p); break;
   }
-  
+*/  
   if (kto < vt->count-1)
     memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
 
@@ -702,6 +722,27 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup)
     
    return t;  
 }
+
+int vec_cmp (const void *a, const void *b)
+{
+  const vec_slot_t *va = a;
+  const vec_slot_t *vb = b;
+ 
+  int c;
+  
+  _dbgmsg("CMP: %c %c\n",vec_valtype(va) , vec_valtype(vb));
+  c = vec_valtype(va) - vec_valtype(vb);
+  
+  if (c != 0) return c;
+  
+  switch(vec_valtype(va)) {
+    case 'N' : return (va->val.n - vb->val.n);
+    case 'S' : _dbgmsg("[%s],[%s]\n",va->val.p, vb->val.p);
+               return strcmp(va->val.p, vb->val.p);
+  }
+  return (va->val.p - vb->val.p);
+}
+
 
 
 /*****************/
