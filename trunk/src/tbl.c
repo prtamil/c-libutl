@@ -498,6 +498,7 @@ static unsigned short llog2(unsigned long x)
 
 vec_t vec_tmp;
 
+
 long vecCount(vec_t vt)
 {
   return (vt ? vt->count: 0);
@@ -550,6 +551,7 @@ vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval)
 {
   vec_slot_t *slot;
   
+  _dbgmsg("vec_set: %ld %c\n",nkey,tv);
   nkey = fixndx(vt,nkey);
   
   if (!vt || vt->size <= nkey)
@@ -593,6 +595,7 @@ val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef)
 {
   val_u v;
   
+  nkey = fixndx(vt,nkey);
   if (nkey >= vecCount(vt)) {
     if (tv == 'N') v.n = ndef; 
     else           v.p = pdef;
@@ -602,7 +605,7 @@ val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef)
 }
 
 vec_t vecDel(vec_t vt, long kfrom, long kto)
-{
+{  
   if (!vt || vt->count == 0) return vt;
   
   kfrom = fixndx(vt,kfrom);
@@ -611,8 +614,11 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
   if (kto >= vt->count) kto = vt->count -1;
   if (kfrom >= vt->count || kfrom > kto) return vt;
   
-  if (vec_valtype(vt->slot+kfrom) == 'S')      chsFree(vt->slot[kfrom].val.p);
-  else if (vec_valtype(vt->slot+kfrom) == 'T') tblFree(vt->slot[kfrom].val.p);
+  switch(vec_valtype(vt->slot+kfrom)) {
+    case 'S': chsFree(vt->slot[kfrom].val.p); break;
+    case 'T': tblFree(vt->slot[kfrom].val.p); break;
+    case 'V': vecFree(vt->slot[kfrom].val.p); break;
+  }
   
   if (kto < vt->count-1)
     memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
@@ -624,11 +630,15 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
 vec_t vec_free(vec_t vt, char wipe)
 {
   int k = 0;
+
   if (vt) {
     if (wipe) {  
       for (k = 0; k < vt->count; k++) {
-        if (vec_valtype(vt->slot+k) == 'S')      chsFree(vt->slot[k].val.p);
-        else if (vec_valtype(vt->slot+k) == 'T') tblFree(vt->slot[k].val.p);
+        switch(vec_valtype(vt->slot+k)) {
+          case 'S': chsFree(vt->slot[k].val.p);  break;
+          case 'T': tblFree(vt->slot[k].val.p);  break;
+          case 'V': vecFree(vt->slot[k].val.p);  break;
+        }
       }
     }  
     free(vt);

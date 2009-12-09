@@ -53,6 +53,8 @@ chs_t chs_setsize(chs_t s, long ndx)
 chs_t chs_Set(chs_t s, long ndx, char c)
 {
   chs_blk_t *cb;
+  
+  if (s == NULL) chsNew(s);
 
   s[ndx] = c;
   cb = chs_blk(s);
@@ -121,8 +123,8 @@ size_t chsTell(chs_t dst)
 chs_t chs_CpyL(chs_t dst, char *src, long len)
 {
   chsSetChr(dst, len, '\0');
+  _dbgmsg("chs_Cpy: %p %ld \"%s\"\n",dst, len, src?src:"(null)");
   if (src && len > 0) {
-    _dbgmsg("chs_Cpy: %d \"%s\"\n",len, src);
     strncpy(dst, src, len);
   }  
   chs_blk(dst)->cur = len; 
