@@ -286,11 +286,12 @@ vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
 #define vecGetV(tb,k,d)  valGetV(vec_get(tb, k , 'V', 0, d))
 #define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d))
 
-#define vecGetRawN(tb,k)  valGetN(vec_get(tb, k , 'N', d, NULL))
-#define vecGetRawS(tb,k)  valGetS(vec_get(tb, k , 'S', 0, d))
-#define vecGetRawP(tb,k)  valGetP(vec_get(tb, k , 'P', 0, d))
-#define vecGetRawT(tb,k)  valGetT(vec_get(tb, k , 'T', 0, d))
-#define vecGetRawO(tb,k)  valGetP(vec_get(tb, k , 'O', 0, d))
+#define vecGetRawN(tb,k)  valGetN(vec_get(tb, k , 'N', 0, NULL))
+#define vecGetRawS(tb,k)  valGetS(vec_get(tb, k , 'S', 0, NULL))
+#define vecGetRawP(tb,k)  valGetP(vec_get(tb, k , 'P', 0, NULL))
+#define vecGetRawT(tb,k)  valGetT(vec_get(tb, k , 'T', 0, NULL))
+#define vecGetRawV(tb,k)  valGetT(vec_get(tb, k , 'T', 0, NULL))
+#define vecGetRawO(tb,k)  valGetP(vec_get(tb, k , 'O', 0, NULL))
 
 vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval);
 #define vec_Ins(t,nk,tv,nv,pv) (t = vec_ins(t,nk,tv,nv,pv))
