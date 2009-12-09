@@ -94,13 +94,23 @@ int main(void)
             
     }      
 
-    _TSTGROUP("print strings") {
+    TSTGROUP("print strings") {
+       for (kk=0; kk<vecCount(vt); kk++) {
+         ss = vecGetS(vt,kk,NULL);
+         if (ss) TSTNOTE("%4ld %s",kk,ss);
+       } 
+    }
+ 
+    TSTGROUP("Sort") {
+      vecSort(vt);
+    }
+ 
+    TSTGROUP("print strings") {
        for (kk=0; kk<vecCount(vt); kk++) {
          ss = vecGetS(vt,kk,NULL);
          if (ss) TSTNOTE("%4ld %s",kk,ss);
        }
     }
-
     vecFree(vt);
     TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
   }

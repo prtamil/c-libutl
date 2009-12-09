@@ -216,7 +216,9 @@ tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey);
 #define tblDelT(tb,k) tbl_Del(tb, 'T', 0, k)
 #define tblDelO(tb,k) tbl_Del(tb, 'O', 0, k)
 
-tbl_t tblMaxSlot(tbl_t tb, long nslots);
+tbl_t tbl_MaxSlot(tbl_t tb, long nslots);
+
+#define tblMaxSlot(t,n) (t = tbl_MaxSlot(t,n))
 
 /* VEC *****************/
 
@@ -310,5 +312,8 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup);
 
 #define vecSplit(s, sep, trim) vec_split(s,sep,trim,1)
 #define vecSplitP(s, sep, trim) vec_split(s,sep,trim,0)
+
+int vec_cmp (const void *a, const void *b);
+#define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
 
 #endif

@@ -23,10 +23,10 @@ int main(void)
   
     TSTGROUP("Values") {
     
-      tt = tblNew();
+      tblNew(tt);
       TST("TBL created",(tt != NULL));
       #if 0
-      tt = tblSetNN(tt,3,4);
+      tblSetNN(tt,3,4);
       
       ii = tblGetNN(tt,3,-1);
       TST("TBL set/get",ii==4);
@@ -34,14 +34,14 @@ int main(void)
       ii = tblGetNN(tt,4,-1);
       TST("TBL set/get",ii == -1);
       
-      tt = tblSetNN(tt,3,5);
+      tblSetNN(tt,3,5);
       ii = tblGetNN(tt,3,-1);
       TST("TBL set/get",ii==5);
       #endif
-      tt = tblMaxSlot(tt,50000);
+      tblMaxSlot(tt,50000);
       
       for (ii=0; ii<49149; ii++) {
-       tt = tblSetNN(tt,ii,ii*2);
+        tblSetNN(tt,ii,ii*2);
       }
       
       tblSetSN(tt,"XX",131);
@@ -84,11 +84,11 @@ int main(void)
       TST("GetNN OK",kk != 2 * ii); 
       
       
-      tt = tblFree(tt);
+      tblFree(tt);
       TST("TBL freed",(tt == NULL));
       #if 1
       
-      tt = tblNew();
+      tblNew(tt);
       tblSetNN(tt,432,431);
       ii = tblGetNN(tt,432,-1);
       tblDelN(tt,432);
@@ -103,7 +103,7 @@ int main(void)
       
       kk = tblFindS(tt,"Pippo");
       if (kk>0) {
-       tblValS(tt,kk) = chsInsStr(tblValS(tt,kk),1,"xxxx"); 
+        tblValS(tt,kk) = chsInsStr(tblValS(tt,kk),1,"xxxx"); 
       }
       
       str = tblGetSS(tt,"Pippo",NULL);
@@ -114,7 +114,7 @@ int main(void)
       
       TSTWRITE("[%s] = %s\n",tblKeyS(tt,kk), tblValS(tt,kk));
       
-      tt = tblSetSS(tt,"",NULL);
+      tblSetSS(tt,"",NULL);
       
       str = tblGetSS(tt,"","xx");
       TST("GetSS Empty", !str);
@@ -126,26 +126,19 @@ int main(void)
       
       #endif
       
-      tt = tblNew();
-      tt = tblMaxSlot(tt,120);
+      tblNew(tt);
+      tblMaxSlot(tt,120);
       TST("MAX size", tt && tt->size >= 120);
       
-      tt = tblMaxSlot(tt,130);
+      tblMaxSlot(tt,130);
       TST("MAX size", tt && tt->size >= 130);
-      tt = tblFree(tt);
+      tblFree(tt);
     }
   }    
   
   
-  TSTSECTON ("Vectors") {
-    vec_t vt;
-    TSTGROUP ("Create") {
-      vecNew(vt);
-      vecSetV(vt,7,vecNew(vecNULL));
-      
-    }
-  }
   TSTDONE();
   
   exit(0);
 }
+ 
