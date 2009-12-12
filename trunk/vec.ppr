@@ -95,9 +95,12 @@ vec
 7=src\chs.h
 8=test\regress\rgr_tbl.c
 9=test\regress\makefile
+10=src\exp\obj.h
+11=src\rec.h
+12=Nuovo1.h
 [Selected Project Files]
 Main=
-Selected=src\tbl.h
+Selected=Nuovo1.h
 [src\chs.c]
 TopLine=69
 Caret=15,80
@@ -128,3 +131,12 @@ Caret=26,117
 [test\regress\makefile]
 TopLine=1
 Caret=48,13
+[src\exp\obj.h]
+TopLine=5
+Caret=50,46
+[src\rec.h]
+TopLine=47
+Caret=11,76
+[Nuovo1.h]
+TopLine=1
+Caret=11,4
