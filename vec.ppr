@@ -97,10 +97,9 @@ vec
 9=test\regress\makefile
 10=src\exp\obj.h
 11=src\rec.h
-12=Nuovo1.h
 [Selected Project Files]
 Main=
-Selected=Nuovo1.h
+Selected=src\rec.h
 [src\chs.c]
 TopLine=69
 Caret=15,80
@@ -135,8 +134,5 @@ Caret=48,13
 TopLine=5
 Caret=50,46
 [src\rec.h]
-TopLine=47
-Caret=11,76
-[Nuovo1.h]
-TopLine=1
-Caret=11,4
+TopLine=33
+Caret=27,57
