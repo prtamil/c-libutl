@@ -91,8 +91,10 @@ int main(void)
       k = chsLen(buf);
       chsInsStr(buf,'M'-'A', "MNOP");
       TST("Added \"MNOP\" in the middle. Length is correct", k == chsLen(buf)-4);
-      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
-      
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+    }
+    
+    TSTGROUP("Create/Destroy") {
       chsSubStr(buf ,0, "><=EGIKM>","++");
       TST("Replacing <=EGIKM> with '++'",1);
       TSTWRITE("# >>  \"%s\"\n",buf);
@@ -100,14 +102,16 @@ int main(void)
       chsSubStr(buf ,0, "><=PQRS>","[&0&0]");
       TST("Replacing <=PQRS> with '[&0&0]'", 4);
       TSTWRITE("# >>  \"%s\"\n",buf);
+    }
       
+    TSTGROUP("Destroy") {
       chsFree(buf);
       TST("CHS destroyed", buf == NULL);
     }
       
     TSTGROUP("Basic file reading") {
       f = fopen("txt.txt","r");
-      if (f) {
+      if (f) { 
         chsCpyFile(buf,f);
         TSTWRITE("[[**************************\n");
         TSTWRITE("%s\n",buf);
@@ -154,9 +158,22 @@ int main(void)
         chsCpyFile(buf,f);
         fclose(f);
         
-      }
+      } 
     }
     
+    TSTGROUP("Upper/Lower/Reverse") {
+      chsCpy(buf,"abc");
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+      chsUpper(buf);
+      TST("Upper",strcmp(buf,"ABC")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+      chsLower(buf);
+      TST("Lower",strcmp(buf,"abc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+      chsReverse(buf);
+      TST("Reverse",strcmp(buf,"cba")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+    }    
   }  
   TSTDONE();
   

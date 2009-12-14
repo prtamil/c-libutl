@@ -164,7 +164,8 @@ chs_t chs_setsize(chs_t s, long ndx);
 #define chsDup(s)     chs_Cpy(NULL,s)
 #define chsDupL(s,l)  chs_CpyL(NULL,s,l)
 
-#define chsFree(s) ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), (s=NULL)) : NULL)
+#define chsFree(s) \
+ ((s) = ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), NULL) : NULL))
 
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len  : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
@@ -359,5 +360,22 @@ chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl) ;
 
 chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f);
 #define chsSubFun(s, n, p, f) (s = chs_SubFun(s,n,p,f))
+
+/* .%% Other  */
+
+#define chsUpper(s) \
+ do { char *p=s; if (p) while (*p) {*p = toupper(*p); p++;}} while(utlZero)
+ 
+#define chsLower(s) \
+ do { char *p=s; if (p) while (*p) {*p = tolower(*p); p++;}} while(utlZero)
+
+#define chsReverse(s) \
+ do { char *p,*q,t; \
+      if ((p=s)) \
+        for (q = p+chsLen(p); q-p > 0; p++) { \
+          t = *--q ; *q = *p; *p = t; \
+        } \
+    } while(utlZero)
+
 
 #endif  /* CHS_H */
