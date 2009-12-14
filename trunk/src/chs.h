@@ -270,9 +270,11 @@ chs_t chs_AddChr(chs_t dst, char c) ;
 
 chs_t chs_AddStrL(chs_t dst, char *src, long len) ;
 #define chsAddStrL(d, s, l) (d = chs_AddStrL(d,s,l))
+#define chsCatL chsAddStrL
 
 chs_t chs_AddStr(chs_t dst, char *src) ;
 #define chsAddStr(d, s) (d = chs_AddStr(d,s))
+#define chsCat chsAddStr
 
 chs_t chs_InsChr(chs_t dst, long ndx, char c) ;
 #define chsInsChr(d, n, c) (d = chs_InsChr(d,n,c))
