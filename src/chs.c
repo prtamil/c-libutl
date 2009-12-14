@@ -54,7 +54,7 @@ chs_t chs_Set(chs_t s, long ndx, char c)
 {
   chs_blk_t *cb;
   
-  if (s == NULL) chsNew(s);
+  if (ndx >= chsLen(s)) s = chs_setsize(s,ndx+1);
 
   s[ndx] = c;
   cb = chs_blk(s);
@@ -230,7 +230,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
 {
   int k = chs_buf_size;
   
-  _dbgmsg("READ = %p,%p,%c,%c",dst,f,how,what);
+  _dbgmsg("READ = %p,%p,%c,%c\n",dst,f,how,what);
 
   if (!dst) chsNew(dst);
 
@@ -242,9 +242,9 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   if (what == 'A') { /* read rest of the file */
     while ((k = fread(chs_buf,1,chs_buf_size,f)) > 0) {
       chsAddStrL(dst, chs_buf,k);
-      _dbgmsg("READBLK %d\n",chsLen(dst));
+      _dbgmsg("READBLK %ld\n",chsLen(dst));
     }
-//    dst = chs_Set(dst, chsLen(dst), '\0');
+    dst = chs_Set(dst, chsLen(dst), '\0');
   }
   else { /* read line */
     what = '\0';
@@ -368,7 +368,7 @@ static char  *rpl_fun(char *mtc, pmxMatches_t cpt)
       else r=t;
     }
   }
-  dbgmsg("\tret:%s\n",rpl_chs);
+  _dbgmsg("\tret:%s\n",rpl_chs);
   return (char *)rpl_chs;
 }
 

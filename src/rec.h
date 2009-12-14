@@ -95,13 +95,14 @@ rec(pippo,
 
 /**** .a ****/
 
-void *rec_cpy(void *a, void *b) 
+void *rec_cpy(struct rec_f_t *a, struct rec_f_t *b) 
 {
   if (b != a) { 
     if (b == NULL)  recFree(a);
-    else if (a == NULL) {
-      
-      
+    else {
+      if (!a) a = malloc(b->size);
+      if (!a) utlError(8912,utlErrInternal);
+      memcpy(a,b,b->size);
     }
   }
   
