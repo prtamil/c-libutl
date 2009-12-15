@@ -15,7 +15,7 @@
 int state = CODE;
 
 chs_t ln;
-pmxMatches_t ret;
+pmx_t ret;
 
 int main(int argc, char *argv[])
 {

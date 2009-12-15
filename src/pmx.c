@@ -59,7 +59,7 @@ typedef struct {
 that has been matched.
 
   This structure is not to be used directly, an opaque pointer
-type ('{pmxMatches_t}) is provided for passing information from a 
+type ('{pmx_t}) is provided for passing information from a 
 function to another. 
  
 */
@@ -70,29 +70,29 @@ static pmxMatches capt_arr[pmxCaptStkSize];
 
 static short icase = mFALSE;
 
-size_t pmxLen(pmxMatches_t mtc, unsigned char n)
+size_t pmxLen(pmx_t mtc, unsigned char n)
 {
   return (mtc != NULL && (n < pmxCaptMax) && ((*mtc)[n][1] > (*mtc)[n][0]))
           ? (*mtc)[n][1] - (*mtc)[n][0]
           : 0;
 }
 
-size_t pmxStart(pmxMatches_t mtc, unsigned char n)
+size_t pmxStart(pmx_t mtc, unsigned char n)
 {
   return (mtc && n < pmxCaptMax) ? (*mtc)[n][0] : 0;
 }
 
-size_t pmxEnd(pmxMatches_t mtc, unsigned char n)
+size_t pmxEnd(pmx_t mtc, unsigned char n)
 {
   return (mtc && (n < pmxCaptMax)) ? (*mtc)[n][1] : 0;
 }
 
-int pmxMatched(pmxMatches_t mtc)
+int pmxMatched(pmx_t mtc)
 {
   return mtc ? (*mtc)[pmxCaptMax][0] : 0;
 }
 
-unsigned char pmxToken(pmxMatches_t mtc)
+unsigned char pmxToken(pmx_t mtc)
 {
   return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0x00);
 }
@@ -217,7 +217,7 @@ static int braced(void *text, int left, int right, char esc)
 */
 #define MAX_MAX 0xFFFFFFFE
 
-static pmxMatches_t domatch(void *text, char *pattern, char **next)
+static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
   int ch,left,right;
@@ -512,9 +512,9 @@ static pmxMatches_t domatch(void *text, char *pattern, char **next)
 
 /* */
 
-pmxMatches_t pmxMatchStr(char *txt, char *ptrn)
+pmx_t pmxMatchStr(char *txt, char *ptrn)
 {
-  pmxMatches_t ret = NULL;
+  pmx_t ret = NULL;
   size_t cnt;
   size_t start;
   char *next;
@@ -564,7 +564,7 @@ pmxMatches_t pmxMatchStr(char *txt, char *ptrn)
 
 int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
 {
-  pmxMatches_t ret;
+  pmx_t ret;
   char *cur = text;
   int f_ret;
   int k;
@@ -591,7 +591,7 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
 
 char *pmx_tmpstr;
 char *pmx_tmpptrn;
-pmxMatches_t pmx_tmpmtc;
+pmx_t pmx_tmpmtc;
 
 /*******************/
 

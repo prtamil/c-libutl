@@ -298,9 +298,9 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   return dst;
 }
 
-pmxMatches_t chsMatch(chs_t s, long from, char *pat)
+pmx_t chsMatch(chs_t s, long from, char *pat)
 {
-  pmxMatches_t ret;
+  pmx_t ret;
   int k;
   
   if (!pat || !*pat || !s || chsLen(s) == 0) return NULL;
@@ -323,7 +323,7 @@ chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
   char  *rpl;
   long   l = 0;
   int    repeat = 0;
-  pmxMatches_t  ret;
+  pmx_t  ret;
   
   pos = fixndx(s,pos);
   
@@ -368,7 +368,7 @@ chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
 
 static char  *rpl_str;
 static chs_t  rpl_chs = NULL;
-static char  *rpl_fun(char *mtc, pmxMatches_t cpt)
+static char  *rpl_fun(char *mtc, pmx_t cpt)
 {
   char *r, *t;
   long l;

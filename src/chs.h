@@ -351,9 +351,9 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what);
    ''''''''''''''''''''
 */
 
-pmxMatches_t chsMatch(chs_t s, long from, char *pat) ;
+pmx_t chsMatch(chs_t s, long from, char *pat) ;
 
-typedef char *(*chsSubF_t)(char *mtc, pmxMatches_t cpt);
+typedef char *(*chsSubF_t)(char *mtc, pmx_t cpt);
 
 chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl) ;
 #define chsSubStr(s, n, p, r) (s = chs_SubStr(s,n,p,r))
@@ -383,43 +383,44 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
 /* .% Alternative syntax
 */
 
-#define chsnew     chsNew
-#define chsfree    chsFree
-#define chslen     chsLen
-
-#define chscpy     chsCpy
-#define chsncpy    chsCpyL
-#define chscat     chsAddStr
-#define chsins     chsInsStr
-#define chsncat    chsAddStrL
-#define chsnins    chsInsStrL
-
-#define chssetchr  chsChrSet
-#define chscatchr  chsAddChar
-#define chsinschr  chsInsChar
-
-#define chsdel     chsDel
-#define chstrim    chsTrim
-
-#define chsupper   chsUpper
-#define chslower   chsLower
-#define chsreverse chsReverse
-
-#define chsprintf  chsCpyFmt
-#define chscpyf    chsCpyFmt
-#define chscatf    chsAddFmt
-#define chsinsf    chsInsFmt
-
-#define chsgetline chsCpyLine
-#define chsgetfile chsCpyFile
-#define chscatline chsAddLine
-#define chscatfile chsAddFile
-#define chslines   chsForLines
-
-#define chsmatch   chsMatch
-#define chssub     chsSubStr
-#define chssubfun  chsSubfun
-
-#define chschrat   chsChrAt
+#define chsnew     chsNew            
+#define chsfree    chsFree           
+#define chslen     chsLen            
+                                     
+#define chscpy     chsCpy            
+#define chsncpy    chsCpyL           
+#define chscat     chsAddStr         
+#define chsins     chsInsStr         
+#define chsncat    chsAddStrL        
+#define chsnins    chsInsStrL        
+                                     
+#define chssetchr  chsChrSet         
+#define chscatchr  chsAddChar        
+#define chsinschr  chsInsChar        
+                                     
+#define chsdel     chsDel            
+#define chstrim    chsTrim           
+                                     
+#define chsupper   chsUpper          
+#define chslower   chsLower          
+#define chsreverse chsReverse        
+                                     
+#define chsprintf  chsCpyFmt         
+#define chscpyf    chsCpyFmt         
+#define chscatf    chsAddFmt         
+#define chsinsf    chsInsFmt         
+                                     
+#define chsgetline chsCpyLine        
+#define chsgetfile chsCpyFile        
+#define chscatline chsAddLine        
+#define chscatfile chsAddFile        
+#define chslines   chsForLines       
+                                     
+#define chsmatch   chsMatch          
+#define chssub     chsSubStr         
+#define chssubfun  chsSubfun         
+#define chssubfun_t chsSubF_t
+                                     
+#define chschrat   chsChrAt          
 
 #endif  /* CHS_H */
