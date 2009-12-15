@@ -210,20 +210,46 @@ chs_t chs_InsStr(chs_t dst, long ndx, char *src)
 
 chs_t chs_Del(chs_t dst, long from, long to)
 {
-  if (dst) {
+  long len = chsLen(dst);
+  if (len > 0) {
     from = fixndx(dst, from);
     to = fixndx(dst, to);
-    if (from == 0 && to >= chsLen(dst)) {
-      chs_blk(dst)->len = 0;   
-      chs_blk(dst)->cur = 0;   
-    }
-    else if (to >= from) {
-      memmove(dst+from, dst+to+1, chsLen(dst) - to);
-      chs_blk(dst)->len -= (to+1-from);   
-      chs_blk(dst)->cur  = from;   
-    }
+    if (to > len) to = len;
+    if (to >= from) { 
+      if (to == len) {
+        chs_blk(dst)->len -= (to-from);   
+        chs_blk(dst)->cur  = from;
+      }
+      else {
+        memmove(dst+from, dst+to+1, len - to);
+        chs_blk(dst)->len -= (to+1-from);   
+      }
+      dst[chs_blk(dst)->len] = '\0';
+      chs_blk(dst)->cur  = from;
+    }   
   }
   return dst;
+}
+
+chs_t chs_Trim(chs_t st,char *left, char *right) 
+{
+  char *p ;
+  
+  if (!(st && *st)) return st;
+  
+  if (right && *right) {
+    p = st + chsLen(st);
+    while (p > st && strchr(right,*--p)) {
+      *p = '\0'; 
+      chs_blk(st)->len -= 1;
+    }   
+  }
+  if (left && *left) {
+    p = st;
+    while (*p && strchr(left,*p)) p++;
+    if (p>st) chsDel(st,0,p-st-1);
+  }
+  return st;
 }
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what)

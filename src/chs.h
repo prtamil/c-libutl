@@ -344,8 +344,8 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 #define chsAddFile(s,f) (s = chs_read(s,f,'a','A'))
 #define chsAddLine(s,f) (s = chs_read(s,f,'a','L'))
 
-#define chsForLines(l,f)  for (l=chsReadln(l,f, 'w'); chsLen(l) > 0;\
-                                                        chsReadln(l,f,'w'))
+#define chsForLines(l,f) \
+     for (chsCpyLine(l,f); chsLen(l) > 0; chsCpyLine(l,f))
 
 /* .%% Matching strings
    ''''''''''''''''''''
@@ -372,10 +372,54 @@ chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f);
 #define chsReverse(s) \
  do { char *p,*q,t; \
       if ((p=s)) \
-        for (q = p+chsLen(p); q-p > 0; p++) { \
+        for (q = p+chsLen(p); q > p; p++) { \
           t = *--q ; *q = *p; *p = t; \
         } \
     } while(utlZero)
 
+chs_t chs_Trim(chs_t st,char *left, char *right) ;
+#define chsTrim(s,l,r) (s = chs_Trim(s,l,r))
+
+/* .% Alternative syntax
+*/
+
+#define chsnew     chsNew
+#define chsfree    chsFree
+#define chslen     chsLen
+
+#define chscpy     chsCpy
+#define chsncpy    chsCpyL
+#define chscat     chsAddStr
+#define chsins     chsInsStr
+#define chsncat    chsAddStrL
+#define chsnins    chsInsStrL
+
+#define chssetchr  chsChrSet
+#define chscatchr  chsAddChar
+#define chsinschr  chsInsChar
+
+#define chsdel     chsDel
+#define chstrim    chsTrim
+
+#define chsupper   chsUpper
+#define chslower   chsLower
+#define chsreverse chsReverse
+
+#define chsprintf  chsCpyFmt
+#define chscpyf    chsCpyFmt
+#define chscatf    chsAddFmt
+#define chsinsf    chsInsFmt
+
+#define chsgetline chsCpyLine
+#define chsgetfile chsCpyFile
+#define chscatline chsAddLine
+#define chscatfile chsAddFile
+#define chslines   chsForLines
+
+#define chsmatch   chsMatch
+#define chssub     chsSubStr
+#define chssubfun  chsSubfun
+
+#define chschrat   chsChrAt
 
 #endif  /* CHS_H */
