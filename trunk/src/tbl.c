@@ -740,7 +740,7 @@ int vec_cmp (const void *a, const void *b)
     case 'S' : _dbgmsg("[%s],[%s]\n",va->val.p, vb->val.p);
                return strcmp(va->val.p, vb->val.p);
   }
-  return (va->val.p - vb->val.p);
+  return ((char *)(va->val.p) - (char *)(vb->val.p));
 }
 
 

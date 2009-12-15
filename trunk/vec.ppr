@@ -15,10 +15,15 @@ FileFormat=1
 ProjectFilesOnly=0
 [Project tree]
 vec
+	+build
+		build\win_visualc.bat
+		build\win_clean.bat
+		build\unix_gcc.sh
+		build\msys_mingw.sh
 	+vec
 		+doc
 			doc\stk.gif
-		+examples
+		-examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -98,11 +103,12 @@ vec
 10=examples\uncomment\unc.c
 11=examples\scanner\mpnotes.c
 12=examples\cxrf\cxrf.pmx
+13=build\win_visualc.bat
 [Selected Project Files]
 Main=
-Selected=doc\chs_doc.h
+Selected=build\win_visualc.bat
 [src\chs.c]
-TopLine=292
+TopLine=327
 Caret=39,371
 [src\chs.h]
 TopLine=319
@@ -138,5 +144,8 @@ Caret=1,1
 TopLine=1
 Caret=33,18
 [examples\cxrf\cxrf.pmx]
-TopLine=49
+TopLine=56
 Caret=3,100
+[build\win_visualc.bat]
+TopLine=25
+Caret=48,36

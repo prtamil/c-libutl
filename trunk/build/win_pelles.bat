@@ -1,6 +1,6 @@
 ::  (C) by Remo Dentato (rdentato@gmail.com)
 :: 
-:: This sofwtare is distributed under the terms of the BSD license:
+:: This software is distributed under the terms of the BSD license:
 ::   http://creativecommons.org/licenses/BSD/
 ::   http://opensource.org/licenses/bsd-license.php 
 ::
@@ -27,27 +27,29 @@ pocc %CFLAGS% %NO_ASM% pmx.c
 polib *.obj /OUT:libutl.lib
 
 copy *.obj ..\dist
+copy libutl.lib ..\dist
+copy libutl.h ..\dist
 
 cd ..\examples\uncomment
 
-pocc %CFLAGS% /I..\..\src unc.c
-polink unc.obj ..\..\src\libutl.lib
+pocc %CFLAGS% /I..\..\dist unc.c
+polink unc.obj ..\..\dist\libutl.lib
 unc < ..\..\src\libutl.h > ..\..\dist\libutl.h    
 
 :: --------- pmx2c ------------
 echo Building pmx2c tool
 
 cd ..\pmx2c
-pocc %CFLAGS% /I..\..\src pmx2c_boot.c
-polink pmx2c_boot.obj ..\..\src\libutl.lib /OUT:pmx2a.exe
+pocc %CFLAGS% /I..\..\dist pmx2c_boot.c
+polink pmx2c_boot.obj ..\..\dist\libutl.lib /OUT:pmx2a.exe
 pmx2a pmx2c.pmx pmx2c.c
  
-pocc %CFLAGS% /I..\..\src pmx2c.c
-polink pmx2c.obj ..\..\src\libutl.lib /OUT:pmx2b.exe
+pocc %CFLAGS% /I..\..\dist pmx2c.c
+polink pmx2c.obj ..\..\dist\libutl.lib /OUT:pmx2b.exe
 pmx2b pmx2c.pmx pmx2c.c
   
-pocc %CFLAGS% /I..\..\src pmx2c.c
-polink pmx2c.obj ..\..\src\libutl.lib /OUT:pmx2c.exe
+pocc %CFLAGS% /I..\..\dist pmx2c.c
+polink pmx2c.obj ..\..\dist\libutl.lib /OUT:pmx2c.exe
 copy pmx2c.exe ..\..\dist
 
 del pmx2c.c
@@ -58,9 +60,9 @@ echo Building pmxshell tool
 cd ..\pmxshell
 
 ..\..\dist\pmx2c pmxshell.pmx pmxshell.c
-pocc %CFLAGS% /I..\..\src pmxshell.c
+pocc %CFLAGS% /I..\..\dist pmxshell.c
 del pmxshell.c
-polink pmxshell.obj ..\..\src\libutl.lib /OUT:pmxshell.exe
+polink pmxshell.obj ..\..\dist\libutl.lib /OUT:pmxshell.exe
 copy pmxshell.exe ..\..\dist
 
 :: --------- DONE ------------
