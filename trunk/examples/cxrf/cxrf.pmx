@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
                 c = *pmx(End,0);
                 *pmx(End,0) = '\0';
                 k=tblGetSN(identifiers,pmx(Start,0),0);            
-                identifiers = tblSetSN(identifiers,pmx(Start,0),k+1);                
+                tblSetSN(identifiers,pmx(Start,0),k+1);                
                 *pmx(End,0) = c;                
                 break;   
                 
@@ -91,12 +91,12 @@ int main(int argc, char *argv[])
     }
   }
   
-  printf("Total: %d\n",tblCount(identifiers));
+  printf("Total: %ld\n",tblCount(identifiers));
   
   if (outf != stdout) fclose(outf);
   if (inf  != stdin)  fclose(inf);
   fclose(tmpf);
-  identifiers=tblFree(identifiers);
-  ln = chsFree(ln);
+  tblFree(identifiers);
+  chsFree(ln);
   exit (0);  
 }

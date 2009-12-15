@@ -254,7 +254,7 @@ void print_escaped(char *s,long len)
 
 void do_test(char *txttomatch, int txtindex, int verbose)
 {
-  pmxMatches_t ret;
+  pmx_t ret;
   int k;
   chs_t 
 
@@ -358,7 +358,7 @@ void cmd_export(char *arg)
   }
 }
 
-int do_trace(char *text, pmxMatches_t mtc,int verbose)
+int do_trace(char *text, pmx_t mtc,int verbose)
 {
   int k;
   
@@ -379,10 +379,10 @@ int do_trace(char *text, pmxMatches_t mtc,int verbose)
   return 0;
 }
 
-int do_trace_verbose(char *text, pmxMatches_t mtc)
+int do_trace_verbose(char *text, pmx_t mtc)
 {return do_trace(text,mtc,1);}
 
-int do_trace_notverbose(char *text, pmxMatches_t mtc)
+int do_trace_notverbose(char *text, pmx_t mtc)
 {return do_trace(text,mtc,0);}
 
 void tracex(char *arg, int verbose)
@@ -688,7 +688,7 @@ void cmd_help(char *arg)
                                       
 void init_cmd()                       
 {
-  #define cmdtbl(x) cmd = tblSetSP(cmd,#x,cmd_##x)
+  #define cmdtbl(x) tblSetSP(cmd,#x,cmd_##x)
       cmdtbl(add);
       cmdtbl(list);
       cmdtbl(help);

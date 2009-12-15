@@ -301,7 +301,7 @@ over an alternative expressions that failed.
 .% pmx API '<pmxapi>
 """"""""""
 
-   pmx functions use objects of type '{pmxMatches_t} to keep track of 
+   pmx functions use objects of type '{pmx_t} to keep track of 
 what's has been matched. From and API perspective, it has to be treated
 as an '/opaque/ pointer; inner details can be found in the '<pmx.c=pmx.c#matchinfo>
 file.
@@ -310,7 +310,9 @@ file.
 #define pmxCaptMax 10
 
 typedef size_t pmxMatches[pmxCaptMax+1][2];
-typedef pmxMatches *pmxMatches_t;
+typedef pmxMatches *pmx_t;
+
+//#define pmxMatches_t pmx_t 
 
 extern int pmx_capt_cur;
 
@@ -325,12 +327,12 @@ extern int pmx_capt_cur;
 
   The simplest way to match a string against a pattern is to use the
 '{=pmxMatchStr()} function.
-  Upon a successuful match, it returns a pointer of type '|pmxMatches_t| that
+  Upon a successuful match, it returns a pointer of type '|pmx_t| that
 can be used to retrieve information on the match. 
   If no the string desn't match, '|NULL| is returned.
 */
 
-pmxMatches_t pmxMatchStr(char *text, char *p);
+pmx_t pmxMatchStr(char *text, char *p);
 
 /*
 
@@ -377,13 +379,13 @@ typically the value returned by a '{pmxMatchStr()} function call.
   ..  
 */
 
-int           pmxMatched (pmxMatches_t mtc);
+int           pmxMatched (pmx_t mtc);
 
-size_t        pmxLen     (pmxMatches_t mtc, unsigned char n);
-size_t        pmxStart   (pmxMatches_t mtc, unsigned char n);
-size_t        pmxEnd     (pmxMatches_t mtc, unsigned char n);
+size_t        pmxLen     (pmx_t mtc, unsigned char n);
+size_t        pmxStart   (pmx_t mtc, unsigned char n);
+size_t        pmxEnd     (pmx_t mtc, unsigned char n);
 
-unsigned char pmxToken(pmxMatches_t mtc);
+unsigned char pmxToken(pmx_t mtc);
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
@@ -468,7 +470,7 @@ otherwise  the scanner stops and '{pmxScanStr()} returns that value.
   Callback functions must be of type '{=pmxScanFun_t types}. 
 */
 
-typedef int (*pmxScanFun_t)(char *txt, pmxMatches_t mtc);
+typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
@@ -488,7 +490,7 @@ different types of scanners.
 
 extern char *pmx_tmpstr;
 extern char *pmx_tmpptrn;
-extern pmxMatches_t pmx_tmpmtc;
+extern pmx_t pmx_tmpmtc;
 
 /*
 .%% Token scanners '<tokscanner>

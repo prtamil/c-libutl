@@ -39,7 +39,6 @@ your project.
 compilers.
   .[PellesC]
    [Visual C++ Express]
-   [Borland C++ 5.1]
    [Open Watcom]
   ..
 
@@ -101,7 +100,8 @@ documentation that's why I provided a set of them in the '|examples| directory.
    ['|fmt|]        A light markup text formatter to extract documentation
                    from the library source file.
                    
-   ['|macro|]      A simple macro system inspired by '<musicpad:http://l01c.ouvaton.org/musicpad-help.html>
+   ['|macro|]      A simple macro system inspired by 
+                   '<musicpad:http://l01c.ouvaton.org/musicpad-help.html>
   .. 
 
   

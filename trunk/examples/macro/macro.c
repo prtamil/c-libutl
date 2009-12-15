@@ -48,7 +48,7 @@ chs_t rpl  = NULL;
 vec_t args = NULL;
 
 
-char *getmacro(char *str, pmxMatches_t capt)
+char *getmacro(char *str, pmx_t capt)
 {
   char *name;
   char c;
@@ -68,7 +68,7 @@ char *getmacro(char *str, pmxMatches_t capt)
   if (pmxLen(capt,3) > 0)
     chsAddStrL(body,str+pmxStart(capt,3)+1,pmxLen(capt,3)-2);   
 
-  macros = tblSetSS(macros,name,body);
+  tblSetSS(macros,name,body);
   
   name[pmxLen(capt,2)] = c;
   
@@ -77,7 +77,7 @@ char *getmacro(char *str, pmxMatches_t capt)
 }
 
 
-char *subargs(char *str, pmxMatches_t capt)
+char *subargs(char *str, pmx_t capt)
 { 
   int k;
   char *r;
@@ -88,7 +88,7 @@ char *subargs(char *str, pmxMatches_t capt)
   return (r? r : utlEmptyString);
 }
 
-char *submacro(char *str, pmxMatches_t capt)
+char *submacro(char *str, pmx_t capt)
 {
   char *name;
   char *bd;
@@ -116,7 +116,7 @@ char *submacro(char *str, pmxMatches_t capt)
   
   name[pmxLen(capt,1)] = c;
 
-  args = vecFree(args);
+  vecFree(args);
   if (pmxLen(capt,2)>2) {  
     name = str+pmxStart(capt,2);
     c = name[pmxLen(capt,2)]; 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
   
   if (argc < 2) usage(); 
     
-  macros = tblNew();
+  tblNew(macros);
   if (!macros) merr("Unable to create table for macro");
   
   chsNew(body);
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
   fputs("-----------------\n",stdout);
   
   chsFree(text);
-  macros = tblFree(macros);
+  tblFree(macros);
   chsFree(body);
   
   exit(0);
