@@ -10,6 +10,7 @@
 #include "libutl.h"
 
 #include <assert.h>
+#include <ctype.h>
 
 char *lorem =
   "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. "
@@ -173,7 +174,54 @@ int main(void)
       chsReverse(buf);
       TST("Reverse",strcmp(buf,"cba")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
-    }    
+    } 
+    
+    TSTGROUP("Delete") {
+      chsCpy(buf,"012345678");
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      chsDel(buf,4,4) ;     
+      TST("Del 4,4",strcmp(buf,"01235678")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      chsDel(buf,2,3) ;     
+      TST("Del 2,3",strcmp(buf,"015678")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      chsDel(buf,4,-1);      
+      TST("Del 4,-1",strcmp(buf,"0156")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      chsDel(buf,0,1);      
+      TST("Del 0,1",strcmp(buf,"56")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      chsDel(buf,0,-1);      
+      TST("Del 0,-1",*buf == '\0');
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    }
+        
+    TSTGROUP("Trim") {
+      chscpy(buf,"xxyxxabcxxyxx");
+      TSTWRITE("# >> [%2ld]  \"%s\"\n",chslen(buf),buf);
+      k=chslen(buf);
+      chstrim(buf,"x",NULL);
+      TST("trim x left", k == chslen(buf)+2);
+      TSTWRITE("# >> [%2ld]  \"%s\"\n",chslen(buf),buf);
+      k=chslen(buf);
+      chstrim(buf,NULL,"x");
+      TST("trim x right", k == chslen(buf)+2);
+      TSTWRITE("# >> [%2ld]  \"%s\"\n",chslen(buf),buf);
+      k=chslen(buf);
+      chstrim(buf,"xy","xy");
+      TST("trim xy right and left", k == chslen(buf)+6);
+      TSTWRITE("# >> [%2ld]  \"%s\"\n",chslen(buf),buf);
+    }
+    
+    TSTGROUP ("Formatting") {
+      chscpyf(buf,"x:%d, y:%d, d:%c",3,4,'N');
+      TST("Format 1",strcmp(buf,"x:3, y:4, d:N")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+
+      chscpyf(buf,"x:%02d, y:%05.2f, d:%s",3,4.3,"NE");
+      TST("Format 2",strcmp(buf,"x:03, y:04.30, d:NE")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    }
   }  
   TSTDONE();
   
