@@ -184,9 +184,10 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 /* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */
-
+/*
 UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
-
+*/
+#define utlErrInternal "Internal error"
 /* .% UnitTest
 ** ===========
 **
