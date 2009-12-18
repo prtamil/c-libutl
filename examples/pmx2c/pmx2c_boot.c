@@ -39,8 +39,7 @@ int main(int argc, char *argv[])
     outf = fopen(argv[2],"w");
   if (!outf) utlError(204,"Unable to open output file");
 
-  for (ln = chsReadln(ln, inf, 'w'); chsLen(ln) > 0;
-                                                 ln = chsReadln(ln, inf, 'w')) {
+  for (chsReadln(ln, inf, 'w'); chsLen(ln) > 0; chsReadln(ln, inf, 'w')) {
     cur = ln;
     _dbgmsg("LINE: %s\n",cur);
     while (*cur) {
