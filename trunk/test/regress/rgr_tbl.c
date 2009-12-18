@@ -122,7 +122,7 @@ int main(void)
       str = tblGetSS(tt,"xx",NULL);
       TST("GetSS non existant", !str);
       
-      tt = tblFree(tt);
+      tblFree(tt);
       
       #endif
       
