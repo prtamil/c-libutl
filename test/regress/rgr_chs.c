@@ -223,6 +223,8 @@ int main(void)
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     }
   }  
+  
+  chsFree(buf);
   TSTDONE();
   
   return 0;
