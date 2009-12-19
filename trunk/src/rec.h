@@ -1,6 +1,32 @@
+#include <stdio.h>
+enum {a,b,c} x;
+int v[c];
+//int c = 3;
+int main()
+{
+  printf("** %d %d\n",c,sizeof(v));
+  return (0);
+}
+
 #if 0
 
+typedef rec(x,y,z) r_t;
 
+enum 
+
+
+
+
+r_t my_r;
+
+recNew(my_r);
+
+my_r->getR(x);
+
+recGetR(my_r,x);
+
+
+#if 0
 
 rec(pippo,
   int k;
@@ -123,3 +149,4 @@ int main()
   recFree(r); 
 }
 
+#endif

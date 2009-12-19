@@ -84,7 +84,6 @@ as implemented by the '{=chs_blk_t} structure below.
 typedef struct {
   long size;
   long len;
-  long cur;
   char chs[chs_blk_inc];
 } chs_blk_t;
 
@@ -169,42 +168,14 @@ chs_t chs_setsize(chs_t s, long ndx);
 
 #define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len  : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
-#define chsCur(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->cur  : 0)
 
 
 /*  .%% Strings as streams
     ''''''''''''''''''''''
-  These functions provide a stream-like access to a '|chs| string.
 
-  .['|chsSeek(s,p,w)|]
-        Moves the current cursor in the string at the specified
-        offset. The argument '|w| is one of the costants '|SEEK_SET|,
-        '|SEEK_END| and '|SEEK_CUR| defined by in '|<stdio.h>|.
-  
-   ['|chsTells(s)|]
-        Returns the offset of the cursor from the beginning of the file. 
-   
-   ['|chsEof(s)|]  
-        Returns true if the cursor is at the end of the string;
-        
-   ['|chsGetChr(s)|]  
-        Returns the character at the current cursor position;
-
-   ['|chsChrAt(s,n)|]  
-        Returns the character at the position n. The cursor will be
-        moved on the next character;
-
-   ['|chsSetChr(s,n,c)|]  
-        Writes the character '|c| at the position '|n|. The cursor will be
-        moved on the next character;
 
   .. 
 */
-
-int    chsSeek   (chs_t dst, long pos, int whence);
-size_t chsTell   (chs_t dst);
-int    chsEof    (chs_t s);
-int    chsGetChr (chs_t s);
 
 char   chsChrAt  (chs_t s, long ndx);
 
@@ -256,7 +227,13 @@ is the last character of the string).
         and insert it into d at the speficied index n. 
         
    ['|chsDel(d,b,e)|]
-        Deletes the content of the string from the index '|b| to the index '|e|. 
+        Deletes the content of the string from the index '|b| to the index '|e|.
+         
+   ['|chsChrAt(s,n)|]  
+        Returns the character at the position n.
+
+   ['|chsSetChr(s,n,c)|]  
+        Writes the character '|c| at the position '|n|. 
   ..    
 */
 

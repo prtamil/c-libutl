@@ -43,7 +43,6 @@ chs_t chs_setsize(chs_t s, long ndx)
     cb->size = sz + chs_blk_inc;
   }
   if (s == NULL) {  /* created a fresh string */
-    cb->cur    = 0;
     cb->len    = 0;
     cb->chs[0] = '\0';
   }
@@ -58,7 +57,6 @@ chs_t chs_Set(chs_t s, long ndx, char c)
 
   s[ndx] = c;
   cb = chs_blk(s);
-  cb->cur = ndx;
   
   if (c == '\0') 
     cb->len = ndx;
@@ -74,50 +72,9 @@ char chsChrAt(chs_t s, long ndx)
 {
   ndx = fixndx(s,ndx);
   if (s && ndx < chsLen(s)) {
-    chs_blk(s)->cur = ndx+1;
     return s[ndx];
   }
   return '\0';
-}
-
-int chsGetChr(chs_t s)
-{
-  chs_blk_t *cb;
-  
-  if (!s) return EOF;
-
-  cb = chs_blk(s);
-
-  if (cb->cur == EOF) return EOF;
-  if (cb->cur >= cb->len) return (cb->cur = EOF);
-  return s[cb->cur++];  
-}
-
-int chsEof(chs_t s)
-{
-  return (s? chs_blk(s)->cur == EOF : 1);
-}
-
-int chsSeek(chs_t dst, long pos, int whence)
-{
-  if (dst) {
-    switch (whence) {
-      case SEEK_END : pos += chsLen(dst); break;
-      case SEEK_CUR : pos += chsCur(dst) ; break; 
-      case SEEK_SET : 
-           default  : break;
-    }
-    _dbgmsg("\tpos:%d\n",pos);
-    if (pos > chsLen(dst)) pos = chsLen(dst);
-    if (pos < 0) pos = 0;
-    chs_blk(dst)->cur = pos;
-  }
-  return 0;
-}
-
-size_t chsTell(chs_t dst)
-{
-  return (size_t)chsCur(dst);
 }
 
 chs_t chs_CpyL(chs_t dst, char *src, long len)
@@ -127,7 +84,6 @@ chs_t chs_CpyL(chs_t dst, char *src, long len)
   if (src && len > 0) {
     strncpy(dst, src, len);
   }  
-  chs_blk(dst)->cur = len; 
   return dst;
 }
 
@@ -144,7 +100,6 @@ chs_t chs_AddChr(chs_t dst, char c)
   long k = chsLen(dst);
   chsSetChr(dst, k+1, '\0');
   dst[k] = c;
-  chs_blk(dst)->cur = k+1;
   return dst;
 }
 
@@ -155,7 +110,6 @@ chs_t chs_AddStrL(chs_t dst, char *src, long len)
     k = chsLen(dst);
     chsSetChr(dst, k+len, '\0');
     strncpy(dst+k, src, len);
-    chs_blk(dst)->cur = chs_blk(dst)->len;
   } 
   return dst;
 }
@@ -175,7 +129,6 @@ chs_t chs_InsChr(chs_t dst, long ndx, char c)
   if (ndx < chsLen(dst)-1) 
     memmove(dst+ndx+1, dst+ndx, chsLen(dst)-1 - ndx );
   dst[ndx] = c;
-  chs_blk(dst)->cur = ndx+1;
   return dst;
 }
 
@@ -194,7 +147,6 @@ chs_t chs_InsStrL(chs_t dst, long ndx, char *src, long len)
       memmove(dst+ndx+len, dst+ndx, k - ndx );
       strncpy(dst+ndx,src,len);
       /*chs_blk(dst)->len += len;*/
-      chs_blk(dst)->cur = ndx+len;
     }
   }
   return dst;
@@ -218,14 +170,12 @@ chs_t chs_Del(chs_t dst, long from, long to)
     if (to >= from) { 
       if (to == len) {
         chs_blk(dst)->len -= (to-from);   
-        chs_blk(dst)->cur  = from;
       }
       else {
         memmove(dst+from, dst+to+1, len - to);
         chs_blk(dst)->len -= (to+1-from);   
       }
       dst[chs_blk(dst)->len] = '\0';
-      chs_blk(dst)->cur  = from;
     }   
   }
   return dst;
@@ -263,8 +213,6 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   if (tolower(how) != 'a') 
     chs_blk(dst)->len = 0 ;
        
-  chs_blk(dst)->cur = chs_blk(dst)->len ;
-  
   if (what == 'A') { /* read rest of the file */
     while ((k = fread(chs_buf,1,chs_buf_size,f)) > 0) {
       chsAddStrL(dst, chs_buf,k);
@@ -312,7 +260,6 @@ pmx_t chsMatch(chs_t s, long from, char *pat)
     for (k = 0; k<pmxCaptMax; k++) {
       (*ret)[k][0] += from; (*ret)[k][1] += from;
     }
-    chs_blk(s)->cur = from+pmxStart(ret,0);    
   }
   return ret;
 }

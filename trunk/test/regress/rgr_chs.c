@@ -31,11 +31,10 @@ char *uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 int main(void)
 {
-  int k;
+  int k = 0;
   chs_t buf = NULL;
   FILE *f;
-  size_t pos;
-  char ln[256];
+  /*char ln[256];*/
  
   TSTTITLE("");
   
@@ -47,7 +46,6 @@ int main(void)
       TST("String created", buf != NULL);
       TST("Size is one slot", chsSize(buf) == chs_blk_inc);
       TST("Length is 0", chsLen(buf) == 0);
-      TST("Cur is 0", chsCur(buf) == 0);
       
       chsCpy(buf, uppers);
       k = chsLen(buf);
@@ -61,13 +59,8 @@ int main(void)
       TSTWRITE("# Check that next lines don't have MNOP in it!\n");
       TSTWRITE("# >>  \"%s\"\n",buf);
     
-      k = chsGetChr(buf);
-      TST("Cur char is Q", k == 'Q');
-      
       k = chsChrAt(buf,'L'-'A');
       TST("ChrAt in the middle", k == 'L');
-      k = chsGetChr(buf);
-      TST("GetChr after ChrAt ", k == 'Q');
     
       k = chsLen(buf);
       chsDel(buf, -4, -1);
