@@ -1,7 +1,7 @@
 /* 
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
-** This sofwtare is distributed under the terms of the BSD license:
+** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
 **   http://opensource.org/licenses/bsd-license.php 
 */
@@ -316,5 +316,6 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup);
 
 int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
+
 
 #endif
