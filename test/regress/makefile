@@ -10,9 +10,13 @@ TOP=../../
 
 include $(TOP)config.mk
 
-RGR_TESTS=rgr_vec$(_EXE) rgr_chs$(_EXE) rgr_tbl$(_EXE)  
+RGR_TESTS = rgr_rec$(_EXE) rgr_vec$(_EXE) \
+            rgr_chs$(_EXE) rgr_tbl$(_EXE)
 
 all: $(RGR_TESTS)
+
+rgr_rec$(_EXE): $(CHKLIB) rgr_rec$(_OBJ)
+	$(LN)$@ rgr_rec$(_OBJ) -lutl
 
 rgr_vec$(_EXE): $(CHKLIB) rgr_vec$(_OBJ)
 	$(LN)$@ rgr_vec$(_OBJ) -lutl

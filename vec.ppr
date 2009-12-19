@@ -15,7 +15,7 @@ FileFormat=1
 ProjectFilesOnly=0
 [Project tree]
 vec
-	+build
+	-build
 		build\win_visualc.bat
 		build\win_clean.bat
 		build\unix_gcc.sh
@@ -23,7 +23,7 @@ vec
 	+vec
 		+doc
 			doc\stk.gif
-		+examples
+		-examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -76,12 +76,14 @@ vec
 			src\makefile
 			src\hif.h
 			src\hif.c
+			src\rec.h
 		+test
 			+regress
 				test\regress\rgr_tbl.c
 				test\regress\rgr_chs.c
-				test\regress\makefile
 				test\regress\rgr_vec.c
+				test\regress\rgr_rec.c
+				test\regress\makefile
 			+stress
 				test\stress\sts_add.lua
 				test\stress\makefile
@@ -98,50 +100,62 @@ vec
 5=src\utl.h
 6=test\regress\rgr_tbl.c
 7=examples\macro\macro.c
-8=src\rec.h
-9=src\tbl.h
-10=Nuovo1.c
-11=src\rec.c
-12=src\v.lua
+8=src\tbl.h
+9=src\rec.h
+10=src\rec.c
+11=test\regress\rgr_rec.c
+12=test\regress\makefile
+13=makefile
+14=src\makefile
+15=test\regress\r.c
 [Selected Project Files]
 Main=
-Selected=Nuovo1.c
+Selected=test\regress\rgr_rec.c
 [src\chs.c]
 TopLine=31
 Caret=17,54
 [src\chs.h]
-TopLine=176
+TopLine=30
 Caret=1,181
 [test\regress\rgr_chs.c]
-TopLine=22
-Caret=20,37
+TopLine=1
+Caret=1,11
 [src\pmx.h]
 TopLine=315
 Caret=56,359
 [doc\chs_doc.h]
-TopLine=13
+TopLine=10
 Caret=12,29
 [src\utl.h]
 TopLine=159
 Caret=1,187
 [test\regress\rgr_tbl.c]
-TopLine=103
+TopLine=100
 Caret=1,144
 [examples\macro\macro.c]
 TopLine=136
 Caret=51,158
-[src\rec.h]
-TopLine=1
-Caret=41,85
 [src\tbl.h]
 TopLine=1
 Caret=1,1
-[Nuovo1.c]
-TopLine=1
-Caret=1,40
+[src\rec.h]
+TopLine=29
+Caret=37,65
 [src\rec.c]
-TopLine=43
-Caret=31,106
-[src\v.lua]
 TopLine=1
-Caret=1,7
+Caret=7,19
+[test\regress\rgr_rec.c]
+TopLine=2
+Caret=6,25
+[test\regress\makefile]
+TopLine=1
+Caret=18,16
+[makefile]
+TopLine=6
+Caret=1,1
+[src\makefile]
+TopLine=12
+Caret=12,39
+[test\regress\r.c]
+TopLine=991
+Caret=1,998
