@@ -10,6 +10,7 @@
 #ifndef REC_H
 #define REC_H
 
+
 struct rec_f_t {
   int size;
   int   (*cmp)  (void * , void *) ;
@@ -29,27 +30,24 @@ typedef struct { struct rec_f_t  *rec_f; } rec_t;
     void (*free) (t *) ;\
   }; \
   int    t##_cmp(t *a, t *b); \
-  t     *t##_cpy(t *a, t *b);\
+  void   t##_cpy(t *a, t *b);\
   void   t##_free(t *a); \
-  void  *t##_init(t *);
+  void   t##_init(t *);
 
-#define recNew(t,r)  (r = t##_new())
-
-#define recFunFree(t,x)    void t##_free(t *a)
+#define recFunFree(t,x) void t##_free(t *x)
 
 #define recFree(r)   \
-  (r = (r ? ((r)->rec_f.free(r),free(r),NULL):NULL); 
-
+  (r = (r ? ((r)->rec_f->free(r),free(r),NULL):NULL)) 
 
 #define recFunCmp(t,x,y)   int  t##_cmp(t *a, t *b)
 
-#define recCpy(a,b) rec_cpy(rec_t)
+#define recCpy(a,b) (a = rec_cpy((rec_t *)a,(rec_t *)b))
 
-#define recFunCpy(t,x,y)   int  t##_cpy(t *a, t *b)
+#define recFunCpy(t,x,y)   void t##_cpy(t *a, t *b)
 
-#define recFunNew(t,x)    \
+#define recFunNew(t,x) \
     static struct rec_##t##_f rec_##t##_func; \
-    void *t##_new() {\
+    t *t##_new() {\
       t *p = NULL;\
       rec_##t##_func.size = sizeof(t);\
       rec_##t##_func.cmp = t##_cmp;\
@@ -57,49 +55,15 @@ typedef struct { struct rec_f_t  *rec_f; } rec_t;
       rec_##t##_func.free = t##_free;\
       p = calloc(1,sizeof(t));\
       if (p) {\
-        p->rec_f = rec_##t##_func;\
+        p->rec_f = &rec_##t##_func;\
         t##_init(p);\
       }\
       return p;\
     }\
     void t##_init(t *p)
 
-#define recSize(a) ((a)->rec_f.size)
+#define recNew(t,r)  (r = t##_new())
 
-/**** .h ****/
-rec(pippo,
-  int k;
-  int v;
-);
-
-/**** .a ****/
-
-void *rec_cpy(rec_t *a, struct rec_t *b) 
-{
-  if (b != a) { 
-    if (!b)  recFree(a);
-    else {
-      if (!a) a = malloc(recSize(b));
-      if (!a) utlError(8912,utlErrInternal);
-      memcpy(a,b,recSize(b));
-      b->rec_f.cpy((void *)a,(void *)b);
-    }
-  }
-  return a;
-}
-
-/**** .c ****/
-recFunNew(pippo, a) { }
-recFunCpy(pippo,a,b) { memcpy(a,b,sizeof(pippo));}
-recFunCmp(pippo, a,b) { memcmp(a,b,sizeof(pippo));}
-recFunFree(pippo, a) { }
-
-int main()
-{
-  pippo *rr;
-  
-  recNew(pippo,r);
-  recFree(r); 
-}
+#define recSize(a) ((a)->rec_f->size)
 
 #endif
