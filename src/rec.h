@@ -1,117 +1,70 @@
-#include <stdio.h>
-enum {a,b,c} x;
-int v[c];
-//int c = 3;
-int main()
-{
-  printf("** %d %d\n",c,sizeof(v));
-  return (0);
-}
-
-#if 0
-
-typedef rec(x,y,z) r_t;
-
-enum 
+/* 
+**  (C) by Remo Dentato (rdentato@gmail.com)
+** 
+** This software is distributed under the terms of the BSD license:
+**   http://creativecommons.org/licenses/BSD/
+**   http://opensource.org/licenses/bsd-license.php 
+*/
 
 
-
-
-r_t my_r;
-
-recNew(my_r);
-
-my_r->getR(x);
-
-recGetR(my_r,x);
-
-
-#if 0
-
-rec(pippo,
-  int k;
-vec_t v;
-)
-
-typedef struct {
-  size_t size;
-  int (*)(void * , void *) cmp;
-  void *(*)(void * , void *) cpy;
-  void (*)(void *) free;
-} rec_func_t;
-
-typedef struct pippo  {
-  rec_func_t *rec_func;
-  int k;
-  vec_t v;
-
-} pippo; 
-
-int pippo_cmp(void *a, void *b);
-void *pippo_cpy(void *a, void *b);
-void   pippo_free(void *a);
-
-recFunCpy(pippo,x,y) 
-{
-
-}
-
-#endif
+#ifndef REC_H
+#define REC_H
 
 struct rec_f_t {
   int size;
-  int (*cmp)(void * , void *) ;
-  t *(*cpy)(void * , void *) ;
-  void (*free)(void *) ;
+  int   (*cmp)  (void * , void *) ;
+  void *(*cpy)  (void * , void *) ;
+  void  (*free) (void *) ;
 };
  
-typedef struct { struct rec_f_t  *f; } rec_t;
+typedef struct { struct rec_f_t  *rec_f; } rec_t;
 
 #define rec(t,y) \
   struct rec_##t##_f;\
   typedef struct t { struct rec_##t##_f *rec_f; y } t; \
   struct rec_##t##_f {\
-    int size;\
-    int (*cmp)(t * , void *) ;\
-    t *(*cpy)(t * , t *) ;\
-    void (*free)(t *) ;\
+    int    size;\
+    int  (*cmp)  (t * , t *) ;\
+    t   *(*cpy)  (t * , t *) ;\
+    void (*free) (t *) ;\
   }; \
   int    t##_cmp(t *a, t *b); \
   t     *t##_cpy(t *a, t *b);\
   void   t##_free(t *a); \
-  void   t##_init_func(void);\
-  void  *t##_init(void *);
+  void  *t##_init(t *);
 
-#define recNew(t,r)  \
-  (r = t##_new())
+#define recNew(t,r)  (r = t##_new())
 
 #define recFunFree(t,x)    void t##_free(t *a)
+
 #define recFree(r)   \
   (r = (r ? ((r)->rec_f.free(r),free(r),NULL):NULL); 
-
-#define recFunCpy(t,x,y)   int  t##_cpy(t *a, t *b)
 
 
 #define recFunCmp(t,x,y)   int  t##_cmp(t *a, t *b)
 
+#define recCpy(a,b) rec_cpy(rec_t)
+
+#define recFunCpy(t,x,y)   int  t##_cpy(t *a, t *b)
+
 #define recFunNew(t,x)    \
     static struct rec_##t##_f rec_##t##_func; \
-    void t##_init(void *p);\
     void *t##_new() {\
       t *p = NULL;\
       rec_##t##_func.size = sizeof(t);\
       rec_##t##_func.cmp = t##_cmp;\
       rec_##t##_func.cpy = t##_cpy;\
       rec_##t##_func.free = t##_free;\
-      p= calloc(1,sizeof(t));\
+      p = calloc(1,sizeof(t));\
       if (p) {\
         p->rec_f = rec_##t##_func;\
         t##_init(p);\
       }\
       return p;\
     }\
-    void t##_init(void *p)
+    void t##_init(t *p)
 
+#define recSize(a) ((a)->rec_f.size)
 
 /**** .h ****/
 rec(pippo,
@@ -121,17 +74,17 @@ rec(pippo,
 
 /**** .a ****/
 
-void *rec_cpy(struct rec_f_t *a, struct rec_f_t *b) 
+void *rec_cpy(rec_t *a, struct rec_t *b) 
 {
   if (b != a) { 
-    if (b == NULL)  recFree(a);
+    if (!b)  recFree(a);
     else {
-      if (!a) a = malloc(b->size);
+      if (!a) a = malloc(recSize(b));
       if (!a) utlError(8912,utlErrInternal);
-      memcpy(a,b,b->size);
+      memcpy(a,b,recSize(b));
+      b->rec_f.cpy((void *)a,(void *)b);
     }
   }
-  
   return a;
 }
 
