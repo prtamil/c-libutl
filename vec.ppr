@@ -110,12 +110,12 @@ vec
 15=test\regress\r.c
 [Selected Project Files]
 Main=
-Selected=test\regress\rgr_rec.c
+Selected=src\rec.h
 [src\chs.c]
 TopLine=31
 Caret=17,54
 [src\chs.h]
-TopLine=30
+TopLine=137
 Caret=1,181
 [test\regress\rgr_chs.c]
 TopLine=1
@@ -139,13 +139,13 @@ Caret=51,158
 TopLine=1
 Caret=1,1
 [src\rec.h]
-TopLine=29
-Caret=37,65
+TopLine=6
+Caret=23,24
 [src\rec.c]
 TopLine=1
 Caret=7,19
 [test\regress\rgr_rec.c]
-TopLine=2
+TopLine=1
 Caret=6,25
 [test\regress\makefile]
 TopLine=1
@@ -154,8 +154,8 @@ Caret=18,16
 TopLine=6
 Caret=1,1
 [src\makefile]
-TopLine=12
+TopLine=9
 Caret=12,39
 [test\regress\r.c]
-TopLine=991
+TopLine=976
 Caret=1,998
