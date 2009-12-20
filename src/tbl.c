@@ -565,7 +565,10 @@ vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
     vecSetCount(vt, nkey);
   
   slot = vt->slot + nkey;
+  val_del(vec_valtype(slot),slot->val);
+
   vec_valtype(slot) = tv;
+  
   if (tv == 'N') 
     slot->val.n = nval;
   else if (tv == 'F') 
@@ -614,7 +617,7 @@ val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef, float fdef)
   return vt->slot[nkey].val;
 }
 
-vec_t vecDel(vec_t vt, long kfrom, long kto)
+vec_t vec_Del(vec_t vt, long kfrom, long kto)
 { 
   int k; 
   if (!vt || vt->count == 0) return vt;

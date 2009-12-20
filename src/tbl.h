@@ -260,7 +260,9 @@ extern vec_t vec_tmp;
 vec_t vec_new(long nslots);
 #define vecNew(v) (v = vec_new(2))
 
-vec_t vecDel(vec_t vt, long kfrom, long kto);
+vec_t vec_Del(vec_t vt, long kfrom, long kto);
+#define vecDel(v,f,t) (v = vec_Del(v,f,t))
+
 vec_t vecMove(vec_t vt, long kfrom, long kto);
 
 vec_t vec_free(vec_t vt, char wipe);
@@ -307,7 +309,6 @@ vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval, float fval);
 #define vecInsV(tb,k,v)  vec_Ins(tb,  k, 'V', 0, v        , 0.0)
 #define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v        , 0.0)
 
-vec_t vec_del(vec_t tb, long kfrom, long kto);
 
 
 /* .%% Other functions
