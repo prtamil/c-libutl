@@ -22,3 +22,11 @@ void *rec_cpy(rec_t *a, rec_t *b)
   return a;
 }
 
+int rec_cmp(rec_t *a, rec_t *b)
+{
+   if (a == b) return 0;
+   if (!a) return 1;
+   if (!b) return -1;
+   if (a->rec_f != b->rec_f) return (recPtrCmp(a->rec_f,b->rec_f));
+   return (a->rec_f->cmp(a,b));
+}

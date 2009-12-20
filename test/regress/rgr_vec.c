@@ -111,6 +111,15 @@ int main(void)
          if (ss) TSTNOTE("%4ld %s",kk,ss);
        }
     }
+    
+    TSTGROUP("Float Values") {
+      float fv;
+      vecFree(vt);
+      fv = 3.14;
+      vecSetF(vt,3,fv);
+      TST("Float inserted", vecGetF(vt,3,0.0) == fv);
+    }
+    
     vecFree(vt);
     TST("VEC destroyed: count = 0", vt == NULL && vecCount(vt) == 0);
   }
@@ -122,6 +131,9 @@ int main(void)
     TSTGROUP ("Create") {
       vecSetV(vt,7,vecNew(vt2));
       TST("v of v created", vt2 != NULL && vt2 == vecGetV(vt,7,NULL));
+      TSTIF_NOTOK {
+        TSTNOTE("vt=%p count:%ld", vt,vecCount(vt)); 
+      }
     }
   }
   

@@ -96,8 +96,10 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
                              case 'S' : chsFree((v).p); break; \
                              case 'T' : tblFree((v).p); break; \
                              case 'V' : vecFree((v).p); break; \
+                             case 'R' : recFree((v).p); break; \
                              case 'P' : (v).p = NULL; \
                              case 'N' : (v).n = 0; \
+                             case 'F' : (v).f = 0.0; \
                            }\
                       } while (utlZero)
 
@@ -330,21 +332,8 @@ tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey)
     }
     
     val_del(tbl_keytype(cur_slot),cur_slot->key);
-/*
-    switch (tbl_keytype(cur_slot)) {
-      case 'S' : chsFree(cur_slot->key.p); break;
-      case 'T' : tblFree(cur_slot->key.p); break;
-      case 'V' : vecFree(cur_slot->key.p); break;
-    }
-*/    
     val_del(tbl_valtype(cur_slot),cur_slot->val);
-/*    
-    switch (tbl_valtype(cur_slot)) {
-      case 'S' : chsFree(cur_slot->val.p); break;
-      case 'T' : tblFree(cur_slot->val.p); break;
-      case 'V' : vecFree(cur_slot->val.p); break;
-    }
-*/
+    
     isnotempty(cur_slot) = 0;
     properslot(cur_slot) = 0;
     
@@ -530,7 +519,7 @@ static long fixndx(vec_t s, long n)
   return n;
 }
 
-vec_t vecSetCount(vec_t vt, long max)
+vec_t vec_SetCount(vec_t vt, long max)
 {
   long nslots;
   unsigned long lg;
@@ -560,12 +549,12 @@ vec_t vecSetCount(vec_t vt, long max)
 vec_t vec_new(long nslots)
 { 
   vec_t vt;
-  vt = vecSetCount(NULL, nslots);
+  vt = vec_SetCount(NULL, nslots);
   vt->count = 0;
   return vt;
 }
 
-vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval)
+vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
 {
   vec_slot_t *slot;
   
@@ -573,12 +562,14 @@ vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval)
   nkey = fixndx(vt,nkey);
   
   if (!vt || vt->size <= nkey)
-    vt = vecSetCount(vt, nkey);
+    vecSetCount(vt, nkey);
   
   slot = vt->slot + nkey;
   vec_valtype(slot) = tv;
   if (tv == 'N') 
     slot->val.n = nval;
+  else if (tv == 'F') 
+    slot->val.f = fval;
   else
     slot->val.p = pval;
     
@@ -587,7 +578,7 @@ vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval)
   return vt;
 }
 
-vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval)
+vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
 {
   vec_slot_t slot;
   int k;
@@ -596,9 +587,9 @@ vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval)
   k = vecCount(vt);
   
   if (nkey >= k) 
-    return vt = vec_set(vt, nkey, tv, nval, pval);
+    return vt = vec_set(vt, nkey, tv, nval, pval,fval);
     
-  vt = vec_set(vt, k, tv, nval, pval);
+  vt = vec_set(vt, k, tv, nval, pval,fval);
   
   if (nkey < vt->count-1) {
     slot = vt->slot[vt->count-1];
@@ -609,21 +600,23 @@ vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval)
   return vt;
 }
 
-val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef)
+val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef, float fdef)
 {
   val_u v;
   
   nkey = fixndx(vt,nkey);
   if (nkey >= vecCount(vt)) {
-    if (tv == 'N') v.n = ndef; 
-    else           v.p = pdef;
+    if      (tv == 'N') v.n = ndef; 
+    else if (tv == 'F') v.f = fdef; 
+    else                v.p = pdef;
     return v;
   }
   return vt->slot[nkey].val;
 }
 
 vec_t vecDel(vec_t vt, long kfrom, long kto)
-{  
+{ 
+  int k; 
   if (!vt || vt->count == 0) return vt;
   
   kfrom = fixndx(vt,kfrom);
@@ -632,14 +625,9 @@ vec_t vecDel(vec_t vt, long kfrom, long kto)
   if (kto >= vt->count) kto = vt->count -1;
   if (kfrom >= vt->count || kfrom > kto) return vt;
   
-  val_del(vec_valtype(vt->slot+kfrom),vt->slot[kfrom].val);
-/*
-  switch(vec_valtype(vt->slot+kfrom)) {
-    case 'S': chsFree(vt->slot[kfrom].val.p); break;
-    case 'T': tblFree(vt->slot[kfrom].val.p); break;
-    case 'V': vecFree(vt->slot[kfrom].val.p); break;
-  }
-*/  
+  for (k=kfrom; k<=kto; k++)
+    val_del(vec_valtype(vt->slot+k),vt->slot[k].val);
+  
   if (kto < vt->count-1)
     memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
 
@@ -658,6 +646,7 @@ vec_t vec_free(vec_t vt, char wipe)
           case 'S': chsFree(vt->slot[k].val.p);  break;
           case 'T': tblFree(vt->slot[k].val.p);  break;
           case 'V': vecFree(vt->slot[k].val.p);  break;
+          case 'R': recFree(vt->slot[k].val.p);  break;
         }
       }
     }  
@@ -709,7 +698,7 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup)
        while (pp > q  &&  strchr(trim,pp[-1])) --pp;
        
      if (dup) {
-       t = vec_set(t, k++, 'S', 0, chsDupL(q, pp-q));
+       t = vec_set(t, k++, 'S', 0, chsDupL(q, pp-q),0.0);
        /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
      }
      else {

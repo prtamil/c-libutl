@@ -53,12 +53,14 @@ typedef union {
 
 /********/
 
-#define valGetN(v) ((v).n)
-#define valGetS(v) ((v).s)
-#define valGetP(v) ((v).p)
-#define valGetT(v) ((tbl_t)((v).p))
-#define valGetV(v) ((vec_t)((v).p))
-#define valGetO(v) ((v).p)
+#define valGetN(v)   ((v).n)
+#define valGetF(v)   ((v).f)
+#define valGetS(v)   ((v).s)
+#define valGetP(v)   ((v).p)
+#define valGetT(v)   ((tbl_t)((v).p))
+#define valGetV(v)   ((vec_t)((v).p))
+#define valGetR(v)   ((rec_t)((v).p))
+#define valGetO(v)   ((v).p)
 
 /* TBL *****************/
 /**
@@ -245,9 +247,11 @@ extern vec_t vec_tmp;
          vec_valtype((vec_tmp)->slot+(i)) : \
          '\0')
 
-val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef);
+val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef, float fdef);
 
-vec_t vecSetCount(vec_t vt, long max);
+vec_t vec_SetCount(vec_t vt, long max);
+#define vecSetCount(vt,n) (vt = vec_SetCount(vt,n))
+
 long vecCount(vec_t vt);
 
 extern vec_t vec_tmp;
@@ -262,46 +266,46 @@ vec_t vecMove(vec_t vt, long kfrom, long kto);
 vec_t vec_free(vec_t vt, char wipe);
 #define vecFree(vt) (vt=vec_free(vt,1))
 
-vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval);
-#define vec_Set(t,n,tv,nv,pv) (t = vec_set(t,n,tv,nv,pv))
+vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval,float fval);
+#define vec_Set(t,n,tv,nv,pv,fv) (t = vec_set(t,n,tv,nv,pv,fv))
 
-#define vecSetN(tb,k,v)  vec_Set(tb, k, 'N', v, NULL)
-#define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v))
-#define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v)
-#define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v)
-#define vecSetV(tb,k,v)  vec_Set(tb, k, 'V', 0, v)
-#define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v)
+#define vecSetN(tb,k,v)  vec_Set(tb, k, 'N', v, NULL      ,0.0)
+#define vecSetF(tb,k,v)  vec_Set(tb, k, 'F', 0, NULL      ,v  )
+#define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v) ,0.0)
+#define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v         ,0.0)
+#define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v         ,0.0)
+#define vecSetV(tb,k,v)  vec_Set(tb, k, 'V', 0, v         ,0.0)
+#define vecSetR(tb,k,v)  vec_Set(tb, k, 'R', 0, v         ,0.0)
+#define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v         ,0.0)
 
-#define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL)
-#define vecAddS(tb,v)    vec_Set(tb, vecCount(tb), 'S', 0, chsDup(v))
-#define vecAddP(tb,v)    vec_Set(tb, vecCount(tb), 'P', 0, v)
-#define vecAddT(tb,v)    vec_Set(tb, vecCount(tb), 'T', 0, v)
-#define vecAddV(tb,v)    vec_Set(tb, vecCount(tb), 'V', 0, v)
-#define vecAddO(tb,v)    vec_Set(tb, vecCount(tb), 'O', 0, v)
+#define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL      ,0.0)
+#define vecAddF(tb,v)    vec_Set(tb, vecCount(tb), 'F', 0, NULL      ,f  )
+#define vecAddS(tb,v)    vec_Set(tb, vecCount(tb), 'S', 0, chsDup(v) ,0.0)
+#define vecAddP(tb,v)    vec_Set(tb, vecCount(tb), 'P', 0, v         ,0.0)
+#define vecAddT(tb,v)    vec_Set(tb, vecCount(tb), 'T', 0, v         ,0.0)
+#define vecAddV(tb,v)    vec_Set(tb, vecCount(tb), 'V', 0, v         ,0.0)
+#define vecAddR(tb,v)    vec_Set(tb, vecCount(tb), 'R', 0, v         ,0.0)
+#define vecAddO(tb,v)    vec_Set(tb, vecCount(tb), 'O', 0, v         ,0.0)
 
-#define vecGetN(tb,k,d)  valGetN(vec_get(tb, k , 'N', d, NULL))
-#define vecGetS(tb,k,d)  valGetS(vec_get(tb, k , 'S', 0, d))
-#define vecGetP(tb,k,d)  valGetP(vec_get(tb, k , 'P', 0, d))
-#define vecGetT(tb,k,d)  valGetT(vec_get(tb, k , 'T', 0, d))
-#define vecGetV(tb,k,d)  valGetV(vec_get(tb, k , 'V', 0, d))
-#define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d))
+#define vecGetN(tb,k,d)  valGetN(vec_get(tb, k , 'N', d, NULL, 0.0))
+#define vecGetF(tb,k,d)  valGetF(vec_get(tb, k , 'F', 0, NULL, d  ))
+#define vecGetS(tb,k,d)  valGetS(vec_get(tb, k , 'S', 0, d   , 0.0))
+#define vecGetP(tb,k,d)  valGetP(vec_get(tb, k , 'P', 0, d   , 0.0))
+#define vecGetT(tb,k,d)  valGetT(vec_get(tb, k , 'T', 0, d   , 0.0))
+#define vecGetR(tb,k,d)  valGetR(vec_get(tb, k , 'R', 0, d   , 0.0))
+#define vecGetV(tb,k,d)  valGetV(vec_get(tb, k , 'V', 0, d   , 0.0))
+#define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d   , 0.0))
 
-#define vecGetRawN(tb,k)  valGetN(vec_get(tb, k , 'N', 0, NULL))
-#define vecGetRawS(tb,k)  valGetS(vec_get(tb, k , 'S', 0, NULL))
-#define vecGetRawP(tb,k)  valGetP(vec_get(tb, k , 'P', 0, NULL))
-#define vecGetRawT(tb,k)  valGetT(vec_get(tb, k , 'T', 0, NULL))
-#define vecGetRawV(tb,k)  valGetT(vec_get(tb, k , 'T', 0, NULL))
-#define vecGetRawO(tb,k)  valGetP(vec_get(tb, k , 'O', 0, NULL))
+vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval, float fval);
+#define vec_Ins(t,nk,tv,nv,pv,fv) (t = vec_ins(t,nk,tv,nv,pv,fv))
 
-vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval);
-#define vec_Ins(t,nk,tv,nv,pv) (t = vec_ins(t,nk,tv,nv,pv))
-
-#define vecInsN(tb,k,v)  vec_Ins(tb,  k, 'N', v, NULL)
-#define vecInsS(tb,k,v)  vec_Ins(tb,  k, 'S', 0, chsDup(v))
-#define vecInsP(tb,k,v)  vec_Ins(tb,  k, 'P', 0, v)
-#define vecInsT(tb,k,v)  vec_Ins(tb,  k, 'T', 0, v)
-#define vecInsV(tb,k,v)  vec_Ins(tb,  k, 'V', 0, v)
-#define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v)
+#define vecInsN(tb,k,v)  vec_Ins(tb,  k, 'N', v, NULL,      0.0)
+#define vecInsF(tb,k,v)  vec_Ins(tb,  k, 'F', v, NULL,      v)
+#define vecInsS(tb,k,v)  vec_Ins(tb,  k, 'S', 0, chsDup(v), 0.0)
+#define vecInsP(tb,k,v)  vec_Ins(tb,  k, 'P', 0, v        , 0.0)
+#define vecInsT(tb,k,v)  vec_Ins(tb,  k, 'T', 0, v        , 0.0)
+#define vecInsV(tb,k,v)  vec_Ins(tb,  k, 'V', 0, v        , 0.0)
+#define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v        , 0.0)
 
 vec_t vec_del(vec_t tb, long kfrom, long kto);
 
