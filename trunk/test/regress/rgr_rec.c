@@ -6,27 +6,50 @@
 **   http://opensource.org/licenses/bsd-license.php 
 */
 
-//#define UTL_UNITTEST
+#define UTL_UNITTEST
 #include "libutl.h"
 
 rec(point,
  int x; int y;
 );
-
+ 
+recFunCmp(point,a,b) { return (recPtrCmp(a,b)); }
 recFunCpy(point,a,b) { }
-recFunCmp(point,a,b) { return ((char *)a-(char *)b);}
-recFunNew(point,a) { }
-recFunFree(point,a) { }
+recFunUid(point,a)   { return (recPtrUid(a)); }
+recFunFree(point,a)  { }
+recFunNew(point,a)   { }
 
 int main (int argc, char *argv[])
 {
-  int p;
   point *r = NULL;
-     
-  recNew(point, r);
-  r->x = 3;
-  r->y = 5;
-  
-  recFree(r);
+  point *s = NULL;
+      
+  TSTSECTION("rec Basics") {
+ 
+    TSTGROUP("Create") {
+      recNew(point, r);
+      TST("Create", recIs(point,r));
+      r->x = 3;
+      r->y = 5;
+      TST("Set values", r->x == 3 && r->y == 5);
+    }
+    
+    TSTGROUP("Copy") {
+      recCpy(s,r);
+      TST("Copy record", r != s && r->x == s->x && r->y == s->y);
+    }
+    
+    TSTGROUP("Set to vec") {
+      vec_t vt = NULL;
+      vecSetR(vt,4,r);
+      TST("Add record to V", (point *)vecGetR(vt,4,NULL) == r);      
+    }
+    
+    TSTGROUP("Destroy") {
+      recFree(r);
+      recFree(s);
+    }
+
+  }
   exit(0);
 }
