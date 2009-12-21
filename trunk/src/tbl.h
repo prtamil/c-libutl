@@ -242,9 +242,9 @@ extern vec_t vec_tmp;
  
 #define vec_valtype(slot)  ((slot)->flg[1])
 #define vecValType(vt,i) \
- (vec_tmp=vt, \
- ((vec_tmp) && (vec_tmp->count < (i)))    ? \
-         vec_valtype((vec_tmp)->slot+(i)) : \
+ (vec_tmp = vt, \
+ ((vec_tmp) && (vec_tmp->count > 0) && (vec_tmp->count > (i)))    ? \
+         ((vec_tmp)->slot+(i))->flg[1] : \
          '\0')
 
 val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef, float fdef);
@@ -322,5 +322,24 @@ vec_t vec_split(char *s, char *sep,char *trim, int dup);
 int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
 
+
+/* .%% Stack discipline */
+
+#define stk_t vec_t
+
+#define stkPushN(tb,v)   vecAddN(tb,v)
+#define stkPushF(tb,v)   vecAddF(tb,v)
+#define stkPushP(tb,v)   vecAddP(tb,v)
+
+#define stkIsEmpty(tb)   (vecCount(tb) == 0)
+#define stkTopType(tb)   vecValType(tb,vecCount-1)
+
+#define stkTopN(tb,v)    vecGetN(tb,vecCount(tb),0)
+#define stkTopF(tb,v)    vecGetF(tb,vecCount(tb),0.0)
+#define stkTopP(tb,v)    vecGetP(tb,vecCount(tb),NULL)
+
+#define stkNew(tb)       vecNew(tb)
+
+#define vecPop(tb)       vecDel(tb,-1,-1)
 
 #endif
