@@ -247,7 +247,7 @@ static tbl_slot_t *nextfreeslot(tbl_t tb, unsigned long h)
   tbl_slot_t *free_slot;
   
   do {
-    if (++h >= tb->size) h = 0;
+    if (++h >= (unsigned long)tb->size) h = 0;
     free_slot = tblslot(tb,h);
   } while (isnotempty(free_slot));
 

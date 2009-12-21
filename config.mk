@@ -43,7 +43,21 @@ LN=gcc $(LNFLAGS) -o
 DIST=$(TOP)dist
 CHKLIB=chklib
 
-CFLAGS=-I. -I$(DIST) -Wall $(CCOPTS) $(NO_ASM)
+WFLAGS = -pedantic -std=c99 -Wall -Wextra -Wformat=2 \
+         -Winit-self -Wswitch-default \
+         -Wswitch-enum -Wunused-parameter -Wfloat-equal -Wundef \
+         -Wshadow -Wbad-function-cast \
+         -Wcast-qual -Wcast-align -Wconversion -Waggregate-return \
+         -Wstrict-prototypes \ 
+         -Wold-style-definition -Wmissing-prototypes \
+         -Wmissing-declarations -Wpacked -Wpadded -Wredundant-decls \
+         -Wnested-externs -Wunreachable-code -Winline -Winvalid-pch \
+         -Wvolatile-register-var -Wstrict-aliasing=2 -Wstrict-overflow=2 \
+         -Wtraditional-conversion -Wwrite-strings
+
+WFLAGS = -Wall -Wextra -std=c99
+
+CFLAGS=-I. -I$(DIST) $(WFLAGS) $(CCOPTS) $(NO_ASM)
 LNFLAGS=-L. -L$(DIST) $(LNOPTS)
 
 .SUFFIXES: .c .h .o .pmx
