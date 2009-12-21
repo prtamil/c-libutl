@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
                 break;
                 
               case "&e\\&q" :
-              case "&f<?jEe>%F" :
+              case "&f<?jEe>&F" :
               case "0x<+h>" :
               case "&d<?jLl>" :
                 break;
