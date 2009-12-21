@@ -8,7 +8,7 @@
 
 #include "libutl.h"
 
-void *rec_cpy(rec_t *a, rec_t *b) 
+void *rec_cpy(rec_t a, rec_t b) 
 {
   if (b != a) { 
     if (!b)  recFree(a);
@@ -22,7 +22,7 @@ void *rec_cpy(rec_t *a, rec_t *b)
   return a;
 }
 
-int rec_cmp(rec_t *a, rec_t *b)
+int rec_cmp(rec_t a, rec_t b)
 {
    if (a == b) return 0;
    if (!a) return 1;

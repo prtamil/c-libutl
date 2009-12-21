@@ -332,10 +332,10 @@ pmx_t chsMatch(chs_t s, long from, char *pat) ;
 
 typedef char *(*chsSubF_t)(char *mtc, pmx_t cpt);
 
-chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl) ;
+chs_t chs_SubStr(chs_t s, long pos, char *pat, char *rpl) ;
 #define chsSubStr(s, n, p, r) (s = chs_SubStr(s,n,p,r))
 
-chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f);
+chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f);
 #define chsSubFun(s, n, p, f) (s = chs_SubFun(s,n,p,f))
 
 /* .%% Other  */

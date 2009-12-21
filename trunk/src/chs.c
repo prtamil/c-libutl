@@ -264,7 +264,7 @@ pmx_t chsMatch(chs_t s, long from, char *pat)
   return ret;
 }
 
-chs_t chs_SubFun(chs_t s, size_t pos, char *pat, chsSubF_t f)
+chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
 {
   chs_t  mtc = NULL;
   char  *rpl;
@@ -345,7 +345,7 @@ static char  *rpl_fun(char *mtc, pmx_t cpt)
   return (char *)rpl_chs;
 }
 
-chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl)
+chs_t chs_SubStr(chs_t s, long pos, char *pat, char *rpl)
 { 
   rpl_str = rpl;
   chsSubFun(s, pos, pat, rpl_fun);
@@ -357,7 +357,7 @@ chs_t chs_SubStr(chs_t s, size_t pos, char *pat, char *rpl)
 #if 0
 static tbl_t rpl_tbl=NULL;
 
-chs_t chs_SubTbl(chs_t s, size_t pos, char *pat, tbl_t rpl)
+chs_t chs_SubTbl(chs_t s, long pos, char *pat, tbl_t rpl)
 { 
   rpl_tbl = rpl;
   rpl_chs = NULL;
