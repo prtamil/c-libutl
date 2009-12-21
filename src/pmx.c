@@ -493,7 +493,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    }
                    break;
   
-        case ')' : if (capt_stk_cnt>0) {
+        case ')' : if (capt_stk_cnt > 0) {
                      capt_stk_cnt--;
                      capt[capt_stk[capt_stk_cnt]][1] = capt[0][1];
                    }
