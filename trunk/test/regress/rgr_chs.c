@@ -49,7 +49,7 @@ int main(void)
       
       chsCpy(buf, uppers);
       k = chsLen(buf);
-      TST("CHS length is correct", k == strlen(uppers));
+      TST("CHS length is correct", k == (int)strlen(uppers));
       TSTWRITE("# Next two lines should be identical\n");
       TSTWRITE("# >>  \"%s\"\n",uppers);
       TSTWRITE("# >>  \"%s\"\n",buf);

@@ -13,6 +13,9 @@ include $(TOP)config.mk
 RGR_TESTS = rgr_rec$(_EXE) rgr_vec$(_EXE) \
             rgr_chs$(_EXE) rgr_tbl$(_EXE)
 
+RGR_OBJS = rgr_rec$(_OBJ) rgr_vec$(_OBJ) \
+           rgr_chs$(_OBJ) rgr_tbl$(_OBJ)
+
 all: $(RGR_TESTS)
 
 rgr_rec$(_EXE): $(CHKLIB) rgr_rec$(_OBJ)
@@ -28,7 +31,8 @@ rgr_chs$(_EXE): $(CHKLIB) rgr_chs$(_OBJ)
 	$(LN)$@ rgr_chs$(_OBJ) -lutl
 
 clean:
-	$(RM) rgr_vec$(_EXE) rgr_vec$(_OBJ)
+	$(RM) $(RGR_TESTS) 
+	$(RM) $(RGR_OBJS) 
 	$(RM) gmon.out
 
 include $(TOP)targets.mk

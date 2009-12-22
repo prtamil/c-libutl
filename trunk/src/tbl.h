@@ -327,19 +327,30 @@ int vec_cmp (const void *a, const void *b);
 
 #define stk_t vec_t
 
+#define stkNew(tb)       vecNew(tb)
+#define stkFree(tb)      vecFree(tb)
+
 #define stkPushN(tb,v)   vecAddN(tb,v)
 #define stkPushF(tb,v)   vecAddF(tb,v)
 #define stkPushP(tb,v)   vecAddP(tb,v)
+#define stkPushS(tb,v)   vecAddS(tb,v) 
+#define stkPushT(tb,v)   vecAddT(tb,v) 
+#define stkPushV(tb,v)   vecAddV(tb,v) 
+#define stkPushR(tb,v)   vecAddR(tb,v) 
+#define stkPushO(tb,v)   vecAddO(tb,v) 
 
 #define stkIsEmpty(tb)   (vecCount(tb) == 0)
 #define stkTopType(tb)   vecValType(tb,vecCount-1)
 
-#define stkTopN(tb,v)    vecGetN(tb,vecCount(tb),0)
-#define stkTopF(tb,v)    vecGetF(tb,vecCount(tb),0.0)
-#define stkTopP(tb,v)    vecGetP(tb,vecCount(tb),NULL)
+#define stkTopN(tb)      vecGetN(tb,vecCount(tb),0)
+#define stkTopF(tb)      vecGetF(tb,vecCount(tb),0.0)
+#define stkTopP(tb)      vecGetP(tb,vecCount(tb),NULL)
+#define stkTopS(tb)      vecGetS(tb,vecCount(tb),NULL)
+#define stkTopT(tb)      vecGetT(tb,vecCount(tb),NULL)
+#define stkTopR(tb)      vecGetR(tb,vecCount(tb),NULL)
+#define stkTopV(tb)      vecGetV(tb,vecCount(tb),NULL)
+#define stkTopO(tb)      vecGetO(tb,vecCount(tb),NULL)
 
-#define stkNew(tb)       vecNew(tb)
-
-#define vecPop(tb)       vecDel(tb,-1,-1)
+#define stkPop(tb)       vecDel(tb,-1,-1)
 
 #endif

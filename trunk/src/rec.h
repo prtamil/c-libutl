@@ -12,6 +12,7 @@
 
 struct rec_f_t {
   int size;
+  char  *name; 
   int   (*cmp)  (void * , void *) ;
   void *(*cpy)  (void * , void *) ;
   char *(*uid)  (void *) ;
@@ -28,8 +29,10 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
   char  *t##_uid(t *a);\
   void   t##_free(t *a); \
   void   t##_init(t *); \
+  char  *t##_name = #t; \
   struct rec_##t##_f {\
     int    size;\
+    char  *name; \
     int   (*cmp)  (t * , t *) ;\
     void  (*cpy)  (t * , t *) ;\
     char *(*uid)  (t *) ;\
@@ -44,12 +47,13 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 #define recFunNew(t,a) \
     static struct rec_##t##_f rec_##t##_func; \
     t *t##_new() {\
-      t *p = calloc(1,sizeof(t));\
-      rec_##t##_func.size = sizeof(t);\
-      rec_##t##_func.cmp  = t##_cmp;\
-      rec_##t##_func.cpy  = t##_cpy;\
-      rec_##t##_func.uid  = t##_uid;\
-      rec_##t##_func.free = t##_free;\
+      t *p = calloc(1,sizeof(t));      \
+      rec_##t##_func.size = sizeof(t); \
+      rec_##t##_func.name = t##_name;  \
+      rec_##t##_func.cmp  = t##_cmp;   \
+      rec_##t##_func.cpy  = t##_cpy;   \
+      rec_##t##_func.uid  = t##_uid;   \
+      rec_##t##_func.free = t##_free;  \
       if (p) {\
         p->rec_f = &rec_##t##_func;\
         t##_init(p);\
@@ -69,12 +73,14 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 
 #define recUid(a)    ((a)? (a)->rec_f->uid(a) : NULL)
 
+#define recName(a)   ((a)? (a)->rec_f->name : NULL)
+
 #define recPtrUid(a)   (sprintf(chs_buf,"ptr:%p",a),(char *)chs_buf)
 #define recPtrCmp(a,b) ((char *)(a) - (char *)(b))
 
 void *rec_cpy(rec_t a, rec_t b);
 int   rec_cmp(rec_t a, rec_t b);
 
-#define recIs(t,r)  (r && ((rec_t)r)->rec_f == (rec_t)(&rec_##t##_func))
+#define recIs(t,r) (r && (void *)(((rec_t)r)->rec_f) == (&rec_##t##_func))
 
 #endif
