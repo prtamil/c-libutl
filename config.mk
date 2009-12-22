@@ -55,7 +55,7 @@ WFLAGS = -pedantic -std=c99 -Wall -Wextra -Wformat=2 \
          -Wvolatile-register-var -Wstrict-aliasing=2 -Wstrict-overflow=2 \
          -Wtraditional-conversion -Wwrite-strings
 
-WFLAGS = -Wall -Wextra -std=c99
+WFLAGS = -Wall -std=c99
 
 CFLAGS=-I. -I$(DIST) $(WFLAGS) $(CCOPTS) $(NO_ASM)
 LNFLAGS=-L. -L$(DIST) $(LNOPTS)

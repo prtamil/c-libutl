@@ -46,6 +46,7 @@ int main (int argc, char *argv[])
     }
     
     TSTGROUP("Destroy") {
+      TSTNOTE("Destroying: %s", recName(r));
       recFree(r);
       recFree(s);
     }
