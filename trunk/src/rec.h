@@ -69,17 +69,19 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 #define recFree(r)  \
   (r = (r? (( (rec_t)(r))->rec_f->free(r),free(r),NULL):NULL)) 
 
-#define recSize(a)   ((a)? (a)->rec_f->size : 0)
+#define recSize(a)   ((a)? ((rec_t)(a))->rec_f->size : 0)
 
-#define recUid(a)    ((a)? (a)->rec_f->uid(a) : NULL)
+#define recUid(a)    ((a)? ((rec_t)(a))->rec_f->uid(a) : NULL)
 
-#define recName(a)   ((a)? (a)->rec_f->name : NULL)
+#define recName(a)   ((a)? ((rec_t)(a))->rec_f->name : NULL)
 
 #define recPtrUid(a)   (sprintf(chs_buf,"ptr:%p",a),(char *)chs_buf)
 #define recPtrCmp(a,b) ((char *)(a) - (char *)(b))
 
 void *rec_cpy(rec_t a, rec_t b);
 int   rec_cmp(rec_t a, rec_t b);
+
+#define recCmp(a,b) rec_cmp((rec_t)a, (rec_t)b)
 
 #define recIs(t,r) (r && (void *)(((rec_t)r)->rec_f) == (&rec_##t##_func))
 

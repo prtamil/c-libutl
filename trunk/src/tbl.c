@@ -31,8 +31,8 @@ static unsigned short llog2(unsigned long x);
 #define isnotempty(sl)  tbl_keytype(sl)
 
 
-tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey,
-                        char tv, long nval, void *pval);
+tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
+                        char tv, long nval, void *pval, float fdef);
 
 tbl_t tbl_new(long nslots)
 {
@@ -78,19 +78,22 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
   ret = atype - btype;
   if (ret == 0) {
     switch (atype) {
-      case 'N' : ret = a.n - b.n; break;
-      case 'S' : ret = strcmp(a.p, b.p); break;
+      case 'N' : ret = a.n - b.n;                                  break;
+      case 'S' : ret = strcmp(a.p, b.p);                           break;
+      case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
+      case 'R' : ret = recCmp(a.p,b.p);                            break;
       case 'P' :
-      case 'T' : ret = (char *)(a.p) - (char *)(b.p); break;
+      case 'T' :
+      case 'V' : ret = (char *)(a.p) - (char *)(b.p);              break;
       default  : ret = -1;
     }
   }
   return ret;
 }
 
-#define val_set(x, tv,nv,pv) ((tv == 'N') \
-                                  ? (void)((x).n = (nv)) \
-                                  : (void)((x).p = (pv))) 
+#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
+                                 (tv == 'F') ? (void)((x).f = (fv)) : \
+                                               (void)((x).p = (pv))) 
 
 #define val_del(tv,v) do { switch (tv) { \
                              case 'S' : chsFree((v).p); break; \
@@ -103,20 +106,28 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
                            }\
                       } while (utlZero)
 
+#define val_cmp(ta,a,tb,b) tblcmp(ta,a,tb,b)
+
 #define isnotpow2(x)  ((x) & ((x)-1))
 
 unsigned long keyhash(tbl_t tb, char tk, val_u key)
 {
+  char  *s;
+  float f;
+  
   switch (tk) {
     case 'N' : return (hsh_num1(key.n) % tb->size);
-    
+    case 'R' : s = recUid(key.p);
+               return (hsh_str1(s, strlen(s)) % tb->size);
+    case 'F' : f = key.f + 1; /* avoid -0 */
+               return (hsh_str1((char *)(&f),sizeof(f))  % tb->size);    
     case 'S' : return (hsh_str1(key.p, strlen(key.p)) % tb->size);
   } 
    
   return (hsh_ptr1(key.p)                % tb->size);
 }
 
-static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey,
+static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
                                                               tbl_slot_t **head)
 {
   tbl_slot_t *cur_slot;
@@ -124,7 +135,7 @@ static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey,
   int cmp;
   unsigned long h;
  
-  val_set(key,tk,nkey,pkey);
+  val_set(key,tk,nkey,pkey,fkey);
   h = keyhash(tb, tk, key);
   cur_slot = tblslot(tb,h); 
   if (head) *head = cur_slot;
@@ -143,25 +154,25 @@ static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey,
   return NULL;
 }
 
-val_u tbl_get(tbl_t tb, char tk, long nkey, void *pkey,
-                        char tv, long ndef, void *pdef)
+val_u tbl_get(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
+                        char tv, long ndef, void *pdef, float fdef)
 {
   tbl_slot_t *cur_slot;
   val_u val;
     
   if (tb) {
-    cur_slot = tbl_search(tb,tk,nkey,pkey,NULL);
+    cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,NULL);
     if (cur_slot) return cur_slot->val;
   }
-  val_set(val,tv,ndef,pdef);
+  val_set(val,tv,ndef,pdef,fdef);
   return val; 
 }
 
-long tbl_find(tbl_t tb, char tk, long nkey, void *pkey)
+long tbl_find(tbl_t tb, char tk, long nkey, void *pkey, float fkey)
 {
   tbl_slot_t *cur_slot;
  
-  cur_slot = tbl_search(tb,tk,nkey,pkey,NULL);
+  cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,NULL);
   if (cur_slot) return slotpos(tb,cur_slot)+1;
   
   return 0; 
@@ -186,7 +197,7 @@ tbl_t tbl_MaxSlot(tbl_t tb, long nslots)
   long n;
   tbl_t tt;
   
-  dbgmsg("SETMAX: %ld -> ",nslots);
+  _dbgmsg("SETMAX: %ld -> ",nslots);
   if (nslots < 4) nslots = 4;
   lg = two_raised(llog2(nslots));
   
@@ -234,8 +245,8 @@ static tbl_t rehash(tbl_t tb, char resize)
   for (k = 0; k < tb->size; k++, cur_slot++) {
     if (isnotempty(cur_slot)) {
       newtb = tbl_set(newtb, 
-         tbl_keytype(cur_slot), cur_slot->key.n, cur_slot->key.p,
-         tbl_valtype(cur_slot), cur_slot->val.n, cur_slot->val.p);
+         tbl_keytype(cur_slot), cur_slot->key.n, cur_slot->key.p, cur_slot->key.f,
+         tbl_valtype(cur_slot), cur_slot->val.n, cur_slot->val.p, cur_slot->val.f);
     }
   }
   tb = tbl_free(tb,0);
@@ -254,8 +265,8 @@ static tbl_slot_t *nextfreeslot(tbl_t tb, unsigned long h)
   return free_slot;
 }
 
-tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey,
-                        char tv, long nval, void *pval)
+tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
+                        char tv, long nval, void *pval, float fdef)
 {
   tbl_slot_t *cur_slot, *head_slot;
   tbl_slot_t *new_slot, *parent_slot;
@@ -270,12 +281,12 @@ tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey,
     tb = rehash(tb,'+');
   
   _dbgmsg("TBL SET: T[%c %ld %p] = (%c %ld %p)\n",tk, nkey,pkey,tv,nval,pval);
-  tbl_keytype(&ins) = tk; val_set(ins.key,tk,nkey,pkey); 
-  tbl_valtype(&ins) = tv; val_set(ins.val,tv,nval,pval);
+  tbl_keytype(&ins) = tk; val_set(ins.key,tk,nkey,pkey,fkey); 
+  tbl_valtype(&ins) = tv; val_set(ins.val,tv,nval,pval,fdef);
   linkedslot(&ins) = -1;
   properslot(&ins) = 0; 
 
-  cur_slot = tbl_search(tb,tk,nkey,pkey,&head_slot);
+  cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,&head_slot);
 
   if (cur_slot) {                      /* Key already present: replace value */
     if (tbl_keytype(&ins) == 'S')
@@ -318,11 +329,11 @@ tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey,
   return tb;
 }
 
-tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey)
+tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey, float fkey)
 {
   tbl_slot_t *cur_slot, *parent_slot;
   
-  cur_slot = tbl_search(tb, tk, nkey, pkey, &parent_slot);
+  cur_slot = tbl_search(tb, tk, nkey, pkey, fkey, &parent_slot);
   
   if (cur_slot) {
     if (cur_slot != parent_slot) {
@@ -620,6 +631,8 @@ val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef, float fdef)
 vec_t vec_Del(vec_t vt, long kfrom, long kto)
 { 
   int k; 
+  vec_slot_t *slot;
+
   if (!vt || vt->count == 0) return vt;
   
   kfrom = fixndx(vt,kfrom);
@@ -628,8 +641,8 @@ vec_t vec_Del(vec_t vt, long kfrom, long kto)
   if (kto >= vt->count) kto = vt->count -1;
   if (kfrom >= vt->count || kfrom > kto) return vt;
   
-  for (k=kfrom; k<=kto; k++)
-    val_del(vec_valtype(vt->slot+k),vt->slot[k].val);
+  for (k=kfrom, slot = vt->slot+kfrom; k<=kto; k++, slot++)
+    val_del(vec_valtype(slot),slot->val);
   
   if (kto < vt->count-1)
     memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
@@ -641,16 +654,12 @@ vec_t vec_Del(vec_t vt, long kfrom, long kto)
 vec_t vec_free(vec_t vt, char wipe)
 {
   int k = 0;
+  vec_slot_t *slot;
 
   if (vt) {
     if (wipe) {  
-      for (k = 0; k < vt->count; k++) {
-        switch(vec_valtype(vt->slot+k)) {
-          case 'S': chsFree(vt->slot[k].val.p);  break;
-          case 'T': tblFree(vt->slot[k].val.p);  break;
-          case 'V': vecFree(vt->slot[k].val.p);  break;
-          case 'R': recFree(vt->slot[k].val.p);  break;
-        }
+      for (k = 0, slot = vt->slot; k < vt->count; k++, slot++) {
+        val_del(vec_valtype(slot),slot->val);
       }
     }  
     free(vt);
