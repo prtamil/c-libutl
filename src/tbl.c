@@ -31,6 +31,23 @@ static unsigned short llog2(unsigned long x);
 #define isnotempty(sl)  tbl_keytype(sl)
 
 
+#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
+                                 (tv == 'F') ? (void)((x).f = (fv)) : \
+                                               (void)((x).p = (pv))) 
+
+#define val_del(tv,v) do { switch (tv) { \
+                             case 'S' : chsFree((v).p); break; \
+                             case 'T' : tblFree((v).p); break; \
+                             case 'V' : vecFree((v).p); break; \
+                             case 'R' : recFree((v).p); break; \
+                             case 'P' : (v).p = NULL; \
+                             case 'N' : (v).n = 0; \
+                             case 'F' : (v).f = 0.0; \
+                           }\
+                      } while (utlZero)
+
+#define val_cmp(ta,a,tb,b) tblcmp(ta,a,tb,b)
+
 tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
                         char tv, long nval, void *pval, float fdef);
 
@@ -59,10 +76,8 @@ tbl_t tbl_free(tbl_t tb, char wipe)
     if (wipe) {  
       for (k = 0; k< tb->size; k++, cur_slot++) {
         if (isnotempty(cur_slot)) {
-          if (tbl_keytype(cur_slot) == 'S') chsFree(cur_slot->key.p);
-          else if (tbl_keytype(cur_slot) == 'T') tblFree(cur_slot->key.p);
-          if (tbl_valtype(cur_slot) == 'S') chsFree(cur_slot->val.p);
-          else if (tbl_valtype(cur_slot) == 'T') tblFree(cur_slot->val.p);
+          val_del(tbl_keytype(cur_slot),cur_slot->key);
+          val_del(tbl_valtype(cur_slot),cur_slot->val);
         }
       }
     }  
@@ -90,23 +105,6 @@ static int tblcmp(char atype, val_u a, char btype, val_u b)
   }
   return ret;
 }
-
-#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
-                                 (tv == 'F') ? (void)((x).f = (fv)) : \
-                                               (void)((x).p = (pv))) 
-
-#define val_del(tv,v) do { switch (tv) { \
-                             case 'S' : chsFree((v).p); break; \
-                             case 'T' : tblFree((v).p); break; \
-                             case 'V' : vecFree((v).p); break; \
-                             case 'R' : recFree((v).p); break; \
-                             case 'P' : (v).p = NULL; \
-                             case 'N' : (v).n = 0; \
-                             case 'F' : (v).f = 0.0; \
-                           }\
-                      } while (utlZero)
-
-#define val_cmp(ta,a,tb,b) tblcmp(ta,a,tb,b)
 
 #define isnotpow2(x)  ((x) & ((x)-1))
 
