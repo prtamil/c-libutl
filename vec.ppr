@@ -23,7 +23,7 @@ vec
 	+vec
 		+doc
 			doc\stk.gif
-		-examples
+		+examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -77,6 +77,7 @@ vec
 			src\hif.h
 			src\hif.c
 			src\rec.h
+			src\rec.c
 		+test
 			+regress
 				test\regress\rgr_tbl.c
@@ -94,12 +95,40 @@ vec
 [Open project files]
 0=src\tbl.h
 1=src\tbl.c
+2=src\rec.h
+3=src\rec.c
+4=test\regress\rgr_vec.c
+5=test\regress\rgr_tbl.c
+6=src\chs.h
+7=src\chs.c
+8=examples\fmt\fmt.c
 [Selected Project Files]
 Main=
-Selected=src\tbl.h
+Selected=examples\fmt\fmt.c
 [src\tbl.h]
-TopLine=317
-Caret=42,343
+TopLine=234
+Caret=17,233
 [src\tbl.c]
+TopLine=60
+Caret=1,77
+[src\rec.h]
+TopLine=48
+Caret=40,76
+[src\rec.c]
 TopLine=1
 Caret=1,1
+[test\regress\rgr_vec.c]
+TopLine=84
+Caret=1,1
+[test\regress\rgr_tbl.c]
+TopLine=113
+Caret=38,141
+[src\chs.h]
+TopLine=247
+Caret=18,261
+[src\chs.c]
+TopLine=156
+Caret=32,120
+[examples\fmt\fmt.c]
+TopLine=1
+Caret=1,8

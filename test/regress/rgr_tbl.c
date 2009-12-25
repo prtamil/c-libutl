@@ -12,7 +12,7 @@
 
 int main(void)
 {
-  tbl_t tt;
+  tbl_t tt = NULL;
   char *ss;
   long   ii,kk,jj;
   long mm, ll;
@@ -103,14 +103,14 @@ int main(void)
       
       kk = tblFindS(tt,"Pippo");
       if (kk>0) {
-        tblValS(tt,kk) = chsInsStr(tblValS(tt,kk),1,"xxxx"); 
+        chsInsStr(tblValS(tt,kk),1,"xxxx"); 
       }
       
       str = tblGetSS(tt,"Pippo",NULL);
-      
+       
       TST("GetSS 2", str && strcmp(str,"Pxxxxluto")==0);
       
-      tblValS(tt,kk) = chsInsStr(tblValS(tt,kk),0,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); 
+      chsInsStr(tblValS(tt,kk),0,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); 
       
       TSTWRITE("[%s] = %s\n",tblKeyS(tt,kk), tblValS(tt,kk));
       
@@ -132,7 +132,17 @@ int main(void)
       
       tblMaxSlot(tt,130);
       TST("MAX size", tt && tt->size >= 130);
-      tblFree(tt);
+      tblFree(tt); 
+    }
+    
+    TSTGROUP("floats")  {
+      float f;
+      tblNew(tt);
+      for (kk = 0; kk < 1000; kk++) {
+        tblSetFN(tt,2.00+(float)kk/100,kk);
+      }
+      f = 2.00+(float)3/100;
+      TST("Float set", tblGetFN(tt,f,-1) == 3);
     }
   }    
   
