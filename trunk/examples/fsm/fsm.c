@@ -11,8 +11,19 @@
 #include "libutl.h"
 
 chs_t vars[27];
+tbl_t states = NULL;
 
-vec_t states = NULL;
+recDef(state,
+  chs_t name;
+  chs_t pattern;
+  vec_t rules;
+);
+
+recDefDel(state,a)   { vecFree(a->rules); }
+recDefNew(state,a)   { a->name = NULL; a->rules = NULL; }
+recDefUid(state,a)   { return a->name; }
+recDefCmp(state,a,b) { return strcmp(a->name,b->name); }
+recDefCpy(state,a,b) { }
 
 int cur_ln = 1;
 
@@ -22,15 +33,13 @@ script = state*
 
 state = "[" state_name "]" rule*
 
-rule  = "\"" pattern "\"" replace? next_state? ";"
-
-nextsate = "->" state_name
+rule  = "\"" pattern "\"" replace? ";"
 
 replace = "=" (value | func)+
 
 value = "$" var_name | "$" DIGIT | STRING | NUMBER
 
-func = add | sub | cat | set | div | mul | mod | len
+func = add | sub | cat | set | div | mul | mod | len | nxt | if
 
 add = "@add" "(" var_name "," value ")"
 sub = "@sub" "(" var_name "," value ")"
@@ -41,8 +50,9 @@ mod = "@mod" "(" var_name "," value ")"
 cat = "@cat" "(" var_name "," value ")"
 mid = "@mid" "(" var_name "," value "," value "," value ")"
 len = "@len" "(" var_name "," value ")"
+nxt = "@nxt" "(" state_name ")"
 
-if = "@if" "(" value op value "," func ("," func)? ")"
+if = ("@if" | "@ifn") "(" value op value "," func ("," func)? ")"
 op = "=" | "<" | ">" | "<=" | ">=" | "!="
 
 ..
@@ -92,6 +102,8 @@ int parse (char *machine)
           fprintf(stderr,"ERROR 102\n"); break;
           
    }
+   
+   return 0;
 }
 
 
@@ -99,10 +111,5 @@ int main(int argc, char *argv[])
 {
   chs_t str = NULL;
  
-  str = chsCpyFmt(str,"value: %f %s 0x%04X\n",1.4,"LLLo",124);
-  str = chsAddFmt(str,"and so %-10d on\n",34);
-  str = chsInsFmt(str,6,"<%c>",64);
-
-  printf("%s",str);
   exit(0);
 }

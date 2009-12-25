@@ -62,6 +62,13 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
     }\
     void t##_init(t *a)
 
+#define recDef    rec
+#define recDefCmp recFunCmp
+#define recDefCpy recFunCpy
+#define recDefUid recFunUid
+#define recDefDel recFunFree
+#define recDefNew recFunNew
+
 #define recCpy(a,b)  (a = rec_cpy((rec_t)a,(rec_t)b))
 
 #define recNew(t,r)  (r = t##_new())
