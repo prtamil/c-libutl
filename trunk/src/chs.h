@@ -166,9 +166,9 @@ chs_t chs_setsize(chs_t s, long ndx);
 #define chsFree(s) \
  ((s) = ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), NULL) : NULL))
 
-#define chsLen(s)  ((chs_tmp_=(s))? chs_blk(chs_tmp_)->len  : 0)
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
 
+long chsLen(chs_t s);
 
 /*  .%% Strings as streams
     ''''''''''''''''''''''
@@ -322,7 +322,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what);
 #define chsAddLine(s,f) (s = chs_read(s,f,'a','L'))
 
 #define chsForLines(l,f) \
-     for (chsCpyLine(l,f); chsLen(l) > 0; chsCpyLine(l,f))
+     while (chsLen(chsCpyLine(l,f)) > 0)
 
 /* .%% Matching strings
    ''''''''''''''''''''

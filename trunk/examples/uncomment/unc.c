@@ -9,40 +9,42 @@
 #include "libutl.h"
 
 #define CODE    1
-#define COMMENT 2
+#define COMMENT 2 
 
 #define T_COMMENT x81
 #define T_SKIP    x82
+#define T_SKIP2   x92
 #define T_EMPTY   x83
 
 int state = CODE;
 
-chs_t ln;
+chs_t ln = NULL;
 
 int main(int argc, char *argv[])
 {
   FILE *inf = stdin;
   int startline;
   char *cur;
-  
+   long k;
+   
   if (argc > 1) { 
     fprintf(stderr,"Usage: uncomment <inputfile. >outputfile");
     exit(1);
   }
-
+ 
   chsForLines(ln,inf) {
-    cur = ln;
-    startline = 1;
+    cur = ln; 
+    startline = 1; 
     while (*cur) {
       switch (state) {
         case CODE :    pmxSwitch (cur,
                          pmxTokSet("&K&n",         T_EMPTY)
-                         pmxTokSet("&k",           T_SKIP)
-                         pmxTokSet("&e\\&B\"\"",   T_SKIP)
+                         pmxTokSet("&s",           T_SKIP)
+                         pmxTokSet("&e\\&b\"\"",   T_SKIP)
                          pmxTokSet("/*",           T_COMMENT)
                          pmxTokSet("/",            T_SKIP)
                          pmxTokSet("<+!/ \t\r\n>", T_SKIP)
-                       ) {
+                       ) { 
                          pmxTokCase(T_COMMENT):
                            state = COMMENT;
                            startline = 2;

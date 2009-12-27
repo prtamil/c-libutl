@@ -11,7 +11,7 @@ A state is introduced by its name:
 
 [state1]
 
- "A" = "a" $v -> s2 ;
+ "A" = "a" $v @nxt(s2) ;
 
 The patterns BEGIN and END match when entering/exiting a state
 The pattern EOF matches the end of text

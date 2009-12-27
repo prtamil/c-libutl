@@ -153,7 +153,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 ** 
 */
 #define utlSetOutput(fname) ((utl_stderr ? fclose(utl_stderr) : 0),\
-                             (utl_stderr = fname? fopen(fname,"w"): NULL))
+                             (utl_stderr = (fname? fopen(fname,"w"): NULL)))
 
 
 /* .% Errors Handling
@@ -523,12 +523,22 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 **
 ** .v
 **      FSM {
-**        STATE(x) : ...
+**        STATE(x) { ...
+**                   if (c == 0) GOTO(z);
 **                   GOTO(y);
-**        ....
+**        }
 **
-**        STATE(y) : ...
+**        STATE(y) { ...
 **                   break;  // exit from the FSM
+**        }
+*
+**        STATE(z) { ...
+**                   GOSUB(t);
+**        }
+**
+**        STATE(t) { ...
+**                   RETURN();  // Go back to the caller state
+**        }
 **      }
 ** ..
 **
@@ -536,9 +546,29 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 ** documentation (e.g including the GraphViz description in comments).
 */
 
-#define FSM for(;;)
-#define STATE(x) x##_s 
-#define GOTO(x)  goto x##_s
+#define utl_fsmmax 16
+
+UTL_EXTERN( int utl_fsmcur , = 0) ;
+UTL_EXTERN( int utl_fsmcnt , = 0) ;
+UTL_EXTERN( int utl_fsmret , = 0) ;
+UTL_EXTERN( int utl_fsmrets[utl_fsmmax] , = {0}) ;
+
+#define FSM for(utl_fsmret=0;;)
+#define STATE(x) \
+   utl_##x##_s : utl_fsmcur = __LINE__ ;  \
+                 if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
+                               
+#define GOTO(x)   goto utl_##x##_s
+#define GOSUB(x)  do { \
+                    if (utl_fsmcnt < utl_fsmmax) \
+                      utl_fsmrets[utl_fsmcnt++] = utl_fsmcur; \
+                    goto utl_##x##_s; \
+                  } while (utlZero) 
+                  
+#define RETURN()  do { \
+                    utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0);\
+                    continue; \
+                  } while (utlZero) 
 
 #endif /*- UTL_H */
 

@@ -46,7 +46,25 @@ static unsigned short llog2(unsigned long x);
                            }\
                       } while (utlZero)
 
-#define val_cmp(ta,a,tb,b) tblcmp(ta,a,tb,b)
+static int val_cmp(char atype, val_u a, char btype, val_u b)
+{
+  int ret;
+  
+  ret = atype - btype;
+  if (ret == 0) {
+    switch (atype) {
+      case 'N' : ret = a.n - b.n;                                  break;
+      case 'S' : ret = strcmp(a.p, b.p);                           break;
+      case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
+      case 'R' : ret = recCmp(a.p,b.p);                            break;
+      case 'P' :
+      case 'T' :
+      case 'V' : ret = (char *)(a.p) - (char *)(b.p);              break;
+      default  : ret = -1;
+    }
+  }
+  return ret;
+}
 
 tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
                         char tv, long nval, void *pval, float fdef);
@@ -86,26 +104,6 @@ tbl_t tbl_free(tbl_t tb, char wipe)
   return NULL;
 }
 
-static int tblcmp(char atype, val_u a, char btype, val_u b)
-{
-  int ret;
-  
-  ret = atype - btype;
-  if (ret == 0) {
-    switch (atype) {
-      case 'N' : ret = a.n - b.n;                                  break;
-      case 'S' : ret = strcmp(a.p, b.p);                           break;
-      case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
-      case 'R' : ret = recCmp(a.p,b.p);                            break;
-      case 'P' :
-      case 'T' :
-      case 'V' : ret = (char *)(a.p) - (char *)(b.p);              break;
-      default  : ret = -1;
-    }
-  }
-  return ret;
-}
-
 #define isnotpow2(x)  ((x) & ((x)-1))
 
 unsigned long keyhash(tbl_t tb, char tk, val_u key)
@@ -141,7 +139,7 @@ static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey, float fk
   if (!properslot(cur_slot)) return NULL;
     
   do {
-    cmp = tblcmp(tk, key, tbl_keytype(cur_slot), cur_slot->key);
+    cmp = val_cmp(tk, key, tbl_keytype(cur_slot), cur_slot->key);
     
     if (cmp == 0)                 return cur_slot;
     if (linkedslot(cur_slot) < 0) break;
@@ -726,20 +724,7 @@ int vec_cmp (const void *a, const void *b)
 {
   const vec_slot_t *va = a;
   const vec_slot_t *vb = b;
- 
-  int c;
-  
-  _dbgmsg("CMP: %c %c\n",vec_valtype(va) , vec_valtype(vb));
-  c = vec_valtype(va) - vec_valtype(vb);
-  
-  if (c != 0) return c;
-  
-  switch(vec_valtype(va)) {
-    case 'N' : return (va->val.n - vb->val.n);
-    case 'S' : _dbgmsg("[%s],[%s]\n",va->val.p, vb->val.p);
-               return strcmp(va->val.p, vb->val.p);
-  }
-  return ((char *)(va->val.p) - (char *)(vb->val.p));
+  return val_cmp(vec_valtype(va),va->val,vec_valtype(vb),vb->val);
 }
 
 
