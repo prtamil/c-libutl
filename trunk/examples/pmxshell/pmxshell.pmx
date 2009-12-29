@@ -16,7 +16,7 @@
 tbl_t cmd = NULL;
 vec_t patterns = NULL;
 chs_t expr = NULL;
-vec_t strings = NULL;
+vec_t strings = NULL; 
 
 #define lnbuf_sz 512
 char lnbuf[lnbuf_sz];
@@ -190,6 +190,7 @@ void cmd_move(char *arg) {
 void listx(char *arg,vec_t list,FILE *f)
 {
   int k;
+  arg = NULL;
   for (k=0;k<vecCount(list);k++) {
     fprintf(f,"%4d: \"%s\"\n",k+1,vecGetS(list,k,""));
   }
@@ -336,7 +337,7 @@ void testx(char *arg, int verbose)
 void cmd_test(char *arg) { testx(arg,1); }
 void cmd_TEST(char *arg) { testx(arg,0); }
 
-void cmd_export(char *arg)
+void cmd_export(/*char *arg*/)
 {
   FILE *f=stdout;
   int k;
@@ -435,7 +436,7 @@ void explain(char *ptrn)
   int capt[pmxCaptMax];
   int capt_num=0;
   int capt_max=0;
-  int k;
+  int k,j;
   char *start_ptrn = ptrn;
 
   #define expl_ptrn() \
@@ -458,6 +459,18 @@ void explain(char *ptrn)
         }
         break;
         
+      case "&<(<?=?*+>)(<=1-9>)&>" :
+        expl_ptrn();
+        if (pmx(Len,1)>0) {
+          switch(*pmx(Start,1)) {
+            case '?': printf("  optionally"); break;
+            case '+': printf("  one or more times"); break;
+            case '*': printf("  zero or more times"); break;
+          }
+        }
+        printf(" the capture %c\n",*pmx(Start,2));
+        break;
+                     
       case "&<(<?=?*+>)(<=.qaikcdglrpsuxwQAIKCDGLRPSUXW>)&>" :
         expl_ptrn();
         if (pmx(Len,1)>0) {
@@ -471,7 +484,8 @@ void explain(char *ptrn)
         printf(" character");
         if (isupper(*pmx(Start,2))) printf(" not");
         printf(" being");
-        switch (tolower(*pmx(Start,2))) {
+        j=tolower(*pmx(Start,2));
+        switch (j) {
           case 'q' : printf(" alphanumeric ([0-9A-Za-z])"); break;
           case 'a' : printf(" alphabetic ([A-Za-z])"); break;
           case 'i' : printf(" coded between 0 and 127 (ASCII)"); break;
@@ -561,6 +575,10 @@ void explain(char *ptrn)
         expl_ptrn();
         printf("  optionally the end of line\n"); break;
       case "&&n" : printf("  the end of line\n"); break;
+      case "&&W" :  
+        expl_ptrn();
+        printf("  optionally\n"); break;
+      case "&&w" : printf("  a sequence of word characters\n"); break;
       case "&&|" :  
         expl_ptrn();
         printf("  alternative pattern\n"); break;
@@ -670,7 +688,7 @@ void cmd_explain(char *arg)
   if (exp) explain(exp);
 }
 
-void cmd_help(char *arg)
+void cmd_help(/*char *arg*/)
 {
   printf("PMX shell 0.1\n");
   printf("  add s|p  \"str\" ...                  Add strings or patterns\n");

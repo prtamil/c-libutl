@@ -780,6 +780,17 @@ Inline tags
  ['|`'{|] An identifier to be included in indexes and cross references
 ..
 
+.% BNF
+======
+
+.v
+
+  doc = header? section*
+   
+  section = 
+
+..
+
 .% License
 ==========
 
