@@ -519,7 +519,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 /*  .% Finite state machine
 **  =======================
 **
-**  Three quick macros to embed Finite state machine into C programs.
+**  Macros to embed Finite state machine into C programs.
 **
 ** .v
 **      FSM {
@@ -529,7 +529,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 **        }
 **
 **        STATE(y) { ...
-**                   break;  // exit from the FSM
+**                   BREAK;  // exit from the FSM
 **        }
 *
 **        STATE(z) { ...
@@ -537,7 +537,7 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 **        }
 **
 **        STATE(t) { ...
-**                   RETURN();  // Go back to the caller state
+**                   GOBACK;  // Go back to the caller state
 **        }
 **      }
 ** ..
@@ -565,10 +565,12 @@ UTL_EXTERN( int utl_fsmrets[utl_fsmmax] , = {0}) ;
                     goto utl_##x##_s; \
                   } while (utlZero) 
                   
-#define RETURN()  do { \
+#define GOBACK    do { \
                     utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0);\
                     continue; \
                   } while (utlZero) 
+
+#define BREAK break
 
 #endif /*- UTL_H */
 

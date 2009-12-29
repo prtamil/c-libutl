@@ -21,8 +21,8 @@
 /* {{ * FILE-like access function to a string **/
 
 typedef struct {
-  char *start;
   char *text;
+  char *start;
   short eof;
 } sbuf;
 
@@ -32,6 +32,7 @@ typedef struct {
 #define pmxTell(s)     (SB(s)->text - SB(s)->start)
 #define pmxSeek(s,o,w) (SB(s)->text = SB(s)->start + o, SB(s)->eof = 0) 
 #define pmxEof(s)      (SB(s)->eof)
+#define pmxChrAt(s,k)  ((SB(s)->start)[k])
 
 
 
@@ -61,8 +62,10 @@ that has been matched.
   This structure is not to be used directly, an opaque pointer
 type ('{pmx_t}) is provided for passing information from a 
 function to another. 
- 
+
+  There actually is a stack of such structures to handle call back functions; 
 */
+
 int pmx_capt_cur = 0;
 
 static pmxMatches capt_arr[pmxCaptStkSize];
@@ -166,6 +169,24 @@ static int hasstring(void *text, char *lst)
   return mFALSE;
 }
 
+static int iscapt(void *text, int cap_num)
+{
+  size_t pos = pmxTell(text)-1;
+  size_t k = capt[cap_num][0];
+  size_t n = capt[cap_num][1];
+
+  if (k >= n) return mFALSE;
+
+  pmxSeek(text,pos,SEEK_SET);
+  while (k < n && (ic(pmxGetc(text)) == ic(pmxChrAt(text,k))))
+    k++;
+  
+  if (k == n) return mTRUE;
+  
+  pmxSeek(text,pos+1,SEEK_SET);
+  return mFALSE;
+}
+
 static int braced(void *text, int left, int right, char esc)
 {
   size_t pos = pmxTell(text)-1;
@@ -247,7 +268,6 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   if (*p == '>') p++;
   *next = p;
   for (ch = pmxGetc(text); *p && ch != EOF; ++p) {
-    /*printf("*** (%d) %c %s\n",ch,ch, p);*/ 
    *next = p;
     min = 1; max = 1;
     cnt = 0;
@@ -306,7 +326,15 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case '$' : W(hasstring(text,p));
                               break;
 
+                   case '1' : case '2' : case '3' :
+                   case '4' : case '5' : case '6' :
+                   case '7' : case '8' : case '9' :
+                              op -= '0';
+                              W(iscapt(text,op));     
+                              break;
+
                    case '\0': return NULL;
+                   
                  }
                  
                  if (cnt < min) return NULL;
@@ -319,9 +347,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
 
       case '>' : return NULL;
       
-      case '&' : cnt = 0;  op = 0;
+      case '&' : cnt = 0;  
                  left = '\0'; right = '\0';
-                 switch (*++p) {
+                 op = *++p;
+                 switch (op) {
                    case 'G' : capt[0][1] = pmxTell(text)-1;
                               break;
 
@@ -396,14 +425,20 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case 'K' : min = 0;
                    case 'k' : max = MAX_MAX;
                               W(is_blank(ch)) ; 
-                              if (cnt < min) return NULL;
-                              break;
+                              if (cnt >= min) break;
+                              return NULL;
                               
                    case 'S' : min = 0;
                    case 's' : max = MAX_MAX;
                               W(isspace(ch)) ; 
-                              if (cnt < min) return NULL;
-                              break;
+                              if (cnt >= min) break;
+                              return NULL;
+                              
+                   case 'W' : min = 0;
+                   case 'w' : max = MAX_MAX;
+                              W(is_word(ch)) ; 
+                              if (cnt >= min) break;
+                              return NULL;
                               
                    case '\0': return NULL;
                    

@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     curln = 0;
 
     FSM {
-      STATE(linestart):
+      STATE(linestart) {
           curln++;
           pmxSwitch (curchar,
             pmxTokSet("&K.(<+=%>)",  T_HEADER)
@@ -122,8 +122,9 @@ int main(int argc, char *argv[])
             pmxTokCase(pmxTokEOF)  : GOTO(done);
           }
           fprintf(stderr,"EEEKK\n"); break;
-
-      STATE(verbatim) :
+      }
+      
+      STATE(verbatim) {
           pmxSwitch (curchar,
             pmxTokSet("&K&<(<*!&>>)&>",  T_VRB_MARK)
             pmxTokSet("&K:(<*S>)",       T_VRB_FMT)
@@ -153,8 +154,9 @@ int main(int argc, char *argv[])
             pmxTokCase(pmxTokEOF)  : GOTO(done);
           }
           fprintf(stderr,"EEEKK3\n"); break;
-
-      STATE(verb_body) :
+      }
+      
+      STATE(verb_body) {
           pmxSwitch (curchar,
             pmxTokSet("&L&n",T_VRB_LINE)
           ) {
@@ -174,8 +176,9 @@ int main(int argc, char *argv[])
                   GOTO(done);
           }
           fprintf(stderr,"EEEKK3\n"); break;
-
-      STATE(header) :
+      }
+      
+      STATE(header) {
           pmxSwitch (curchar,
             pmxTokSet("&K:&K(<*S>)",T_HDR_CLASS)
             pmxTokSet("&K&<(<*!&>>)&>",T_HDR_MARK)
@@ -199,8 +202,9 @@ int main(int argc, char *argv[])
             pmxTokCase(pmxTokEOF)  : GOTO(done);
           }
           fprintf(stderr,"EEEKK3\n"); break;
-
-      STATE(midline) :
+          
+      }
+      STATE(midline) {
           pmxSwitch (curchar,
             pmxTokSet("&n",   T_NL)
             pmxTokSet("`&n",  T_TICK)
@@ -298,9 +302,10 @@ int main(int argc, char *argv[])
             pmxTokCase(pmxTokEOF) : GOTO(done);
           }
           fprintf(stderr,"EEEKKX %d\n", pmxToken(pmx_tmpmtc));break;
-
-       STATE(done) :
+       }
+       STATE(done) {
          break;
+       }
      }
   }
   else utlError(2,"Unable to open input file\n");

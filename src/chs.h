@@ -170,13 +170,6 @@ chs_t chs_setsize(chs_t s, long ndx);
 
 long chsLen(chs_t s);
 
-/*  .%% Strings as streams
-    ''''''''''''''''''''''
-
-
-  .. 
-*/
-
 char   chsChrAt  (chs_t s, long ndx);
 
 chs_t  chs_SetChr (chs_t s, long ndx, char c) ;
