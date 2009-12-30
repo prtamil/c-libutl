@@ -7,94 +7,108 @@
 
 ::@echo off
 
-:: Uncomment next line to fall back to plain C only implementation
+@if "%1"=="clean" goto clean
 
-@call win_cctest.bat "Pelles" pocc -v
+:: === SET UP COMPILATION
+
+:: --- Guess compiler
+
+:: create the test batch script
+@set F=%0
+@if NOT EXIST %F% set F=%0.bat
+@if NOT EXIST %F% goto usage
+@find "%K%" <%F% >test_cc.bat
+
+:: --- Some defaults
+@set SYS=X 
+@set CC=cl -nologo
+@set CCFLAGS=/c /O2
+@set AR=lib -nologo
+@set AR_OUT=/OUT:
+@set LN=link -nologo
+@set LN_OUT=/OUT:
+@set O=obj
+@set A=lib
+
+@call test_cc.bat "Pelles" pocc -v
 @if errorlevel 1 @goto nopelles
 
 :: ------------ Pelles C
-@echo Pelles C compiler
+@set SYS=PELLES_C 
 @set CC=pocc
 @set AR=polib
-@set AR_OUT=/OUT:
 @set LN=polink
-@set CFLAGS=/c /O2 /W0
 :: @set NO_ASM=/DUTL_NOASM
 @goto gotcc
 :nopelles
 
-@call win_cctest.bat "Watcom" cl -v
-@if errorlevel 1 @goto nowatcom
-
-:: ------------ Open Watcom
-@echo Open Watcom compiler
-@set CC=cl -nologo
-@set AR=lib -nologo
-@set AR_OUT=/OUT:
-@set LN=link -nologo
-@set CFLAGS=-c -O2
-:: @set NO_ASM=-DUTL_NOASM
-@goto gotcc
-:nowatcom
-
-@call win_cctest.bat "Microsoft" cl -v
+@call test_cc.bat "Microsoft" cl -v
 @if errorlevel 1 @goto nomsvc
 
 :: ------------ Visual C++
 @echo Microsoft Visual C++
-@set CC=cl -nologo
-@set AR=lib
-@set AR_OUT=/OUT:
-@set LN=link -nologo
-@set CFLAGS=/c /O2 /W0
+@set SYS=MSVC 
 :: @set NO_ASM=/DUTL_NOASM
 @goto gotcc
 :nomsvc
 
-@echo ERROR: Unable to find a supported compiler
-@goto theend
+@call test_cc.bat "Watcom" cl -v
+@if errorlevel 1 @goto nowatcom
 
+:: ------------ Open Watcom
+@echo Open Watcom compiler
+@set SYS=WATCOM 
+:: @set NO_ASM=-DUTL_NOASM
+@goto gotcc
+:nowatcom
+
+:: === BUILDING
 :gotcc
-del cc.x cc.y
+@del cc.x cc.y
+@del test_cc.bat
+@if "%SYS"=="X" goto nocc
+
+@echo Building with: %SYS%
 
 :: --------- LIBRARY  ------------
 cd ..\src
 @echo Building static library
 
 copy utl.h+pmx.h+chs.h+rec.h+tbl.h libutl.h
-echo /**/ >>libutl.h
-%CC% %CFLAGS% %NO_ASM% utl.c
-%CC% %CFLAGS% %NO_ASM% chs.c
-%CC% %CFLAGS% %NO_ASM% tbl.c
-%CC% %CFLAGS% %NO_ASM% rec.c
-%CC% %CFLAGS% %NO_ASM% pmx.c
+@echo /**/ >>libutl.h
 
-%AR% *.obj %AR_OUT%libutl.lib
+%CC% %CCFLAGS% %NO_ASM% utl.c
+%CC% %CCFLAGS% %NO_ASM% chs.c
+%CC% %CCFLAGS% %NO_ASM% tbl.c
+%CC% %CCFLAGS% %NO_ASM% rec.c
+%CC% %CCFLAGS% %NO_ASM% pmx.c
 
-copy *.obj ..\dist
-copy libutl.lib ..\dist
+%AR% *.%O% %AR_OUT%libutl.%A%
+
+copy *.%O% ..\dist
+copy libutl.%A% ..\dist
 copy libutl.h ..\dist
 
 cd ..\examples\uncomment
 
-%CC% %CFLAGS% -I ..\..\dist unc.c
-%LN%  unc.obj ..\..\dist\libutl.lib /OUT:unc.exe
+%CC% %CCFLAGS% -I ..\..\dist unc.c
+%LN% %LN_OUT%unc.exe unc.%O% ..\..\dist\libutl.%A%
 unc < ..\..\src\libutl.h > ..\..\dist\libutl.h    
 
 :: --------- pmx2c ------------
 @echo Building pmx2c tool
 
 cd ..\pmx2c
-%CC% %CFLAGS% -I ..\..\dist pmx2c_boot.c
-%LN%  pmx2c_boot.obj ..\..\dist\libutl.lib /OUT:pmx2a.exe
+%CC% %CCFLAGS% -I ..\..\dist pmx2c_boot.c
+%LN% %LN_OUT%pmx2a.exe pmx2c_boot.%O% ..\..\dist\libutl.%A%
 pmx2a pmx2c.pmx pmx2c.c
  
-%CC% %CFLAGS% -I ..\..\dist pmx2c.c
-%LN%  pmx2c.obj ..\..\dist\libutl.lib /OUT:pmx2b.exe
+%CC% %CCFLAGS% -I ..\..\dist pmx2c.c
+%LN% %LN_OUT%pmx2b.exe pmx2c.%O% ..\..\dist\libutl.%A%
 pmx2b pmx2c.pmx pmx2c.c
   
-%CC% %CFLAGS% -I ..\..\dist pmx2c.c
-%LN%  pmx2c.obj ..\..\dist\libutl.lib /OUT:pmx2c.exe
+%CC% %CCFLAGS% -I ..\..\dist pmx2c.c
+%LN% %LN_OUT%pmx2c.exe pmx2c.%O% ..\..\dist\libutl.%A%
 copy pmx2c.exe ..\..\dist
 
 del pmx2c.c
@@ -105,12 +119,45 @@ del pmx2c.c
 cd ..\pmxshell
 
 ..\..\dist\pmx2c pmxshell.pmx pmxshell.c
-%CC% %CFLAGS% -I ..\..\dist pmxshell.c
+%CC% %CCFLAGS% -I ..\..\dist pmxshell.c
 del pmxshell.c
-%LN%  pmxshell.obj ..\..\dist\libutl.lib /OUT:pmxshell.exe
+%LN% %LN_OUT%pmxshell.exe pmxshell.%O% ..\..\dist\libutl.%A%
 copy pmxshell.exe ..\..\dist
 
 :: --------- DONE ------------
 cd ..\..\build
+@goto done
+
+:usage
+@echo USAGE: %0
+@goto done
+
+:nocc
+@echo ERROR: Unable to find a supported compiler
+@goto done
  
-:theend
+
+:: ==== TEST BATCH 
+::
+%K% @echo. >cc.x
+%K% @echo. >cc.y
+%K% @%2 %3 %4 %5 >cc.x 2>cc.y
+%K% @type cc.y >> cc.x
+%K% @find %1 cc.x >nul
+::
+
+:clean
+echo off
+cd ..
+del /Q dist\*.*
+del /Q src\libutl.h
+
+del /Q /S *.obj
+del /Q /S *.o
+del /Q /S *.lib
+del /Q /S *.a
+del /Q /S *.exe
+
+cd build
+   
+:done
