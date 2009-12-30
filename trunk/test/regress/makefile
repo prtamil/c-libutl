@@ -11,12 +11,17 @@ TOP=../../
 include $(TOP)config.mk
 
 RGR_TESTS = rgr_rec$(_EXE) rgr_vec$(_EXE) \
-            rgr_chs$(_EXE) rgr_tbl$(_EXE)
+            rgr_chs$(_EXE) rgr_tbl$(_EXE) \
+            rgr_pmx$(_EXE)
 
 RGR_OBJS = rgr_rec$(_OBJ) rgr_vec$(_OBJ) \
-           rgr_chs$(_OBJ) rgr_tbl$(_OBJ)
+           rgr_chs$(_OBJ) rgr_tbl$(_OBJ) \
+           rgr_pmx$(_OBJ)
 
 all: $(RGR_TESTS)
+
+rgr_pmx$(_EXE): $(CHKLIB) rgr_pmx$(_OBJ)
+	$(LN)$@ rgr_pmx$(_OBJ) -lutl
 
 rgr_rec$(_EXE): $(CHKLIB) rgr_rec$(_OBJ)
 	$(LN)$@ rgr_rec$(_OBJ) -lutl

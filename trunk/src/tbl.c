@@ -478,8 +478,8 @@ static unsigned short llog2(unsigned long x)
   l=0;
 
   #ifndef UTL_NOASM   /* Use inline assembly instructions! */
-    #if defined(__POCC__) || defined(_MSC_VER)
-      /* Pelles C & MS Visual C++*/
+    #if defined(__POCC__) || defined(_MSC_VER) || defined (__WATCOMC__)
+        /* Pelles C            MS Visual C++         OpenWatcom*/
       __asm { mov eax, [x]
               cmp eax, 0
               je  z

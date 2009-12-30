@@ -26,15 +26,38 @@ typedef struct {
   short eof;
 } sbuf;
 
+static short pmx_ch;
 
 #define SB(s)          ((sbuf *)(s))
-#define pmxGetc(s)     ((SB(s)->text && *SB(s)->text)?  *SB(s)->text++ : (SB(s)->eof = 1, EOF))
+#define pmxGetc(s) \
+     ((pmx_ch = *SB(s)->text++) ? pmx_ch : (SB(s)->eof = EOF))
+     
 #define pmxTell(s)     (SB(s)->text - SB(s)->start)
 #define pmxSeek(s,o,w) (SB(s)->text = SB(s)->start + o, SB(s)->eof = 0) 
 #define pmxEof(s)      (SB(s)->eof)
 #define pmxChrAt(s,k)  ((SB(s)->start)[k])
 
+/*
+static int pmxGetc(sbuf *s)
+{
+  short ch;
+  if (!s) return EOF;
+  if (!s->text || !*s->text) return (s->eof = EOF);
+  ch = *s->text;
+  s->nl = (s->text == s->start) ||
+          (ch == '\n') ||
+          (ch == '\r' && s->text[1] != '\n') ;
+  s->text++;
+  return ch;
+}
+*/
 
+static int pmxBeginLine(sbuf *s)
+{
+  return ( (s->text-1 == s->start) ||
+           (s->text[-2] == '\n') ||
+           (s->text[-2] == '\r' && s->text[-1] != '\n'));
+}
 
 /* .%% The '|pmxMatches| structure '<matchinfo>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -351,7 +374,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  left = '\0'; right = '\0';
                  op = *++p;
                  switch (op) {
-                   case 'G' : capt[0][1] = pmxTell(text)-1;
+                   case 'g' : capt[0][1] = pmxTell(text)-1;
+                              break;
+
+                   case 'r' : if (!pmxBeginLine(text)) return mFALSE;
                               break;
 
                    case 'I' : icase = mFALSE; break;
@@ -547,7 +573,8 @@ static pmx_t domatch(void *text, char *pattern, char **next)
 
 /* */
 
-pmx_t pmxMatchStr(char *txt, char *ptrn)
+
+pmx_t pmx_matchstr(char *txt, char *ptrn,size_t offset)
 {
   pmx_t ret = NULL;
   size_t cnt;
@@ -561,7 +588,7 @@ pmx_t pmxMatchStr(char *txt, char *ptrn)
   if (!txt || !ptrn || !*ptrn ) return NULL;
   
   sb.start = txt;
-  sb.text  = txt;
+  sb.text  = txt+offset;
   sb.eof   = 0;
 
   start = pmxTell(text);
@@ -602,20 +629,13 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   pmx_t ret;
   char *cur = text;
   int f_ret;
-  int k;
-  int delta;
 
   if (!text || !ptrn || !*ptrn || f == NULL) 
     return 0;
 
   while (*cur) {
-    ret = pmxMatchStr(cur, ptrn);
+    ret = pmx_matchstr(text, ptrn, cur-text);
     if (ret) {
-      delta = cur - text;
-      for (k=0; k<pmxCaptMax; k++) {
-        (*ret)[k][0] += delta;
-        (*ret)[k][1] += delta;
-      }
       if ((f_ret = f(text,ret))) return f_ret; 
       cur =  text+pmxEnd(ret,0);
     }

@@ -36,10 +36,8 @@ extern int pmx_capt_cur;
 #define pmxMatchesPush()  (pmx_capt_cur = (pmx_capt_cur +1) & 0x07)
 #define pmxMatchesPop()   (pmx_capt_cur = (pmx_capt_cur + pmxCaptStkSize -1) & 0x07)
 
-
-
-pmx_t pmxMatchStr(char *text, char *p);
-
+pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset);
+#define pmxMatchStr(t, p) pmx_matchstr(t,p,0)
 
 int           pmxMatched (pmx_t mtc);
 

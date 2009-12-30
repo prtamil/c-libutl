@@ -107,7 +107,7 @@ contains only blank characters.
    
 .%%% Line breaks
 ''''''''''''''''
-   If a line ends with '|_| immediatly before the '|\n| then it's a line break
+   If a line ends with '|_| immediately before the '|\n| then it's a line break
 that does not mark the end of paragraph.
 
 .%%% Ignoring lines
@@ -326,6 +326,7 @@ text, a different end marker can be specified as follows:
  
 
 .%% Tables
+----------
 
   A very simple form of table is supported.
 
@@ -787,7 +788,9 @@ Inline tags
 
   doc = header? section*
    
-  section = 
+  section = sectitle paragraphs*
+  
+  paragraph
 
 ..
 

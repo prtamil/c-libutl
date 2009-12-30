@@ -52,5 +52,6 @@ int main (int argc, char *argv[])
     }
 
   }
+  TSTDONE();
   exit(0);
 }

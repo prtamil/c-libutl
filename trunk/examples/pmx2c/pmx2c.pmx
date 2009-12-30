@@ -246,5 +246,5 @@ int main(int argc, char *argv[])
   if (outf != stdout) fclose(outf);
   if (inf  != stdin)  fclose(inf);
   fclose(tmpf);
-  exit (0);  
+  return 0;  
 }

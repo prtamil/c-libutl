@@ -163,6 +163,28 @@ they must be preceeded by '&'.  For example:
                    or "'|cdcdabcdab|" etc.
   ..
   
+.%% Submatching captures
+''''''''''''''''''''''''
+  Submatches can be denoted using parenthesis. There can be up to 9 
+submatches. Submatches can be nested. Examples:
+
+  .['|(&f)(<?$in$cm>)|]    matches "'|2.0cm|", "'|-3in|", "'|4.1|" etc.;
+                           saves the number as capture 1 and the unit of
+                           measure as capture 2.
+                        
+   ['|=((<?=+&->)<+d>))|]  matches "'|=-5|", "'|=42|", "'|=+1|" etc.;
+                           saves the signed number as capture 1 and the
+                           sign as capture 2;
+  .. 
+
+.%% Back references
+'''''''''''''''''''
+  It is possible to refer to captured test with '|<1>|, '|<2>|, ...,  '|<9>|.
+  
+  For example: '|(<u>)<1>| matches the doubling of an upper case character as
+'|XX| or '|AA|.  
+  
+
 .%% Recognizers
 '''''''''''''''
   Recognizers are patterns that match a specific object (for example
@@ -225,20 +247,6 @@ they must be preceeded by '&'.  For example:
    ['|&i|]    Start case insensitive match.
    ['|&I|]    Stop case insensitive match.
   ..
-
-.%% Submatching captures
-''''''''''''''''''''''''
-  Submatches can be denoted using parenthesis. There can be up to 9 
-submatches. Submatches can be nested. Examples:
-
-  .['|(&f)(<?$in$cm>)|]    matches "'|2.0cm|", "'|-3in|", "'|4.1|" etc.;
-                           saves the number as capture 1 and the unit of
-                           measure as capture 2.
-                        
-   ['|=((<?=+&->)<+d>))|]  matches "'|=-5|", "'|=42|", "'|=+1|" etc.;
-                           saves the signed number as capture 1 and the
-                           sign as capture 2;
-  .. 
 
 
 .%% Alternative expressions
@@ -481,7 +489,17 @@ is found or a break is executed within the '|pmxTokSwitch| section.
   ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_|'
   ['|<x>|]  (isxdigit) matches an hexadecimal digit. Not locale-specific.
   ['|<.>|]  matches any character (except ''|\0|').
+  ['|<1>|] 
+  ['|<2>|] 
+  ['|<3>|] 
+  ['|<4>|] 
+  ['|<5>|] 
+  ['|<6>|] 
+  ['|<7>|] 
+  ['|<8>|] 
+  ['|<9>|]
   ['|>|]
+ ..
 ..
 
 .[]

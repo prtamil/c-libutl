@@ -15,14 +15,14 @@ FileFormat=1
 ProjectFilesOnly=0
 [Project tree]
 vec
-	-build
-		build\win_visualc.bat
-		build\win_clean.bat
+	+build
 		build\unix_gcc.sh
 		build\msys_mingw.sh
+		build\win_build.bat
 	+vec
 		+doc
 			doc\stk.gif
+			doc\pmx.txt
 		+examples
 			+scanner
 				examples\scanner\mpnotes.c
@@ -85,6 +85,7 @@ vec
 				test\regress\rgr_vec.c
 				test\regress\rgr_rec.c
 				test\regress\makefile
+				test\regress\rgr_pmx.c
 			+stress
 				test\stress\sts_add.lua
 				test\stress\makefile
@@ -93,42 +94,42 @@ vec
 		targets.mk
 		config.mk
 [Open project files]
-0=examples\uncomment\unc.c
-1=src\pmx.c
-2=src\pmx.h
-3=src\chs.h
-4=src\chs.c
-5=src\utl.h
-6=examples\fmt\fmt9.txt
-7=examples\pmxshell\pmxshell.pmx
-8=examples\pmx2c\pmx2c.pmx
+0=src\tbl.c
+1=src\rec.h
+2=examples\pmx2c\pmx2c.pmx
+3=examples\pmx2c\pmx2c_boot.c
+4=examples\pmxshell\pmxshell.pmx
+5=build\win_build.bat
+6=..\..\gema\src\gbuild.bat
+7=C:\Trece.txt
+8=C:\main.c
 [Selected Project Files]
 Main=
-Selected=examples\pmxshell\pmxshell.pmx
-[examples\uncomment\unc.c]
-TopLine=11
-Caret=42,54
-[src\pmx.c]
-TopLine=163
-Caret=3,183
-[src\pmx.h]
-TopLine=63
-Caret=1,106
-[src\chs.h]
-TopLine=146
-Caret=1,177
-[src\chs.c]
-TopLine=1
-Caret=26,4
-[src\utl.h]
-TopLine=520
-Caret=42,563
-[examples\fmt\fmt9.txt]
-TopLine=91
-Caret=1,1
-[examples\pmxshell\pmxshell.pmx]
-TopLine=464
-Caret=27,479
+Selected=build\win_build.bat
+[src\tbl.c]
+TopLine=468
+Caret=33,481
+[src\rec.h]
+TopLine=41
+Caret=14,77
 [examples\pmx2c\pmx2c.pmx]
+TopLine=209
+Caret=38,240
+[examples\pmx2c\pmx2c_boot.c]
+TopLine=80
+Caret=22,111
+[examples\pmxshell\pmxshell.pmx]
+TopLine=730
+Caret=10,768
+[build\win_build.bat]
+TopLine=166
+Caret=36,191
+[..\..\gema\src\gbuild.bat]
+TopLine=44
+Caret=1,67
+[C:\Trece.txt]
 TopLine=1
-Caret=1,19
+Caret=1,1
+[C:\main.c]
+TopLine=1
+Caret=1,9

@@ -7,19 +7,11 @@
 
 ::@echo off
 
-@if "%1"=="clean" goto clean
 
 :: === SET UP COMPILATION
-
-:: --- Guess compiler
-
-:: create the test batch script
-@set F=%0
-@if NOT EXIST %F% set F=%0.bat
-@if NOT EXIST %F% goto usage
-@find "%K%" <%F% >test_cc.bat
-
-:: --- Some defaults
+@set K_=@rem
+@set J=K_
+:: --- Some defaults for compiler
 @set SYS=X 
 @set CC=cl -nologo
 @set CCFLAGS=/c /O2
@@ -30,10 +22,67 @@
 @set O=obj
 @set A=lib
 
-@call test_cc.bat "Pelles" pocc -v
-@if errorlevel 1 @goto nopelles
+@if "%1"=="clean" goto clean
+@if "%1"=="help" goto usage
+@if "%1"=="/h" goto usage
+@if "%1"=="/?" goto usage
+@if "%1"=="-h" goto usage
+@if NOT "%1"==""  goto %1
+:: --- Guess compiler
+
+:: This code will be copied in the test_cc.bat file
+%K_% @echo. >cc.x
+%K_% @echo. >cc.y
+%K_% @%2 %3 %4 %5 >cc.x 2>cc.y
+%K_% @type cc.y >> cc.x
+%K_% @find %1 cc.x >nul
+:: --------------------
+
+:guess
+:: create the test batch script
+
+@set F=%0
+@if NOT EXIST %F% set F=%0.bat
+@if NOT EXIST %F% set F=%0.cmd
+@if NOT EXIST %F% goto usage
+@find "%J%" <%F% >test_cc.bat
+@if NOT EXIST test_cc.bat goto usage
+
+:: ------------ gcc
+@call test_cc.bat "GCC" gcc --version
+@if errorlevel 1 @goto nogcc
+@set SYS=GCC
+@set CC=gcc
+@set CCFLAGS=-c -O2
+@set AR=ar
+@set AR_OUT=-ru  
+@set LN=gcc
+@set LN_OUT=-o 
+@set O=o
+@set A=a
+:: @set NO_ASM=/DUTL_NOASM
+@goto gotcc
+:nogcc
+
+:: ------------ Digital Mars
+@call test_cc.bat ".." dmc --
+@if errorlevel 1 @goto nodmc
+:dmc
+@set SYS=Digital_Mars
+@set CC=dmc
+@set CCFLAGS=-w2 -o -c
+@set AR=lib
+@set AR_OUT=-c   
+@set LN=dmc
+@set LN_OUT=-o 
+:: @set NO_ASM=/DUTL_NOASM
+@goto gotcc
+:nodmc
 
 :: ------------ Pelles C
+@call test_cc.bat "Pelles" pocc -v
+@if errorlevel 1 @goto nopelles
+:pelles
 @set SYS=PELLES_C 
 @set CC=pocc
 @set AR=polib
@@ -42,21 +91,19 @@
 @goto gotcc
 :nopelles
 
+:: ------------ Visual C++
 @call test_cc.bat "Microsoft" cl -v
 @if errorlevel 1 @goto nomsvc
-
-:: ------------ Visual C++
-@echo Microsoft Visual C++
+:msvc
 @set SYS=MSVC 
 :: @set NO_ASM=/DUTL_NOASM
 @goto gotcc
 :nomsvc
 
+:: ------------ Open Watcom
 @call test_cc.bat "Watcom" cl -v
 @if errorlevel 1 @goto nowatcom
-
-:: ------------ Open Watcom
-@echo Open Watcom compiler
+:watcom
 @set SYS=WATCOM 
 :: @set NO_ASM=-DUTL_NOASM
 @goto gotcc
@@ -83,7 +130,7 @@ copy utl.h+pmx.h+chs.h+rec.h+tbl.h libutl.h
 %CC% %CCFLAGS% %NO_ASM% rec.c
 %CC% %CCFLAGS% %NO_ASM% pmx.c
 
-%AR% *.%O% %AR_OUT%libutl.%A%
+%AR% %AR_OUT%libutl.%A% utl.%O% chs.%O% tbl.%O% rec.%O% pmx.%O%
 
 copy *.%O% ..\dist
 copy libutl.%A% ..\dist
@@ -128,23 +175,21 @@ copy pmxshell.exe ..\..\dist
 cd ..\..\build
 @goto done
 
-:usage
-@echo USAGE: %0
-@goto done
-
 :nocc
 @echo ERROR: Unable to find a supported compiler
 @goto done
  
-
-:: ==== TEST BATCH 
-::
-%K% @echo. >cc.x
-%K% @echo. >cc.y
-%K% @%2 %3 %4 %5 >cc.x 2>cc.y
-%K% @type cc.y >> cc.x
-%K% @find %1 cc.x >nul
-::
+:usage
+@echo USAGE: %0 [opt]
+@echo   opt:  help     this help 
+@echo         clean    cleanup files 
+@echo         guess    Find available compiler
+@echo         dmc      Digital Mars C compiler 
+@echo         gcc      GNU C compiler 
+@echo         msvc     Microsft Visual C++
+@echo         pelles   Pelles-C
+@echo         watcom   Open Watcom 
+@goto done
 
 :clean
 echo off

@@ -37,12 +37,25 @@ your project.
 '''''''''''''''''''''''''''
   The '|build| directory contains scripts to build the library using other
 compilers.
-  .[PellesC]
+
+  The '|win_build.bat| script will try to guess the compiler that is available
+and will use it to compile the library and the basic tools.
+
+.v
+    D:\projects\clibutl>cd build
+    D:\projects\clibutl\build> win_build
+.. 
+
+  Currently the following compilers for Windows are supported:
+  
+  .[Pelles C]
    [Visual C++ Express]
    [Open Watcom]
   ..
 
-
+  .> NOTE: I'm not an expert in this compilers, please suggest different
+     options to make it 
+  .. 
 
 .% Using the library
 ~~~~~~~~~~~~~~~~~~~~
@@ -52,16 +65,16 @@ compilers.
   .# Link the static library '|libutl.a| '(or '|libutl.lib| or whatever
      the extension is in your system) and include the header '|libutl.h|.
      
-   # Use the object files and headers you may need linking them directly
-     in your executable.
+   # Use the object files and headers you need by linking/including them
+     directly.
      
    # Use '|utl.h| alone. If you just need macros for logging, debugging,
      unit tests and error handling, simply include the '|utl.h| header.
-     The example in '|<utlh.c=examples/utl_h/utlh.c#>| shows how to do it. 
+     The example in '<'|utlh.c|=examples/utl_h/utlh.c#> shows how to do it. 
 
    # Use '|pmx| alone. The pattern matching functions have no dependencies
      on the other functions, you can simply include '|pmx.h| and link
-     '|pmx.o| to your project      
+     '|pmx.o| to your project.    
   ..
 
   That said, the simplest way to use '|libutl| is just to build the
