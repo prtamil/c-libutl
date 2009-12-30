@@ -98,7 +98,7 @@
 */
 
 #ifdef UTL_MAIN
-void utlEmptyFun(void) {};
+void utlEmptyFun(void) {}
 #endif
 void utlEmptyFun(void);
 

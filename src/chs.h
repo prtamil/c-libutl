@@ -164,7 +164,7 @@ chs_t chs_setsize(chs_t s, long ndx);
 #define chsDupL(s,l)  chs_CpyL(NULL,s,l)
 
 #define chsFree(s) \
- ((s) = ((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), NULL) : NULL))
+ ((s) = (char *)((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), NULL) : NULL))
 
 #define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
 

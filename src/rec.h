@@ -74,7 +74,7 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 #define recNew(t,r)  (r = t##_new())
 
 #define recFree(r)  \
-  (r = (r? (( (rec_t)(r))->rec_f->free(r),free(r),NULL):NULL)) 
+  (r = (rec_t)(r? (( (rec_t)(r))->rec_f->free(r),free(r),NULL):NULL)) 
 
 #define recSize(a)   ((a)? ((rec_t)(a))->rec_f->size : 0)
 

@@ -468,7 +468,7 @@ void explain(char *ptrn)
             case '*': printf("  zero or more times"); break;
           }
         }
-        printf(" the capture %c\n",*pmx(Start,2));
+        printf("  the capture %c\n",*pmx(Start,2));
         break;
                      
       case "&<(<?=?*+>)(<=.qaikcdglrpsuxwQAIKCDGLRPSUXW>)&>" :
@@ -765,7 +765,7 @@ int main()
   
   shell();
 
-  exit(0);
+  return (0);
 }
 
 
