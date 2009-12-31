@@ -50,6 +50,7 @@
 
 
 :: ------------ lcc
+:: LCC does not support variadic macros :( 
 @call test_cc.bat "lcc-Win32" lcc -v
 @if errorlevel 1 @goto nolcc
 :lcc

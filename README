@@ -9,7 +9,6 @@
 ..
 
 
-
 .% Building the library
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -18,8 +17,9 @@ platforms.  It is know to work with:
 
 .t
      Compiler                      Platform
-    ---------------------------   -------------------
+    ---------------------------   ------------------------
     gcc 4.4.1                      Linux Ubuntu 9.10
+    gcc 3.4.3                      OpenSolaris 5.11 (x86)
     gcc 3.4.2 (mingw)              Windows 7
     MS Visual C/C++ Express 2008   Windows 7
     Open Watcom 1.8                Windows 7
