@@ -1,0 +1,29 @@
+
+.% Introduction
+===============
+
+  Dating back to 1972, C is one of the oldest programming languages still
+in wide use. There are three main reasons for its longevity:
+
+  .# it's a system language that provides a tiny abstraction over the
+     underlying platform which makes it perfect choice for writing code
+     that directly interacts with hardware components (e.g. device drivers,
+     embedded software).
+  
+   # it can be compiled to fast, compact assembler code. Critical components
+     that require the maximum speed can be coded directly in C (e.g. a
+     physics engine for a game);
+     
+   # it's available on a variety of platforms and can be integrated with other
+     languages, giving the opportunity of writing portable, interoperable code
+     '(yes, that's easier said then done, but, at least, the opportunity is
+     there :) );
+  ..
+       
+  Unfortunately, its simplicity is also the cause of its main drawbacks. 
+Being a low-level language means that the programmer is responsible for many
+tedious tasks.   
+
+  
+
+ 
