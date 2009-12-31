@@ -13,6 +13,30 @@
 .% Building the library
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+  The library has been tested with different combinations of compiler and
+platforms.  It is know to work with:
+
+.t
+     Compiler                      Platform
+    ---------------------------   -------------------
+    gcc 4.4.1                      Linux Ubuntu 9.10
+    gcc 3.4.2 (mingw)              Windows 7
+    MS Visual C/C++ Express 2008   Windows 7
+    Open Watcom 1.8                Windows 7
+    Digital Mars 8.51              Windows 7
+    Pelles C 6.00.6                Windows 7
+..
+
+  The following compilers do not provide enough C99 support to make the 
+library work.
+
+.t
+     Compiler                      Platform
+    ---------------------------   -------------------
+    lcc-Win32                      Windows
+    Borland C/C++ 5.5 (free)       Windows
+..
+
 .%% Using the makefile
 ''''''''''''''''''''''
   The makefile has only been tested with Linux and Win32 Mingw+Msys but should

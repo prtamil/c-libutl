@@ -48,9 +48,27 @@
 @find "%J%" <%F% >test_cc.bat
 @if NOT EXIST test_cc.bat goto usage
 
+
+:: ------------ lcc
+@call test_cc.bat "lcc-Win32" lcc -v
+@if errorlevel 1 @goto nolcc
+:lcc
+@goto nolcc
+@set SYS=lcc
+@set CC=lcc 
+@set CCFLAGS=-ansic -c -O
+@set AR=lcclib
+@set LN=lcclnk -s -subsystem console   
+@set LN_OUT=-o 
+:: @set NO_ASM=/DUTL_NOASM
+@goto gotcc
+:nolcc
+
+
 :: ------------ gcc
 @call test_cc.bat "GCC" gcc --version
 @if errorlevel 1 @goto nogcc
+:gcc
 @set SYS=GCC
 @set CC=gcc
 @set CCFLAGS=-c -O2
@@ -135,10 +153,10 @@ copy utl.h+pmx.h+chs.h+rec.h+tbl.h libutl.h
 copy *.%O% ..\dist
 copy libutl.%A% ..\dist
 copy libutl.h ..\dist
-
+goto done
 cd ..\examples\uncomment
 
-%CC% %CCFLAGS% -I ..\..\dist unc.c
+%CC% %CCFLAGS% -I..\..\dist unc.c
 %LN% %LN_OUT%unc.exe unc.%O% ..\..\dist\libutl.%A%
 unc < ..\..\src\libutl.h > ..\..\dist\libutl.h    
 
@@ -146,15 +164,15 @@ unc < ..\..\src\libutl.h > ..\..\dist\libutl.h
 @echo Building pmx2c tool
 
 cd ..\pmx2c
-%CC% %CCFLAGS% -I ..\..\dist pmx2c_boot.c
+%CC% %CCFLAGS% -I..\..\dist pmx2c_boot.c
 %LN% %LN_OUT%pmx2a.exe pmx2c_boot.%O% ..\..\dist\libutl.%A%
 pmx2a pmx2c.pmx pmx2c.c
  
-%CC% %CCFLAGS% -I ..\..\dist pmx2c.c
+%CC% %CCFLAGS% -I..\..\dist pmx2c.c
 %LN% %LN_OUT%pmx2b.exe pmx2c.%O% ..\..\dist\libutl.%A%
 pmx2b pmx2c.pmx pmx2c.c
   
-%CC% %CCFLAGS% -I ..\..\dist pmx2c.c
+%CC% %CCFLAGS% -I..\..\dist pmx2c.c
 %LN% %LN_OUT%pmx2c.exe pmx2c.%O% ..\..\dist\libutl.%A%
 copy pmx2c.exe ..\..\dist
 
@@ -184,8 +202,8 @@ cd ..\..\build
 @echo   opt:  help     this help 
 @echo         clean    cleanup files 
 @echo         guess    Find available compiler
-@echo         dmc      Digital Mars C compiler 
-@echo         gcc      GNU C compiler 
+@echo         dmc      Digital Mars C 
+@echo         gcc      GNU C 
 @echo         msvc     Microsft Visual C++
 @echo         pelles   Pelles-C
 @echo         watcom   Open Watcom 
