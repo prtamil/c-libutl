@@ -279,8 +279,8 @@ over an alternative expressions that failed.
 
    pmx functions use objects of type '{pmx_t} to keep track of 
 what's has been matched. From and API perspective, it has to be treated
-as an '/opaque/ pointer; inner details can be found in the '<pmx.c=pmx.c#matchinfo>
-file.
+as an '/opaque/ pointer; inner details can be found in the
+'<pmx.c=pmx.c#matchinfo> file.
 
 .%% Matching on a string
 ''''''''''''''''''''''''
@@ -489,16 +489,17 @@ is found or a break is executed within the '|pmxTokSwitch| section.
   ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_|'
   ['|<x>|]  (isxdigit) matches an hexadecimal digit. Not locale-specific.
   ['|<.>|]  matches any character (except ''|\0|').
-  ['|<1>|] 
-  ['|<2>|] 
-  ['|<3>|] 
-  ['|<4>|] 
-  ['|<5>|] 
-  ['|<6>|] 
-  ['|<7>|] 
-  ['|<8>|] 
-  ['|<9>|]
-  ['|>|]
+  ['|<1>|]  matches capture 1
+  ['|<2>|]  matches capture 2
+  ['|<3>|]  matches capture 3
+  ['|<4>|]  matches capture 4
+  ['|<5>|]  matches capture 5
+  ['|<6>|]  matches capture 6
+  ['|<7>|]  matches capture 7
+  ['|<8>|]  matches capture 8
+  ['|<9>|]  matches capture 9
+  ['|>|]    at the start of the pattern matches everywhere in the text
+            at the end of the pattern, matches the end of the text
  ..
 ..
 
@@ -517,6 +518,7 @@ is found or a break is executed within the '|pmxTokSwitch| section.
    ['|&l|]     The rest of the line up to the newline character(s)
    ['|&n|]     The end of the line.
    ['|&q|]     A single or double quoted string (including the quotes).
+   ['|&r|]     Matches the beginning of a line ()
    ['|&s|]     A sequence of spaces (space, tab, newlines, vertical tabs, etc)
    ['|&w|]     An hexadecimal number.
    ['|&x|]     An hexadecimal number.
