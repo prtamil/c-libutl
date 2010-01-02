@@ -20,18 +20,12 @@ int state = CODE;
 
 chs_t ln = NULL;
 
-int main(int argc, char *argv[])
+int main(void)
 {
   FILE *inf = stdin;
   int startline;
   char *cur;
-   long k;
    
-  if (argc > 1) { 
-    fprintf(stderr,"Usage: uncomment <inputfile. >outputfile");
-    exit(1);
-  }
- 
   chsForLines(ln,inf) {
     cur = ln; 
     startline = 1; 
@@ -43,7 +37,7 @@ int main(int argc, char *argv[])
                          pmxTokSet("&e\\&b\"\"",   T_SKIP)
                          pmxTokSet("/*",           T_COMMENT)
                          pmxTokSet("/",            T_SKIP)
-                         pmxTokSet("<+!/ \t\r\n>", T_SKIP)
+                         pmxTokSet("<+!/\t\r\n>", T_SKIP)
                        ) { 
                          pmxTokCase(T_COMMENT):
                            state = COMMENT;
@@ -57,18 +51,27 @@ int main(int argc, char *argv[])
                          pmxTokCase(T_EMPTY):
                            if (startline <= 0) putchar('\n');
                            break;
+                           
+                        pmxTokCase(pmxTokEOF) :
+                           cur = utlEmptyString;
+                           break;
                        }
                        break;
 
         case COMMENT : pmxSwitch (cur,
                          pmxTokSet("&K*/&K(&N)",   T_COMMENT)
-                         pmxTokSet("*<*!*>",       T_SKIP)
+                         pmxTokSet("*",            T_SKIP)
                          pmxTokSet("<+!*>",        T_SKIP)
+                         pmxTokSet("&K&n",        T_SKIP)
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = CODE;
                            if (pmxTokLen(1) != 0 && 
                                startline <= 0)          putchar('\n');
+                           break;
+                           
+                        pmxTokCase(pmxTokEOF) :
+                           cur = utlEmptyString;
                            break;
                        }
                        break;

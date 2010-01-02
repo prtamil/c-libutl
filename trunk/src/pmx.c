@@ -31,8 +31,20 @@ static short pmx_ch;
 #define SB(s)          ((sbuf *)(s))
 #define pmxGetc(s) \
      ((pmx_ch = *SB(s)->text++) ? pmx_ch : (SB(s)->text--,SB(s)->eof = EOF))
-#define pmxEscGetc(s,e) \
-     (pmxGetc(text) == (e)? (pmxGetc(text),pmxGetc(text)) : pmx_ch)
+
+static int pmxEscGetc(void *text,char esc)
+{
+  int ch;
+  ch = pmxGetc(text);
+  while (ch == esc) {
+    ch = pmxGetc(text);
+    ch = pmxGetc(text);
+  }
+  return ch;
+}
+/*#define pmxEscGetc(s,e) \
+     (((pmxGetc(s) == (e)) ? (pmxGetc(s),pmxGetc(s)) : pmx_ch),pmx_ch)
+     ((pmxGetc(s) == (e)) ? (pmxGetc(s),pmxGetc(s)) : pmx_ch)*/
      
 #define pmxTell(s)      (SB(s)->text - SB(s)->start)
 #define pmxSeek(s,o,w)  ((SB(s)->text = SB(s)->start + (o)), SB(s)->eof = 0) 
@@ -313,7 +325,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  reverse = (isupper(op) ? mTRUE : mFALSE);
                  op = tolower(op);
                  switch (op) {
-                   #define W(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
+                   #define  W(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
                                    { ch = pmxGetc(text); cnt++; }
                    #define eW(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
                                    { ch = pmxEscGetc(text,esc); cnt++; }
@@ -606,6 +618,7 @@ pmx_t pmx_matchstr(char *txt, char *ptrn,size_t offset)
     }    
     if (ret) {
       (*ret)[pmxCaptMax][0] = ptnum;
+      pmxMatchesPush();
       break;
     }
     if (ptlen) ptrn += ptlen;
