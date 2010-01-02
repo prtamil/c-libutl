@@ -14,6 +14,7 @@
 #define T_HDR_MARK   x81
 #define T_HDR_CLASS  x82
 #define T_HDR_TITLE  x83
+#define T_HDR_END    x84
 
 #define T_VERBATIM  x82
 #define T_VRB_MARK  x81
@@ -67,6 +68,19 @@ char verb_end[16];
 unsigned short style;
 
 int curln;
+char *cur;
+
+FILE *out;
+
+chs_t tmpstr[16];
+int   tmpint[16];
+
+#define header_title tmpstr[0]   
+#define header_class tmpstr[1]   
+#define header_mark  tmpstr[2]
+#define header_level tmpint[0]
+#define header_line  tmpint[1]   
+
 
 void fmterr(int errnum, char *msg)
 {
@@ -74,13 +88,144 @@ void fmterr(int errnum, char *msg)
   utlError(errnum,msg);
 }
 
-int main(int argc, char *argv[])
+
+void text()
 {
   int k;
+  FSM {
+    STATE (text) {     
+         pmxSwitch (cur,
+           pmxTokSet("&r&K.v<?$erb><?$atim>", T_VERBATIM)
+           pmxTokSet("&r&K.(<+=%>)&K",  T_HEADER)
+           pmxTokSet("(&L)&n",  T_ANY)
+         ) {
+           pmxTokCase(T_HEADER):
+                 header_level = pmxTokLen(1);
+                 header_line = curln;
+                 chsCpy(header_title,"");
+                 chsCpy(header_class,"");
+                 chsCpy(header_mark,"");
+                 GOTO(header);
+
+           pmxTokCase(T_VERBATIM):
+                 fprintf(out,"<v ln=\"%d\"",curln);                  
+                 verb_end[0] = '.'; verb_end[1] = '.'; verb_end[2] = '\0';
+                 GOTO(verbatim);
+
+           pmxTokCase(T_ANY) : 
+                 fprintf(out,"%03d %.*s\n",curln,pmxTokLen(1),pmxTokStart(1));
+                 curln++;
+                 GOTO(text);
+                 
+           pmxTokCase(pmxTokNONE) : 
+           pmxTokCase(pmxTokEOF)  : GOTO(done);
+         }
+         fprintf(stderr,"EEEKK\n"); break;
+    }
+   
+    STATE (verbatim) {
+         pmxSwitch (cur,
+           pmxTokSet("&K<?='>&<(<*!&>>)&>",  T_VRB_MARK)
+           pmxTokSet("&K:(<*S>)",       T_VRB_FMT)
+           pmxTokSet("&K(<+S>)",        T_VRB_END)
+           pmxTokSet("<*!\n\r>&n",      T_VRB_BODY)
+         ) {
+           pmxTokCase(T_VRB_BODY):
+                 fprintf(out,">\n");
+                 curln++;
+                 GOTO(verb_text);
+
+           pmxTokCase(T_VRB_FMT):
+                 fprintf(out," fmt=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                 GOTO(verbatim);
+
+           pmxTokCase(T_VRB_MARK):
+                 fprintf(out," mark=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+                 GOTO(verbatim);
+
+           pmxTokCase(T_VRB_END):
+                 k = pmxTokLen(1); if (k>15) k=15;
+                 strncpy(verb_end,pmxTokStart(1),k);
+                 verb_end[k] = '\0';
+                 GOTO(verbatim);
+
+           pmxTokCase(pmxTokNONE) :
+           pmxTokCase(pmxTokEOF)  : GOTO(done);
+         }
+         fprintf(stderr,"EEEKK3\n"); break;
+    }
+    
+    STATE (verb_text) {
+          pmxSwitch (cur,
+            pmxTokSet("(&L)&n",T_VRB_LINE)
+          ) {
+            pmxTokCase(T_VRB_LINE):
+                  curln++;
+                  if (strncmp(pmxTokStart(1),verb_end,pmxTokLen(1)) == 0) {
+                    fprintf(out,"</v>\n");
+                    GOTO(text);
+                  }
+                  fprintf(out,"%.*s",pmxTokLen(0),pmxTokStart(0));
+                  GOTO(verb_text);
+
+            pmxTokCase(pmxTokNONE) : 
+            pmxTokCase(pmxTokEOF)  :
+                  utlError(5,"File ended within a verbatim section\n");
+                  GOTO(done);
+          }
+          fprintf(stderr,"EEEKK3\n"); break;
+    }
+    
+    STATE (header) {
+          pmxSwitch (cur,
+            pmxTokSet("&K:&K(<*S>)",T_HDR_CLASS)
+            pmxTokSet("&K<?='>&<(<*!&>>)&>",T_HDR_MARK)
+            pmxTokSet("&K(&e`<+!\r\n<>)",T_HDR_TITLE)
+            pmxTokSet("&K&n&K<*='\"~&-=>&K(&N)",T_HDR_END)
+          ) {
+            pmxTokCase(T_HDR_CLASS):
+                  chsCpyL(header_class,pmxTokStart(1), pmxTokLen(1));
+                  chsTrim(header_class," \t"," \t");
+                  GOTO(header);
+
+            pmxTokCase(T_HDR_MARK):
+                  chsCpyL(header_mark,pmxTokStart(1), pmxTokLen(1));
+                  chsTrim(header_mark," \t"," \t");
+                  GOTO(header);
+
+            pmxTokCase(T_HDR_TITLE):
+                  chsCpyL(header_title,pmxTokStart(1),pmxTokLen(1));
+                  chsTrim(header_title,NULL," \t");
+                  GOTO(header);
+                  
+            pmxTokCase(T_HDR_END):
+                  curln += (pmxTokLen(1) > 0 ? 2 : 1);
+                  if (header_mark[0]) fprintf(out,"<a name=\"%s\">",header_mark);
+                  fprintf(out,"<h%d",header_level);
+                  if (header_class[0]) {
+                    fprintf(out," class=\"%s\"",header_class);
+                    if (!header_title[0]) chsCpy(header_title,header_class);
+                  }
+                  fprintf(out,">%s</h%d>\n",header_title,header_level);
+                  GOTO(text);
+
+            pmxTokCase(pmxTokNONE) : 
+            pmxTokCase(pmxTokEOF)  : GOTO(done);
+          }
+          fprintf(stderr,"EEEKK3\n"); break;
+    
+    }
+    
+    STATE (done) {
+       BREAK;
+    }
+  }
+}
+
+int main(int argc, char *argv[])
+{
   FILE *f;
-  FILE *out = stdout;
   chs_t source = NULL;
-  char *curchar;  
 
   chs_t tmps=NULL;
 
@@ -94,219 +239,13 @@ int main(int argc, char *argv[])
     fclose(f);
 
     chsAddChr(source,'\n');
-
-    curchar = source;
-
+    
     style = 0;
-    curln = 0;
+    curln = 1;
+    cur = source;
+    out = stdout;
+    text();
 
-    FSM {
-      STATE(linestart) {
-          curln++;
-          pmxSwitch (curchar,
-            pmxTokSet("&K.(<+=%>)",  T_HEADER)
-            pmxTokSet("&K.v<?$erb><?$atim>", T_VERBATIM)
-          ) {
-            pmxTokCase(T_HEADER):
-                  fprintf(out,"<h lvl=\"%d\" ln=\"%d\"",pmxTokLen(1),curln);
-                  GOTO(header);
-
-            pmxTokCase(T_VERBATIM):
-                  fprintf(out,"<v ln=\"%d\"",curln);                  
-                  verb_end[0] = '.'; verb_end[1] = '.'; verb_end[2] = '\0';
-                  k=2;
-                  GOTO(verbatim);
-
-            pmxTokCase(pmxTokNONE) : GOTO(midline);
-
-            pmxTokCase(pmxTokEOF)  : GOTO(done);
-          }
-          fprintf(stderr,"EEEKK\n"); break;
-      }
-      
-      STATE(verbatim) {
-          pmxSwitch (curchar,
-            pmxTokSet("&K&<(<*!&>>)&>",  T_VRB_MARK)
-            pmxTokSet("&K:(<*S>)",       T_VRB_FMT)
-            pmxTokSet("&K(<+S>)",        T_VRB_END)
-            pmxTokSet("<*!\n\r>&n",      T_VRB_BODY)
-          ) {
-            pmxTokCase(T_VRB_BODY):
-                  fprintf(out,">");
-                  GOTO(verb_body);
-
-            pmxTokCase(T_VRB_FMT):
-                  fprintf(out," fmt=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
-                  GOTO(verbatim);
-
-            pmxTokCase(T_VRB_MARK):
-                  fprintf(out," mark=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
-                  GOTO(verbatim);
-
-            pmxTokCase(T_VRB_END):
-                  k = pmxTokLen(1); if (k>15) k=15;
-                  strncpy(verb_end,pmxTokStart(1),k);
-                  verb_end[k] = '\0';
-                  GOTO(verbatim);
-
-            pmxTokCase(pmxTokNONE) : GOTO(midline);
-
-            pmxTokCase(pmxTokEOF)  : GOTO(done);
-          }
-          fprintf(stderr,"EEEKK3\n"); break;
-      }
-      
-      STATE(verb_body) {
-          pmxSwitch (curchar,
-            pmxTokSet("&L&n",T_VRB_LINE)
-          ) {
-            pmxTokCase(T_VRB_LINE):
-                  curln++;
-                  if (strncmp(pmxTokStart(0),verb_end,k) == 0) {
-                    fprintf(out,"</v>\n");
-                    GOTO(linestart);
-                  }
-                  fprintf(out,"%.*s",pmxTokLen(0),pmxTokStart(0));
-                  GOTO(verb_body);
-
-            pmxTokCase(pmxTokNONE) : GOTO(verb_body);
-
-            pmxTokCase(pmxTokEOF)  :
-                  utlError(5,"File ended within a verbatim section\n");
-                  GOTO(done);
-          }
-          fprintf(stderr,"EEEKK3\n"); break;
-      }
-      
-      STATE(header) {
-          pmxSwitch (curchar,
-            pmxTokSet("&K:&K(<*S>)",T_HDR_CLASS)
-            pmxTokSet("&K&<(<*!&>>)&>",T_HDR_MARK)
-            pmxTokSet("&K(&L)&n",T_HDR_TITLE)
-          ) {
-            pmxTokCase(T_HDR_CLASS):
-                  fprintf(out," class=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
-                  k = 1;
-                  GOTO(header);
-
-            pmxTokCase(T_HDR_MARK):
-                  fprintf(out," mark=\"%.*s\"",pmxTokLen(1),pmxTokStart(1));
-                  GOTO(header);
-
-            pmxTokCase(T_HDR_TITLE):
-                  fprintf(out,">%.*s</h>\n",pmxTokLen(1),pmxTokStart(1));
-                  GOTO(linestart);
-
-            pmxTokCase(pmxTokNONE) : GOTO(midline);
-
-            pmxTokCase(pmxTokEOF)  : GOTO(done);
-          }
-          fprintf(stderr,"EEEKK3\n"); break;
-          
-      }
-      STATE(midline) {
-          pmxSwitch (curchar,
-            pmxTokSet("&n",   T_NL)
-            pmxTokSet("`&n",  T_TICK)
-            pmxTokSet("`<.>", T_ESCAPED)
-            pmxTokSet("'&<",  T_REF)
-            pmxTokSet("'|",   T_MONOSP)
-            pmxTokSet("'$",   T_MATH)
-            pmxTokSet("'*",   T_BOLD)
-            pmxTokSet("'/",   T_ITALIC)
-            pmxTokSet("'_",   T_ULINE)
-            pmxTokSet("'&(",  T_NOTE)
-            pmxTokSet("'{",   T_VAR)
-            pmxTokSet("&>",   T_REF_END)
-            pmxTokSet("|",    T_MONOSP_END)
-            pmxTokSet("$",    T_MATH_END)
-            pmxTokSet("*",    T_BOLD_END)
-            pmxTokSet("/",    T_ITALIC_END)
-            pmxTokSet("_",    T_ULINE_END)
-            pmxTokSet(")",    T_NOTE_END)
-            pmxTokSet("}",    T_VAR_END)
-            pmxTokSet("<.>",  T_ANY)
-          ) {
-
-            pmxTokCase(T_TICK):     fputc('`',out); GOTO(midline);
-            pmxTokCase(T_ESCAPED):  fputc(*pmxTokStart(0)+1,out); GOTO(midline);
-
-            pmxTokCase(T_REF):            
-
-            pmxTokCase(T_BOLD):
-                 if (style & BOLD) fmterr(11, "Bold already enabled.");
-                 style |= BOLD; fprintf(out,"<b>");
-                 GOTO(midline);
-
-            pmxTokCase(T_BOLD_END):
-                 if (style & BOLD) { style &= ~BOLD; fprintf(out,"</b>"); }
-                 else putc('*',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_ITALIC):
-                 if (style & ITALIC) fmterr(12, "Italic already enabled.");
-                 style |= ITALIC; fprintf(out,"<i>");
-                 GOTO(midline);
-
-            pmxTokCase(T_ITALIC_END):
-                 if (style & ITALIC) { style &= ~ITALIC; fprintf(out,"</i>"); }
-                 else fputc('/',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_MONOSP):
-                 if (style & MONOSP) fmterr(13, "Monospace already enabled.");
-                 style |= MONOSP; fprintf(out,"<tt>");
-                 GOTO(midline);
-
-            pmxTokCase(T_MONOSP_END):
-                 if (style & MONOSP) { style &= ~MONOSP; fprintf(out,"</tt>"); }
-                 else fputc('|',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_MATH):
-                 if (style & MATH) fmterr(14, "Math mode already enabled.");
-                 style |= MATH; fprintf(out,"<m style=\"inline\">");
-                 GOTO(midline);
-
-            pmxTokCase(T_MATH_END):
-                 if (style & MATH) { style &= ~MATH; fprintf(out,"</m>"); }
-                 else fputc('$',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_ULINE):
-                 if (style & ULINE) fmterr(15, "Underline mode already enabled.");
-                 style |= ULINE; fprintf(out,"<u>");
-                 GOTO(midline);
-
-            pmxTokCase(T_ULINE_END):
-                 if (style & ULINE) { style &= ~ULINE; fprintf(out,"</u>"); }
-                 else fputc('_',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_NOTE):
-                 if (style & NOTE) fmterr(16, "Footnote mode already enabled.");
-                 style |= NOTE; fprintf(out,"<note>");
-                 GOTO(midline);
-
-            pmxTokCase(T_NOTE_END):
-                 if (style & NOTE) { style &= ~NOTE; fprintf(out,"</note>"); }
-                 else fputc(')',out);
-                 GOTO(midline);
-
-            pmxTokCase(T_NL):
-                  GOTO(linestart);
-
-            pmxTokCase(T_ANY): /*fputc(*pmxTokStart(0),out);*/
-                  GOTO(midline);
-
-            pmxTokCase(pmxTokEOF) : GOTO(done);
-          }
-          fprintf(stderr,"EEEKKX %d\n", pmxToken(pmx_tmpmtc));break;
-       }
-       STATE(done) {
-         break;
-       }
-     }
   }
   else utlError(2,"Unable to open input file\n");
 

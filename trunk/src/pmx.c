@@ -30,12 +30,16 @@ static short pmx_ch;
 
 #define SB(s)          ((sbuf *)(s))
 #define pmxGetc(s) \
-     ((pmx_ch = *SB(s)->text++) ? pmx_ch : (SB(s)->eof = EOF))
+     ((pmx_ch = *SB(s)->text++) ? pmx_ch : (SB(s)->text--,SB(s)->eof = EOF))
+#define pmxEscGetc(s,e) \
+     (pmxGetc(text) == (e)? (pmxGetc(text),pmxGetc(text)) : pmx_ch)
      
-#define pmxTell(s)     (SB(s)->text - SB(s)->start)
-#define pmxSeek(s,o,w) (SB(s)->text = SB(s)->start + o, SB(s)->eof = 0) 
-#define pmxEof(s)      (SB(s)->eof)
-#define pmxChrAt(s,k)  ((SB(s)->start)[k])
+#define pmxTell(s)      (SB(s)->text - SB(s)->start)
+#define pmxSeek(s,o,w)  ((SB(s)->text = SB(s)->start + (o)), SB(s)->eof = 0) 
+#define pmxEof(s)       (SB(s)->eof)
+#define pmxChrAt(s,k)   ((pmx_ch = (SB(s)->start)[k]) ? pmx_ch : EOF)
+#define pmxCurChar(s)   ((pmx_ch = *SB(s)->text) ? pmx_ch : EOF)
+
 
 /*
 static int pmxGetc(sbuf *s)
@@ -261,6 +265,7 @@ static int braced(void *text, int left, int right, char esc)
 */
 #define MAX_MAX 0xFFFFFFFE
 
+
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
@@ -308,8 +313,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  reverse = (isupper(op) ? mTRUE : mFALSE);
                  op = tolower(op);
                  switch (op) {
-                   #define W(x) while(ch != EOF && cnt < max && !(x) == reverse)\
+                   #define W(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
                                    { ch = pmxGetc(text); cnt++; }
+                   #define eW(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
+                                   { ch = pmxEscGetc(text,esc); cnt++; }
                                                                 
                    case 'a' : W(isalpha(ch))  ; break;
                    case 'c' : W(iscntrl(ch))  ; break;
@@ -329,22 +336,13 @@ static pmx_t domatch(void *text, char *pattern, char **next)
 
                    case '!' : reverse = mTRUE;
                    case '=' : if (*++p == 0) return NULL;
-                              W(isclass(p,ch));
+                              eW(isclass(p,ch));
                               break;
                                                 
                    case 'j' : if (*++p == 0) return NULL;
-                              W(issortedclass(p,ch));
+                              eW(issortedclass(p,ch));
                               break;
                                                 
-                   case '#' : while(ch != EOF && cnt < max) {
-                                if (esc && ch == esc) {
-                                  ch = pmxGetc(text); 
-                                } 
-                                else if (isclass(p+1,ch)) break;
-                                ch = pmxGetc(text); cnt++;
-                              }
-                              if (ch == EOF || cnt >= max) return NULL;
-                              break;
                               
                    case '$' : W(hasstring(text,p));
                               break;

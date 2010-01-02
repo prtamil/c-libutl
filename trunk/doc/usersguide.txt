@@ -1,3 +1,6 @@
+.T clibutl Programmer's guide
+.A Remo Dentato (rdentato@gmail.com)
+
 .v
                      _       _               _    _
                     / \     / \             / \  / \
@@ -38,7 +41,7 @@ tedious tasks.
 ====================
 
 .%% Overview
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
   There are several ways to use '|libutl| in your project.
   
@@ -61,8 +64,9 @@ tedious tasks.
 distribution files '(see next section) and copy the static library '|libutl.a|
 and the header file '|libutl.h| where your compiler/linker can find them.
 
+
 .%% Building the library
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
   The library has been tested with different combinations of compiler and
 platforms.  It is know to work with:
@@ -89,8 +93,10 @@ library work.
     Borland C/C++ 5.5 (free)       Windows
 ..
 
+
 .%%% Using the makefile
-''''''''''''''''''''''
+'''''''''''''''''''''''
+
   The makefile has only been tested with Linux and Win32 Mingw+Msys but should
 work for any unix-like environment (e.g. cygwin) with the GCC toolchain.  
   
@@ -110,7 +116,8 @@ the pmx tools.
 your project.
    
 .%%% Using the build scripts
-'''''''''''''''''''''''''''
+''''''''''''''''''''''''''''
+
   The '|build| directory contains scripts to build the library using other
 compilers.
 
@@ -136,7 +143,7 @@ and will use it to compile the library and the basic tools.
 the development process.
 
 .%% Debugging
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
   During debugging, it's a common technique to insert in the code some tracing
 printf() to better understand what's going on in a program.  In conjunction
@@ -147,9 +154,9 @@ time needed to discover and fix a bug.
 symbol DEBUG :
 
 .c C
-#ifdef DEBUG
-printf(“current: %d\n”,k);
-#endif
+        #ifdef DEBUG
+        printf(“current: %d\n”,k);
+        #endif
 ..
 
 so that they can be disabled when not in debugging mode and can be completely
@@ -167,78 +174,58 @@ turn off a single message.
   Here is the prototype for each function:
   
 .c C
-int dbgmsg(const char *fmt, ...);
-int _dbgmsg(const char *fmt, ...);
+        int dbgmsg(const char *fmt, ...);
+        int _dbgmsg(const char *fmt, ...);
 ..
 
 They are to be used as normal printf:
 
 .c C
-dbgmsg(“current: %d\n”,k);
-Debug messages and unit tests output normally go on '{stderr}.
+        dbgmsg(“current: %d\n”,k);
 ..
 
+Debug messages and unit tests output normally go on '{stderr}.
+
 This could be not suitable for applications that are not attached to 
-** a console (e.g. background servers, GUI applications).
-* format string fmt is 
+a console (e.g. background servers, GUI applications).
 
+ You can use '{=dbgmsg()} as if it was a '|printf()| with the only
+difference that the output will be directed to '{utlStderr}.
 
-/* Let's give precedence to '{NDEBUG} over '{DEBUG} */
+Note that to ensure that dbg messages are correctly interleaved with other
+messages that might have been printed on the screen, '|stdout| is
+flushed before printing and '{utlStderr} is flushed right after.
 
-#ifdef NDEBUG
-#ifdef DEBUG
-#undef DEBUG
-#endif
-#endif
+  To disable just one call to '{dbgmsg()}, you can place an underscore
+before its name as '{=_dbgmsg()} is a macro that always expand to nothing.
 
-#ifdef DEBUG
-/*  You can use '{=dbgmsg()} as if it was a '|printf()| with the only
-** difference that the output will be directed to '{utlStderr}.
-*/
-#define dbgmsg(...) ((stdout?fflush(stdout):0),\
-                     fprintf(utlStderr,"# "),\
-                     fprintf(utlStderr,__VA_ARGS__), fflush(utlStderr))
+  If you are worried about the fact that identifiers beginning with an
+underscore may be reserved (as per ISO Stanadard 7.1.3) you can replace
+it with another character (e.g. '|Xdbgmsg()|).  So far I've not find any
+reason to do it and using an underscore seems more natural to me. 
 
-/* Note that to ensure that dbg messages are correctly interleaved with other
-** messages that might have been printed on the screen, '|stdout| is
-** flushed before printing and '{utlStderr} is flushed right after.
-*/
-
-#else
-#define dbgmsg(...)
-#endif /* DEBUG */
-
-/*   To disable just one call to '{dbgmsg()}, you can place an underscore
-** before its name as '{=_dbgmsg()} is a macro that always expand to nothing.
-** 
-**   If you are worried about the fact that identifiers beginning with an
-** underscore may be reserved (as per ISO Stanadard 7.1.3) you can replace
-** it with another character (e.g. '|Xdbgmsg()|).  So far I've not find any
-** reason to do it and using an underscore seems more natural to me. 
-*/
-#define _dbgmsg(...)
 
 .%% Unit testing
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 .%% Error handling
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 .%% Logging
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 .%% Finite State Machines
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .%% Using utl.h
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 .% Pattern Matching
 ===================
 
 
 .%% Overview
-""""""""""""
+^^^^^^^^^^^^
   PMX is a library for strings pattern matching. It uses a set of patterns
 that is different from the more commonly used regular expressions.
 
@@ -274,7 +261,7 @@ exceptions:
            At the beginning of a pattern indicates that it  can be matched
            anywhere in the string.  Without it, a PMX pattern will only be
            matched at the beginning of the string.  This is the opposite of 
-           what Regular Expressions do: without the '^' character a RE will
+           what Regular Expressions do: without the '^^ character a RE will
            be matched anywhere. 
            
            At the end of the pattern indicates that the pattern has to be
@@ -283,11 +270,11 @@ exceptions:
            
     ['|&|] Introduces a "matching option". It is used to:
     
-           .- Escape a special character (e.g. ''|&&|' or ''|&>|')
-            - Denote a predefined recognizer (e.g. ''|&f|' it's a pattern
+           .- Escape a special character (e.g. ^^|&&|' or ^^|&>|')
+            - Denote a predefined recognizer (e.g. ^^|&f|' it's a pattern
               that matches a decimal number like '|3.2|).
-            - Set options while matching (e.g. ''|&i|' for case insensitive
-              match or ''|&e|' to define the escape character). 
+            - Set options while matching (e.g. ^^|&i|' for case insensitive
+              match or ^^|&e|' to define the escape character). 
            ..
            
            Note that '|&| is only to be used with the characters specified
@@ -295,8 +282,10 @@ exceptions:
            mening to a given character.
     ..  
 
+
 .%%% Predefined character classes
-''''''''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''''''
+
   These patterns match characters that are within commonly used sets.
 
  .['|<a>|]  (isalpha)	matches an alphabetic character
@@ -311,17 +300,18 @@ exceptions:
   ['|<r>|]  (isprint)	matches a printable character, including the space character.
   ['|<s>|]  (isspace)	matches a space character
   ['|<u>|]  (isupper)	matches an uppercase character
-  ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ''|_|'
+  ['|<w>|]  (isword)) matches an alphanumeric character or and underscore ^^|_|'
   ['|<x>|]  (isxdigit) matches an hexadecimal digit. Not locale-specific.
-  ['|<.>|]  matches any character (except ''|\0|').
+  ['|<.>|]  matches any character (except ^^|\0|').
  .. 
 
   To match characters that do *not* belong to a given set, use the uppercase
-letter.  For example ''|<D>|' matches a character that is not a digit.
+letter.  For example ^^|<D>|' matches a character that is not a digit.
 
 
 .%%% User defined character classes
-''''''''''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''''''''
+
   It is possible to match a character that is in in a given set of characters 
 as follows:
 
@@ -356,21 +346,28 @@ than "'|<=A-Z_a-z>|"  while "'|<jA-Za-z_>|"  will not work!
 
   
 .%%% Alternative strings
-'''''''''''''''''''''''
+''''''''''''''''''''''''
+
   To match one of multiple strings use the pattern '|<$...$...$...>|'. For
 example:
-  
- .['|<$abc$def>|] matches "'|abc|" or "'|def|"
+ 
+ .v
+    <$abc$def>
  ..
-   
+matches "'|abc|" or "'|def|"
+
   If the characters '&', '>' or '$' are part of the strings specified,
 they must be preceeded by '&'.  For example:
 
- .['|<$a&$b$c&>d>'] matches ''|a$b|' or  ''|c>d|'.
+ .v
+    <$a&$b$c&>d>
  ..
+ 
+matches ^^|a$b|' or  ''|c>d|'.
+ 
    
 .%%% Repetitions
-'''''''''''''''
+^^^^^^^^^^^^^^^
   A pattern may be repeated using ''|?|', ''|*|' and  ''|+|':
   
   .['|?|] Repeat 0 or 1 times, i.e make the pattern optional.
@@ -388,7 +385,7 @@ they must be preceeded by '&'.  For example:
   ..
   
 .%%% Submatching captures
-''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^
   Submatches can be denoted using parenthesis. There can be up to 9 
 submatches. Submatches can be nested. Examples:
 
@@ -402,7 +399,7 @@ submatches. Submatches can be nested. Examples:
   .. 
 
 .%%% Back references
-'''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^
   It is possible to refer to captured test with '|<1>|, '|<2>|, ...,  '|<9>|.
   
   For example: '|(<u>)<1>| matches the doubling of an upper case character as
@@ -410,7 +407,7 @@ submatches. Submatches can be nested. Examples:
   
 
 .%%% Recognizers
-'''''''''''''''
+^^^^^^^^^^^^^^^
   Recognizers are patterns that match a specific object (for example
 "'|&q|" for a quoted string).
   
@@ -455,7 +452,7 @@ submatches. Submatches can be nested. Examples:
 
 
 .%%% Matching options
-''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^
 
   .['|&e|'/x/] Set the character '/x/ as the escape character. For example,
               given the string '|"abc%"def"|': 
@@ -474,7 +471,7 @@ submatches. Submatches can be nested. Examples:
 
 
 .%%% Alternative expressions
-'''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
   Two pmx expressions can be joined with "'|&`||" to indicate that if the 
 first expression fails, the second must be tried.
 
@@ -489,7 +486,7 @@ expression '|A&`|B| matches if '|A| matches or if '|A| fails and '|B| matches.
 
 
 .%%% Expression length
-'''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^
   The operator "'|&:|'/x/" is meant to be used, in conjunction with '|&`||,
 by tools that generate pmx expressions and not for expressions created
 "by hand".
@@ -507,7 +504,7 @@ as an '/opaque/ pointer; inner details can be found in the
 '<pmx.c=pmx.c#matchinfo> file.
 
 .%%% Matching on a string
-''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^
 
   The simplest way to match a string against a pattern is to use the
 '{=pmxMatchStr()} function.
@@ -517,7 +514,7 @@ can be used to retrieve information on the match.
 
 
 .%%% Got a match '<gettxt>
-'''''''''''''''
+^^^^^^^^^^^^^^^
   Upon a successful match, the following functions will retrieve details
 of the match. Their first argument is of type '{pmxMatch_t} and is 
 typically the value returned by a '{pmxMatchStr()} function call.
@@ -559,12 +556,12 @@ typically the value returned by a '{pmxMatchStr()} function call.
   ..  
 
 .%%% Token scanners '<tokscanner>
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 
 
 .%%% pmx switch
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
   The macro '{=pmxSwitch()} implements an '/extension/ of the C '|switch|
   control structure.
@@ -604,7 +601,7 @@ the match.
   ..
 
 .%%% Callback Scanners
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
   The function '{=pmxScanStr()} can be used to repeatedly match a pattern
 against a text and call a function each time a match is found.
@@ -627,7 +624,7 @@ otherwise  the scanner stops and '{pmxScanStr()} returns that value.
 functions to get the <matched text=gettxt>.
 
 .%%% Loop scanners
-'''''''''''''''''''
+''''''''''''''''''
 
   To ease the definition of more complex scanners, the following
 alternative is provided. The syntax makes use of conventions that 
@@ -742,7 +739,7 @@ is found or a break is executed within the '|pmxTokSwitch| section.
    ['|&l|]     The rest of the line up to the newline character(s)
    ['|&n|]     The end of the line.
    ['|&q|]     A single or double quoted string (including the quotes).
-   ['|&r|]     Matches the beginning of a line ()
+   ['|&r|]     Matches the beginning of a line 
    ['|&s|]     A sequence of spaces (space, tab, newlines, vertical tabs, etc)
    ['|&w|]     An hexadecimal number.
    ['|&x|]     An hexadecimal number.
@@ -790,19 +787,19 @@ documentation that's why I provided a set of them in the '|examples| directory.
   .. 
 
 .%% pmx2c
-~~~~~~~~~
+^^^^^^^^^
 
 .%% pmxshell
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 .%% uncomment
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .%% fmt
-~~~~~~~
+^^^^^^^
 
 .%% fsm
-~~~~~~~
+^^^^^^^
  
 .% License
 ==========
