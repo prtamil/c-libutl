@@ -88,6 +88,10 @@ void fmterr(int errnum, char *msg)
   utlError(errnum,msg);
 }
 
+void htmlesc(chs_t s)
+{
+
+} 
 
 void text()
 {

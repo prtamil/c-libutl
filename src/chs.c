@@ -291,11 +291,6 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
   }
     
   if (!*pat) return s;
-
-  /* We might be in a  another '|chsSubFun()| handles, hence we need to preserve
-     the previous matching result if we want to call another pmx function
-  */
-  pmxMatchesPush();
     
   while ((ret = chsMatch(s, pos, pat))) {
     pos =  pmxStart(ret,0);
@@ -314,8 +309,6 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
   }
 
   chsFree(mtc);
-
-  pmxMatchesPop();
 
   return s;  
 }

@@ -104,10 +104,9 @@ vec
 7=examples\fmt\fmt.c
 8=examples\fmt\f.t
 9=examples\fmt\v.txt
-10=examples\pmxshell\pmxshell.pmx
 [Selected Project Files]
 Main=
-Selected=examples\pmxshell\pmxshell.pmx
+Selected=src\pmx.c
 [src\tbl.c]
 TopLine=468
 Caret=8,489
@@ -118,19 +117,19 @@ Caret=14,77
 TopLine=133
 Caret=39,152
 [src\chs.c]
-TopLine=216
+TopLine=263
 Caret=32,239
 [src\pmx.c]
-TopLine=317
-Caret=55,335
+TopLine=491
+Caret=21,269
 [src\pmx.h]
-TopLine=25
-Caret=1,1
+TopLine=21
+Caret=29,33
 [examples\fmt\fmt9.txt]
 TopLine=678
 Caret=1,712
 [examples\fmt\fmt.c]
-TopLine=100
+TopLine=114
 Caret=34,131
 [examples\fmt\f.t]
 TopLine=1
@@ -138,6 +137,3 @@ Caret=1,1
 [examples\fmt\v.txt]
 TopLine=1
 Caret=15,12
-[examples\pmxshell\pmxshell.pmx]
-TopLine=334
-Caret=4,352

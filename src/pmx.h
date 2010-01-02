@@ -32,7 +32,7 @@ typedef pmxMatches *pmx_t;
 
 extern int pmx_capt_cur;
 
-#define pmxCaptStkSize (1 << 3)
+#define pmxCaptStkSize 8
 #define pmxMatchesPush()  (pmx_capt_cur = (pmx_capt_cur +1) & 0x07)
 #define pmxMatchesPop()   (pmx_capt_cur = (pmx_capt_cur + pmxCaptStkSize -1) & 0x07)
 
