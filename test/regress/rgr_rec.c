@@ -9,17 +9,17 @@
 #define UTL_UNITTEST
 #include "libutl.h"
 
-rec(point,
+recDef(point,
  int x; int y;
 );
  
-recFunCmp(point,a,b) { return (recPtrCmp(a,b)); }
-recFunCpy(point,a,b) { }
-recFunUid(point,a)   { return (recPtrUid(a)); }
-recFunFree(point,a)  { }
-recFunNew(point,a)   { }
+recDefCmp(point,a,b) { return (recPtrCmp(a,b)); }
+recDefCpy(point,a,b) { a=b; }
+recDefUid(point,a)   { return (recPtrUid(a)); }
+recDefFree(point,a)  { a=NULL; }
+recDefNew(point,a)   { a=a;}
 
-int main (int argc, char *argv[])
+int main (void)
 {
   point *r = NULL;
   point *s = NULL;
@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
     TSTGROUP("Copy") {
       recCpy(s,r);
       TST("Copy record", r != s && r->x == s->x && r->y == s->y);
-    }
+    } 
     
     TSTGROUP("Set to vec") {
       vec_t vt = NULL;

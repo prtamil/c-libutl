@@ -13,7 +13,6 @@
 int k=0;
 int scan1(char *txt, pmx_t mtc)
 {
-  char *s;
   pmx_t m2;
   m2 = pmxMatchStr(txt+pmxStart(mtc,0),"<.><.>");
   if (m2) {
@@ -26,7 +25,6 @@ int scan1(char *txt, pmx_t mtc)
 
 int main(void)
 {
-  chs_t str;
   pmx_t pp;
   
   TSTSECTION("pmx nested") {
