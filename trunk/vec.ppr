@@ -86,6 +86,7 @@ vec
 				test\regress\rgr_rec.c
 				test\regress\makefile
 				test\regress\rgr_pmx.c
+				test\regress\rgr_pmx_nested.c
 			+stress
 				test\stress\sts_add.lua
 				test\stress\makefile
@@ -95,9 +96,13 @@ vec
 		config.mk
 [Open project files]
 0=doc\usersguide.txt
+1=src\tbl.c
 [Selected Project Files]
 Main=
-Selected=doc\usersguide.txt
+Selected=src\tbl.c
 [doc\usersguide.txt]
-TopLine=7
+TopLine=916
+Caret=11,921
+[src\tbl.c]
+TopLine=218
 Caret=1,1

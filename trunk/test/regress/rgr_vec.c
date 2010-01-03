@@ -19,8 +19,6 @@ int main(void)
   vec_t vt = NULL;
   char *ss;
   long   ii, kk, jj;
-  long  mm, ll;
-  chs_t str;
  
   srand(time(0));
 

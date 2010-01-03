@@ -18,16 +18,15 @@ char *lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
               "fermentum diam. Nam lobortis hendrerit commodo.\n"; 
 
 char *simp = "ab\ncd\r\nef\n";
-
+ 
 int printfirst(char *txt, pmx_t mtc)
 {
   printf("%c\n",txt[pmxStart(mtc,0)]);
   return 0;
 }
 
-int main (int argc, char *argv[])
+int main (void)
 { 
-  char *s = NULL;
      
   TSTSECTION("pmx Basics") {
     TSTGROUP("scan") {

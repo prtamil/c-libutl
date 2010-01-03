@@ -119,6 +119,14 @@ int main(void)
       TST("repl arr1",strcmp(buf,"xBBc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
+      chsSubStr(buf ,0, "&rB","Z");
+      TST("repl arr1",strcmp(buf,"xBBc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
+      chsSubStr(buf ,0, "&rx","z");
+      TST("repl arr1",strcmp(buf,"zBBc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
     }
     
     TSTGROUP("Destroy") {
