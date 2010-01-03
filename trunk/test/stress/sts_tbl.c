@@ -8,14 +8,14 @@
 
 #include "libutl.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
    tbl_t t = NULL;
    int k=0;
-   for (k=0; k<=1000000;k++) {
-     t = tblSetNS(t,k,"test");
+   for (k=0; k<=10000000;k++) {
+     tblSetNS(t,k,"test");
    }
-   t = tblFree(t);
+   tblFree(t);
    
    exit(0);
 }
