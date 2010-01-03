@@ -90,6 +90,7 @@ vec
 			+stress
 				test\stress\sts_add.lua
 				test\stress\makefile
+				test\stress\sts_tbl.c
 		README
 		makefile
 		targets.mk
@@ -97,12 +98,32 @@ vec
 [Open project files]
 0=doc\usersguide.txt
 1=src\tbl.c
+2=test\stress\sts_tbl.c
+3=test\stress\sts_vec.c
+4=test\stress\makefile
+5=test\regress\makefile
+6=test\stress\sts_tests.sh
 [Selected Project Files]
 Main=
-Selected=src\tbl.c
+Selected=test\stress\sts_tbl.c
 [doc\usersguide.txt]
 TopLine=916
 Caret=11,921
 [src\tbl.c]
-TopLine=218
+TopLine=30
 Caret=1,1
+[test\stress\sts_tbl.c]
+TopLine=1
+Caret=1,22
+[test\stress\sts_vec.c]
+TopLine=1
+Caret=21,15
+[test\stress\makefile]
+TopLine=1
+Caret=1,21
+[test\regress\makefile]
+TopLine=1
+Caret=1,9
+[test\stress\sts_tests.sh]
+TopLine=1
+Caret=5,14

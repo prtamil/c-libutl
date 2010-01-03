@@ -10,15 +10,11 @@ TOP=../../
 
 include $(TOP)config.mk
 
-OBJ_S=tbl_1$(_OBJ)
-PRG_S=tbl_1$(_EXE)
-
-tbl_1$(_EXE): $(CHKLIB) tbl_1$(_OBJ)
-	$(LN)$@ tbl_1$(_OBJ) -lutl
-
+include sts_tests.mk
+  
 clean:
-	$(RM) $(PRG_S)
-	$(RM) $(OBJ_S)
+	$(RM) $(STS_TESTS) 
+	$(RM) $(STS_OBJS) 
 	$(RM) gmon.out
 
 include $(TOP)targets.mk
