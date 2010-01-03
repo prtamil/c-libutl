@@ -328,6 +328,9 @@ typedef char *(*chsSubF_t)(char *mtc, pmx_t cpt);
 chs_t chs_SubStr(chs_t s, long pos, char *pat, char *rpl) ;
 #define chsSubStr(s, n, p, r) (s = chs_SubStr(s,n,p,r))
 
+chs_t chs_SubArr(chs_t s, long pos, char *pat, char **arr) ;
+#define chsSubArr(s, n, p, r) (s = chs_SubArr(s,n,p,r))
+
 chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f);
 #define chsSubFun(s, n, p, f) (s = chs_SubFun(s,n,p,f))
 
@@ -388,6 +391,7 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
                                      
 #define chsmatch   chsMatch          
 #define chssub     chsSubStr         
+#define chssubarr  chsSubArr         
 #define chssubfun  chsSubfun         
 #define chssubfun_t chsSubF_t
                                      

@@ -186,13 +186,13 @@ They are to be used as normal printf:
 
 Debug messages and unit tests output normally go on '{stderr}.
 
-This could be not suitable for applications that are not attached to 
+  This could be not suitable for applications that are not attached to 
 a console (e.g. background servers, GUI applications).
 
- You can use '{=dbgmsg()} as if it was a '|printf()| with the only
+  You can use '{=dbgmsg()} as if it was a '|printf()| with the only
 difference that the output will be directed to '{utlStderr}.
 
-Note that to ensure that dbg messages are correctly interleaved with other
+  Note that to ensure that dbg messages are correctly interleaved with other
 messages that might have been printed on the screen, '|stdout| is
 flushed before printing and '{utlStderr} is flushed right after.
 
@@ -214,8 +214,172 @@ reason to do it and using an underscore seems more natural to me.
 .%% Logging
 ^^^^^^^^^^^
 
+While the debugging functions are meant to be used during the
+development process, logging functions are intended to be used
+in production, after a stable  version of the application has
+been released.
+
+These functions are modeled after the widely used log4j
+framework but only offers logging to local files.
+
+
+Logging functions are available only if the symbol '{=UTL_LOGGING}
+has been defined before including '|utl.h|.
+
+
+
+.%% Logging levels
+~~~~~~~~~~~~~~~~~~
+
+  Logging levels are hierarchical and structured as in log4j. The variable 
+'{=logLevel} contains the current logging level.  Logging is off by default.
+
+  Use '{=logSetLevel()} to set the desired level of logging.
+
+The table below shows whether a message of a certain level will be
+printed (Y) or not (N) given the current level of logging.
+.v
+                      message level 
+                   DBG INF WRN ERR FTL
+              DBG   Y   Y   Y   Y   Y
+              INF   N   Y   Y   Y   Y
+     current  WRN   N   N   Y   Y   Y
+     logging  ERR   N   N   N   Y   Y
+      level   FTL   N   N   N   N   Y
+              ALL   Y   Y   Y   Y   Y
+              OFF   N   N   N   N   N
+..
+
+
+.%% Logging format
+~~~~~~~~~~~~~~~~~~
+
+Log files have the following format:
+.v
+    <date> <time> <level> <message>
+..
+
+ For example:
+.v
+    2009-01-29 13:46:02 ERR An error!
+    2009-01-29 13:46:02 FTL An unrecoverable error
+..
+
+These variables are used internally to compose and print log messages:
+
+ .['{=log_abbrev}] The string abbreviations for the levels. Note that the 
+                   macro '{=log_ABR} is defined only to ensure a correct
+                   macro expansion.
+ ..
+
+
+
+.%% Setting the log file
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+  By default, logging messages will be sent to stderr. The internal
+variable '{=log_file} holds the file descriptor of the file the log
+messages should be sent to. 
+  Don't use it in your program, if you need a pointer to the log file,
+you should use the '{=logFile} macro.
+
+
+   Log files can be opened in "write" or "append" mode as any normal file 
+using the '{=logSetLogFile()} function.
+For example:
+.v  
+  logSetLogFile("file1.log","w") // Delete old log file and create a new one
+  ...
+  logSetLogFile(NULL,NULL); // Close log file, send next messages to stderr
+  ... 
+  logSetLogFile("file1.log","a") // Append to previous log file
+.. 
+
+
+  To actually write a message on the log file, use the '{=logWrite()}
+function as if it was a '|printf()| with the exception that the first
+paratmeter is the level of the message.
+Example:
+.v
+   logWrite(logINFO,"Something weird at %d is happening", counter);
+..
+
+
+You can also use one of the following functions that won't require you 
+to pass the message level as parameter:
+         
+If you want to add something to the log file without creating a new entry
+in the log file, you can use the '{=logMessage()} function. 
+
+
+  To ease text alignment in the log, the string '{=logIndent} contains 
+the spaces needed to pass the date, time and type field.
+For example:
+.v
+  logError("Too many items at counter %d",numcounter);
+  logMessage(" (%d)\n%sOccured %d times",numitems,logIndent,times++);
+..
+will produce:
+.v
+    2009-01-29 13:46:02 ERR Too many items at counter 9 (5)
+                            Occured 3 times
+..
+
+
+#define logSetLevel(level)     (logLevel = (x))
+#define logFile         (log_file? log_file: stderr) 
+#define logSetFile(fname,mode) ((log_file? fclose(log_file) : 0),\
+                                (log_file = fname? fopen(fname,mode) : NULL))
+
+#define logWrite(lvl,...) \
+       (lvl >= logLevel  \
+          ? (time(&log_time),\
+             strftime(log_timestr,32,"%Y-%m-%d %X",localtime(&log_time)),\
+             fprintf(logFile,"\n%s %s ",log_timestr, log_abbrev[lvl]),\
+             fprintf(logFile,__VA_ARGS__),\
+             fflush(logFile)\
+            )\
+          : 0)
+
+#define logDebug(...)    logWrite(logDEBUG,__VA_ARGS__)
+#define logInfo(...)     logWrite(logINFO,__VA_ARGS__)
+#define logWarn(...)     logWrite(logWARN,__VA_ARGS__)
+#define logError(...)    logWrite(logERROR,__VA_ARGS__)
+#define logFatal(...)    logWrite(logFATAL,__VA_ARGS__)
+#define logMessage(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
+#define logIndent     "                        "                            
+
 .%% Finite State Machines
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Macros to embed Finite state machine into C programs.
+
+.v
+     FSM {
+       STATE(x) { ...
+                  if (c == 0) GOTO(z);
+                  GOTO(y);
+       }
+
+       STATE(y) { ...
+                  BREAK;  // exit from the FSM
+       }
+
+       STATE(z) { ...
+                  GOSUB(t);
+       }
+
+       STATE(t) { ...
+                  GOBACK;  // Go back to the caller state
+       }
+     }
+..
+
+  It's a good practice to include a graphic of the FSM in the technical
+documentation (e.g including the GraphViz description in comments).
+
+
+
 
 .%% Using utl.h
 ^^^^^^^^^^^^^^^
@@ -753,6 +917,18 @@ is found or a break is executed within the '|pmxTokSwitch| section.
 
 .% Containers
 =============
+
+.%% Tables
+^^^^^^^^^^
+
+.%% Vectors
+^^^^^^^^^^^
+
+.%% Stacks
+^^^^^^^^^^
+
+.%% Records
+^^^^^^^^^^^
 
 .% Examples
 ===========

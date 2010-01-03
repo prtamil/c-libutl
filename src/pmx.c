@@ -35,13 +35,23 @@ static short pmx_ch;
 static int pmxEscGetc(void *text,char esc)
 {
   int ch;
+/*
   ch = pmxGetc(text);
   while (ch == esc) {
     ch = pmxGetc(text);
     ch = pmxGetc(text);
   }
+*/
+  for (;;) {
+    if ((ch = *SB(text)->text) == '\0') return EOF;
+    SB(text)->text++;
+    if (ch != esc) return ch;
+    if ((ch = *SB(text)->text) == '\0') return esc; 
+    SB(text)->text++;
+  }
   return ch;
 }
+
 /*#define pmxEscGetc(s,e) \
      (((pmxGetc(s) == (e)) ? (pmxGetc(s),pmxGetc(s)) : pmx_ch),pmx_ch)
      ((pmxGetc(s) == (e)) ? (pmxGetc(s),pmxGetc(s)) : pmx_ch)*/
