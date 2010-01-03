@@ -88,10 +88,22 @@ void fmterr(int errnum, char *msg)
   utlError(errnum,msg);
 }
 
-void htmlesc(chs_t s)
+chs_t htmlesc(chs_t s)
 {
-
+  chsSubStr(s,0,"&&","&&amp;");
+  chsSubStr(s,0,"&>","&&gt;");
+  chsSubStr(s,0,"&<","&&lt;");
+  return s;
 } 
+
+chs_t setstyle(chs_t s)
+{
+  chsSubStr(s,0,"'|(&e`<*!|>)|","<tt>&1</tt>");
+  chsSubStr(s,0,"'/(&e`<*!/>)/","<i>&1</i>");
+  chsSubStr(s,0,"'*(&e`<*!*>)*","<b>&1</b>");
+  chsSubStr(s,0,"`(<.>)","&1");
+  return s;
+}
 
 void text()
 {
@@ -117,7 +129,7 @@ void text()
                  GOTO(verbatim);
 
            pmxTokCase(T_ANY) : 
-                 fprintf(out,"%03d %.*s\n",curln,pmxTokLen(1),pmxTokStart(1));
+                 fprintf(out,"%.*s\n",pmxTokLen(1),pmxTokStart(1));
                  curln++;
                  GOTO(text);
                  
@@ -204,12 +216,14 @@ void text()
                   
             pmxTokCase(T_HDR_END):
                   curln += (pmxTokLen(1) > 0 ? 2 : 1);
-                  if (header_mark[0]) fprintf(out,"<a name=\"%s\">",header_mark);
+                  if (header_mark[0]) fprintf(out,"<a name=\"%s\"/>",header_mark);
                   fprintf(out,"<h%d",header_level);
                   if (header_class[0]) {
                     fprintf(out," class=\"%s\"",header_class);
                     if (!header_title[0]) chsCpy(header_title,header_class);
                   }
+                  header_title = htmlesc(header_title);
+                  header_title = setstyle(header_title);
                   fprintf(out,">%s</h%d>\n",header_title,header_level);
                   GOTO(text);
 

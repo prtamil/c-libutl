@@ -88,16 +88,39 @@ int main(void)
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
     }
     
-    TSTGROUP("Create/Destroy") {
-      chsSubStr(buf ,0, "><=EGIKM>","++");
+    TSTGROUP("Replace") {
+      chsSubStr(buf ,0, "<=EGIKM>","++");
       TST("Replacing <=EGIKM> with '++'",1);
       TSTWRITE("# >>  \"%s\"\n",buf);
     
-      chsSubStr(buf ,0, "><=PQRS>","[&0&0]");
+      chsSubStr(buf ,0, "<=PQRS>","[&0&0]");
       TST("Replacing <=PQRS> with '[&0&0]'", 4);
       TSTWRITE("# >>  \"%s\"\n",buf);
+      
     }
       
+    TSTGROUP ("Replace arr") {
+      char *ra[] = {"A","B",NULL};
+      char *rb[] = {"#&1#","$&2$&1$",NULL};
+      char *rc[] = {"b","B",NULL};
+      
+      chsCpy(buf,"xabc");
+      chsSubArr(buf,0,"a&|b",ra);
+      TST("repl arr1",strcmp(buf,"xABc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
+      chsCpy(buf,"_123_x34_y_34z12");
+      chsSubArr(buf,0,"(&d)&|(<l>)(&d)",rb);
+      TST("repl arr1",strcmp(buf,"_#123#_$34$x$_y_#34#$12$z$")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
+      chsCpy(buf,"xabc");
+      chsSubArr(buf ,0, "&*a&|b",rc);
+      TST("repl arr1",strcmp(buf,"xBBc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
+    }
+    
     TSTGROUP("Destroy") {
       chsFree(buf);
       TST("CHS destroyed", buf == NULL);
@@ -144,15 +167,6 @@ int main(void)
       assert(buf != NULL);  
       chsFree(buf);
       assert(buf == NULL);  
-    }
-    
-    _TSTGROUP("chs as a stream") {
-      f = fopen("txt.txt","r");
-      if (f) {
-        chsCpyFile(buf,f);
-        fclose(f);
-        
-      } 
     }
     
     TSTGROUP("Upper/Lower/Reverse") {
@@ -212,9 +226,10 @@ int main(void)
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
 
       chscpyf(buf,"x:%02d, y:%05.2f, d:%s",3,4.3,"NE");
-      TST("Format 2",strcmp(buf,"x:03, y:04.30, d:NE")==0);
+      TST("Format 2",strcmp(buf,"x:03, y: 4.30, d:NE")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     }
+    
   }  
   
   chsFree(buf);

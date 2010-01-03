@@ -274,47 +274,55 @@ pmx_t chsMatch(chs_t s, long from, char *pat)
 
 chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
 {
-  chs_t  mtc = NULL;
   char  *rpl;
   long   l = 0;
   int    repeat = 0;
+  int    once = 0;
   pmx_t  ret;
   
   pos = fixndx(s,pos);
   
-  if (!s || pos >= chsLen(s) || !pat)
+  if (!s || !*s || !pat || pos >= chsLen(s))
     return s;
     
-  if (pat[0] == '&' && pat[1] == '*') {
-    repeat = 1;
-    pat += 2;
+  while (pat[0] == '&') {
+    if (pat[1] == '*') {
+      repeat = 1;
+      pat += 2;
+    }
+    else if (pat[1] == 'r') {
+      once = 1;
+      pat += 2;
+    }
+    else break;
   }
     
   if (!*pat) return s;
     
-  while ((ret = chsMatch(s, pos, pat))) {
-    pos =  pmxStart(ret,0);
-    rpl = f(s,ret);
-    if (rpl) {
-      chsDel(s, pos, pmxEnd(ret,0)-1);
-      l = strlen(rpl);
-      if (l>0)
-        chsInsStrL(s, pos, rpl, l);
-
-      if (repeat)
-        l = 0;
+  while ( pos < chsLen(s)) {
+    if ((ret = chsMatch(s, pos, pat))) { 
+      pos =  pmxStart(ret,0);
+      rpl = f(s,ret);
+      if (rpl) {
+        chsDel(s, pos, pmxEnd(ret,0)-1);
+        l = strlen(rpl);
+        if (l>0) chsInsStrL(s, pos, rpl, l);
+  
+        if (repeat) l = 0;
+      }
+      else  l = pmxLen(ret,0);
     }
-    else  l = pmxLen(ret,0);
+    else l = 1;
+    if ( once && l>0) break;
     pos += l;
-  }
-
-  chsFree(mtc);
+  } 
 
   return s;  
 }
 
 
-static char  *rpl_str;
+static char **rpl_arr;
+static int    rpl_num;
 static chs_t  rpl_chs = NULL;
 static char  *rpl_fun(char *mtc, pmx_t cpt)
 {
@@ -322,21 +330,24 @@ static char  *rpl_fun(char *mtc, pmx_t cpt)
   long l;
   
   chsCpy(rpl_chs, utlEmptyString);
-  if (rpl_str && *rpl_str) {
-    r = rpl_str;
+  if (rpl_arr) {
+    r = NULL;
+    l = pmxMatched(cpt);
+    if (l<=rpl_num) r = rpl_arr[l-1];
+    if (!r) return NULL;
     while (*r) {
       l = 0;
       t = r;
       while (*t && *t != '&') { t++; l++; }
       chsAddStrL(rpl_chs, r, l);
       if (*t == '&') {
-        if (t[1] &&  0 <= *++t && *t <= '9') { 
+        if (*++t &&  '0' <= *t && *t <= '9') { 
            l = pmxLen(cpt, *t - '0');
            chsAddStrL(rpl_chs, mtc + pmxStart(cpt,*t - '0'), l);
            _dbgmsg("\tlen: %ld %s\n",l,rpl_chs);
         }
-        else
-          chsAddChr(rpl_chs, *t);
+        else 
+          chsAddChr(rpl_chs, (*t? *t :'&'));
         r = t+1;
       }
       else r=t;
@@ -348,10 +359,24 @@ static char  *rpl_fun(char *mtc, pmx_t cpt)
 
 chs_t chs_SubStr(chs_t s, long pos, char *pat, char *rpl)
 { 
-  rpl_str = rpl;
-  chsSubFun(s, pos, pat, rpl_fun);
-  chsFree(rpl_chs);
-  
+  if (rpl) {
+    rpl_arr = &rpl;
+    rpl_num = 1;
+    chsSubFun(s, pos, pat, rpl_fun);
+    chsFree(rpl_chs);
+  }
+  return s;
+}
+
+chs_t chs_SubArr(chs_t s, long pos, char *pat, char **arr)
+{ 
+  if (arr) {
+    rpl_arr = arr;
+    rpl_num = 0;
+    while (arr[rpl_num]) rpl_num++;
+    chsSubFun(s, pos, pat, rpl_fun);
+    chsFree(rpl_chs);
+  }  
   return s;
 }
 
