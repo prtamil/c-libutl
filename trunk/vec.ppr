@@ -142,8 +142,8 @@ Caret=1,1
 TopLine=1
 Caret=1,1
 [src\tbl.c]
-TopLine=798
-Caret=6,835
+TopLine=853
+Caret=17,875
 [src\tbl.h]
-TopLine=31
-Caret=1,13
+TopLine=77
+Caret=1,102
