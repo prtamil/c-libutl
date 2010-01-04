@@ -800,6 +800,20 @@ static uint16_t keypri(void *key,int len)
   return ((pri2<<8) | pri1);
 }
 
+static tbt_node_t *tbt_newnode()
+{
+   tbt_node_t *node;
+   
+   node = malloc(sizeof(*node));
+   if (node) {
+     node->left = NULL;
+     node->right = NULL;
+     tbt_keytype(node) = '\0';
+     tbt_valtype(node) = '\0';
+   }
+   return node;
+}
+
 #define tbt_keypri(t,n,p,f) \
   ((t) == 'S'? keypri(p,0) :\
    (t) == 'F'? keypri(&f,sizeof(float)) :\
@@ -808,32 +822,66 @@ static uint16_t keypri(void *key,int len)
                keypri(&p,sizeof(void *)))
 
 static tbt_node_t *tbt_search(tbt_node_t *tb, char tk, long nkey, void *pkey, float fkey,
-                                                              tbt_node_t **parent)
+                                                              tbt_node_t **parent. int *lr)
 {
   int cmp;
   val_u key;
   uint16_t pri;
+  tbt_node_t *par;
   
   val_set(key, tk, nkey, pkey, fkey);
   
   pri = tbt_keypri(tk, nkey, pkey, fkey);
   *parent = NULL;  
   while (tb) {
-    cmp = tb->pri - pri; 
+    cmp = tb->pri - pri;
+    if (lr) *lr = cmp; 
     if (cmp == 0) 
       cmp = val_cmp(tbt_keytype(tb),tb->key,tk,key);
       
     if (cmp == 0) break;
      
-    if (cmp < 0) {
-      *parent = tb;
-      tb = tb->right;
-    } 
-    else {
-      *parent = tb;
-      tb = tb->right;
-    }
+    par = tb;
+    tb = (cmp < 0) ? tb->left : tb->right;
   }
+  if (parent) *parent = par;
   return tb;
 }
 
+val_u tbt_get(tbt_t tb, char tk, long nkey, void *pkey, float fkey,
+                        char tv, long ndef, void *pdef, float fdef)
+{
+  tbt_node_t *cur_node;
+  val_u val;
+    
+  if (tb && tb->root) {
+    cur_node = tbt_search(tb->root,tk,nkey,pkey,fkey,NULL,NULL);
+    if (cur_node) return cur_node->val;
+  }
+  val_set(val,tv,ndef,pdef,fdef);
+  return val; 
+}
+
+tbt_t tbt_set(tbt_t tb, char tk, long nkey, void *pkey, float fkey,
+                        char tv, long nval, void *pval, float fdef)
+{
+  tbt_node_t *curnode, *parent;
+  int lr;
+  
+  if (!tb) tb = tbt_new(); 
+  
+  curnode = tbt_search(tb->root,tk,nkey,pkey,fkey,&parent,&lr);
+
+  if (curnode) {
+  }
+  else {
+    curnode =  tbt_newnode();
+    val_set(curnode->key,tk,nkey,pkey,fkey);
+    val_set(curnode->val,tv,nval,pval,fval);    
+    if (lr<0) parent->left = curnode;
+    else parent->right = curnode;
+    tb->count++;
+  }
+  
+  return tb;
+}
