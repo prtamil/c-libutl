@@ -77,9 +77,9 @@ int Cstrlen(char *s, int l)
         if (0 <= s[j] && s[j] <= 7) j++;
         if (0 <= s[j] && s[j] <= 7) j++;
       }
-      else if (s[j] == 'x' && isxdigit(s[j+1])) {
+      else if (s[j] == 'x' && isxdigit((int)s[j+1])) {
         j+=2;
-        if (isxdigit(s[j+1])) j++;
+        if (isxdigit((int)s[j+1])) j++;
       }
     }
     else if (s[j] == '&') {

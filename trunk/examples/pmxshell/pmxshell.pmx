@@ -247,7 +247,7 @@ void print_escaped(char *s,long len)
   long k=0;
   
   while (k<len) {
-    if (isprint(s[k])) putchar(s[k]);
+    if (isprint((int)s[k])) putchar(s[k]);
     else printf("\\x%02X",s[k]);
     k++;
   }
@@ -482,9 +482,9 @@ void explain(char *ptrn)
         }
         else printf ("  a");
         printf(" character");
-        if (isupper(*pmx(Start,2))) printf(" not");
+        if (isupper((int)*pmx(Start,2))) printf(" not");
         printf(" being");
-        j=tolower(*pmx(Start,2));
+        j=tolower((int)*pmx(Start,2));
         switch (j) {
           case 'q' : printf(" alphanumeric ([0-9A-Za-z])"); break;
           case 'a' : printf(" alphabetic ([A-Za-z])"); break;
