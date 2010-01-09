@@ -421,26 +421,4 @@ int vec_cmp (const void *a, const void *b);
 
 #define stkPop(tb)       vecDel(tb,-1,-1)
 
-/* .%% Tree based tables */
-
-typedef struct tbt_node_s {
-  unsigned char flg[2];  /* flags are used to store the type of key/value*/
-  uint16_t pri;
-  val_u  val;  /*  stored value */
-  val_u  key;  /*  slot key */
-  struct tbt_node_s *left;
-  struct tbt_node_s *right;
-} tbt_node_t;    
-
-typedef struct {
-  long count;
-  tbt_node_t *root;
-  tbt_node_t *free;
-}  *tbt_t;
-
-
-#define tbt_keytype(node)  ((node)->flg[0])
-#define tbt_valtype(node)  ((node)->flg[1])
-#define tbt_priority(node) ((node)->pri)
-
 #endif

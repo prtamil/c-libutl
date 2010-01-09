@@ -150,7 +150,7 @@ unsigned char pmxToken(pmx_t mtc)
 }
 
 /* {{ Checks on characters **/
-#define ic(c) (icase?tolower(c):c)
+#define ic(c) (icase?tolower((int)c):c)
 
 #define is_blank(x) (x == ' ' || x =='\t')
 #define is_ascii(x) (x < 0x7F)
@@ -332,8 +332,8 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               break;
                    case '\0': return NULL;
                  }
-                 reverse = (isupper(op) ? mTRUE : mFALSE);
-                 op = tolower(op);
+                 reverse = (isupper((int)op) ? mTRUE : mFALSE);
+                 op = tolower((int)op);
                  switch (op) {
                    #define  W(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
                                    { ch = pmxGetc(text); cnt++; }
