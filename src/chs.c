@@ -219,7 +219,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
   _dbgmsg("READ = %p,%p,%c,%c\n",dst,f,how,what);
 
   if (!dst) chsNew(dst);
-  else if (tolower(how) != 'a')  chsCpy(dst,"") ;
+  else if (tolower((int)how) != 'a')  chsCpy(dst,"") ;
   
   if (what == 'A') { /* read rest of the file */
     while ((k = fread(chs_buf,1,chs_buf_size,f)) > 0) {
