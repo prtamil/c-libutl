@@ -58,7 +58,7 @@ char *getmacro(char *str, pmx_t capt)
   name[pmxLen(capt,2)] = '\0';
     
   while (*name) { 
-    *name = tolower(*name);
+    *name = tolower((int)*name);
     name++;    
   }    
   name = str + pmxStart(capt,2); 
@@ -99,7 +99,7 @@ char *submacro(char *str, pmx_t capt)
   name[pmxLen(capt,1)] = '\0';
   
   while (*name) { 
-    *name = tolower(*name);
+    *name = tolower((int)*name);
     name++;    
   }    
   name = str+pmxStart(capt,1);
@@ -149,13 +149,13 @@ int main(int argc, char *argv[])
   if (!f) merr("Unable to open file");
   
   /* Load text into the buffer */
-  chsRead(text, f, 'w');
+  chsCpyFile(text, f);
   
   fputs(text,stdout);
-  fputs("-----------------\n",stdout);
+  fputs(\n"-----------------\n",stdout);
 
   /* the |&B| recognizer will get a balanced parenthesis*/
-  chsSubFun(text, 0,">&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
+  chsSubFun(text, 0,"&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
 
   tblForeach(macros,k) {
     printf("[%s] = \"%s\"\n",tblKeyS(macros,k),tblValS(macros,k)); 
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
   ** searched again looking for other occurence of the search
   ** pattern.    
   **/
-  chsSubFun(text, 0,"&*>$(<+a>)(&B())",submacro);
+  chsSubFun(text, 0,"&*$(<+a>)(&B())",submacro);
   
   fputs(text,stdout);
-  fputs("-----------------\n",stdout);
+  fputs("\n-----------------\n",stdout);
   
   chsFree(text);
   tblFree(macros);
