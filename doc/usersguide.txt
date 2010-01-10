@@ -69,7 +69,7 @@ and the header file '|libutl.h| where your compiler/linker can find them.
 ^^^^^^^^^^^^^^^^^^^^^^^
 
   The library has been tested with different combinations of compiler and
-platforms.  It is know to work with:
+platforms.  It is knonw to work with:
 
 .t
      Compiler                      Platform
