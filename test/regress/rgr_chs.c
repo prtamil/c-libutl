@@ -175,7 +175,7 @@ int main(void)
       assert(buf != NULL);  
       chsFree(buf);
       assert(buf == NULL);  
-    }
+    } 
     
     TSTGROUP("Upper/Lower/Reverse") {
       chsCpy(buf,"abc");
@@ -234,7 +234,16 @@ int main(void)
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
 
       chscpyf(buf,"x:%02d, y:%05.2f, d:%s",3,4.3,"NE");
-      TST("Format 2",strcmp(buf,"x:03, y: 4.30, d:NE")==0);
+      TST("Format 2",strcmp(buf,"x:03, y:04.30, d:NE")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      
+      chsCpy(buf,"[[]]");
+      chsInsFmt(buf,2,"%04X",23147);
+      TST("Format 3",strcmp(buf,"[[5A6B]]")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      
+      chsAddFmt(buf,"%04X",23147);
+      TST("Format 4",strcmp(buf,"[[5A6B]]5A6B")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     }
     
