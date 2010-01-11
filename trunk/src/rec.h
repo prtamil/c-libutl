@@ -83,7 +83,7 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 
 #define recName(a)   ((a)? ((rec_t)(a))->rec_f->name : NULL)
 
-#define recPtrUid(a)   (sprintf(chs_buf,"ptr:%p",a),(char *)chs_buf)
+#define recPtrUid(b,a) (sprintf(b,"ptr:%p",a),b)
 #define recPtrCmp(a,b) ((char *)(a) - (char *)(b))
 
 void *rec_cpy(rec_t a, rec_t b);
