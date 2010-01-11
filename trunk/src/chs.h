@@ -120,11 +120,6 @@ typedef char *chs_t ;
    and defined in the '<chs.c> file.  
 */
 
-extern chs_blk_t *chs_blk_;
-extern chs_t      chs_tmp_;
-
-#define chs_buf_size 1024
-extern char chs_buf[chs_buf_size];
 
 /*
 .% API
@@ -163,12 +158,11 @@ chs_t chs_setsize(chs_t s, long ndx);
 #define chsDup(s)     chs_Cpy(NULL,s)
 #define chsDupL(s,l)  chs_CpyL(NULL,s,l)
 
-#define chsFree(s) \
- ((s) = (char *)((chs_tmp_=(s))? (free(chs_blk(chs_tmp_)), NULL) : NULL))
-
-#define chsSize(s) ((chs_tmp_=(s))? chs_blk(chs_tmp_)->size : 0)
+chs_t chs_Free(chs_t s);
+#define chsFree(s) (s=chs_Free(s))
 
 long chsLen(chs_t s);
+long chsSize(chs_t s);
 
 char   chsChrAt  (chs_t s, long ndx);
 
@@ -256,11 +250,29 @@ chs_t chs_InsStrL(chs_t dst, long ndx, char *src, long len) ;
 chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
 #define chsInsStr(d, n, s) (d = chs_InsStr(d,n,s))
 
+#define chs_buf_size 1024
 
-#define chsCpyFmt(d,f,...)   (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsCpy(d,chs_buf)) 
-#define chsAddFmt(d,f,...)   (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsAddStr(d,chs_buf)) 
-#define chsInsFmt(d,n,f,...) (snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__),chsInsStr(d,n,chs_buf)) 
-
+#define chsCpyFmt(d,f,...)                      \
+ do {                                           \
+  char chs_buf[chs_buf_size];                   \
+  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
+  chsCpy(d,chs_buf);                            \
+ } while (utlZero) 
+ 
+#define chsAddFmt(d,f,...)                      \
+ do {                                           \
+  char chs_buf[chs_buf_size];                   \
+  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
+  chsAddStr(d,chs_buf);                         \
+ } while (utlZero) 
+ 
+#define chsInsFmt(d,n,f,...)                    \
+ do {                                           \
+  char chs_buf[chs_buf_size];                   \
+  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
+  chsInsStr(d,n,chs_buf);                       \
+ } while (utlZero) 
+ 
 chs_t chs_Del (chs_t dst, long from, long to) ;
 #define chsDel(d, f, t) (d = chs_Del(d,f,t))
 
@@ -337,10 +349,10 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f);
 /* .%% Other  */
 
 #define chsUpper(s) \
- do { char *p=s; if (p) while (*p) {*p = toupper(*p); p++;}} while(utlZero)
+ do { char *p=s; if (p) while (*p) {*p = toupper((int)*p); p++;}} while(utlZero)
  
 #define chsLower(s) \
- do { char *p=s; if (p) while (*p) {*p = tolower(*p); p++;}} while(utlZero)
+ do { char *p=s; if (p) while (*p) {*p = tolower((int)*p); p++;}} while(utlZero)
 
 #define chsReverse(s) \
  do { char *p,*q,t; \
