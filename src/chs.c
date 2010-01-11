@@ -10,10 +10,6 @@
 #include "libutl.h"
 #include <ctype.h>
 
-chs_blk_t *chs_blk_;
-chs_t   chs_tmp_;
-
-char chs_buf[chs_buf_size];
 
 long chsLen(chs_t s)
 {
@@ -24,6 +20,18 @@ long chsLen(chs_t s)
   _dbgmsg("CHSLEN: %p %ld\n",s,l);
   return l;
 }
+
+chs_t chs_Free(chs_t s)
+{
+  if (s) free(chs_blk(s));
+  return NULL;
+}
+
+long chsSize(chs_t s)
+{
+ return (s ? chs_blk(s)->size : 0);
+}
+
 
 static long fixndx(chs_t s, long n)
 {
@@ -214,7 +222,8 @@ chs_t chs_Trim(chs_t st,char *left, char *right)
 
 chs_t chs_read(chs_t dst, FILE *f, char how, char what)
 {
-  int k = chs_buf_size;
+  int k = 0;
+  char chs_buf[chs_buf_size];
   
   _dbgmsg("READ = %p,%p,%c,%c\n",dst,f,how,what);
 
@@ -233,8 +242,9 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
     while (1) {
       chs_buf[0] = '\0';
       if (!fgets(chs_buf,chs_buf_size,f)  || chs_buf[0] == '\0') break;
+      chs_buf[chs_buf_size-1] = '\0';
       k=0;
-      while (k < chs_buf_size  &&  chs_buf[k]  &&  chs_buf[k] != '\n')
+      while (k < chs_buf_size-1  &&  chs_buf[k]  &&  chs_buf[k] != '\n')
         k++; 
       if (chs_buf[k] == '\0') {
         chsAddStrL(dst, chs_buf,k);
