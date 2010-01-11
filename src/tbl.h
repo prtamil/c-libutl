@@ -322,7 +322,6 @@ vec_t vec_SetCount(vec_t vt, long max);
 
 long vecCount(vec_t vt);
 
-extern vec_t vec_tmp;
 #define vecVoid ((vec_t)utlEmptyString)
 
 vec_t vec_new(long nslots);
