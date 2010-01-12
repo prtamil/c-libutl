@@ -29,7 +29,7 @@ static unsigned short llog2(unsigned long x)
       }
       return (unsigned short)l;
     #elif defined(__GNUC__)
-      return (unsigned short)__builtin_clzl(x);
+      return (unsigned short) __builtin_clzl(x);
     #elif
       if (x & 0xFFFF0000)         {l += 16; x >>= 16;}
       if (x & 0xFF00)             {l += 8;  x >>= 8 ;}
@@ -68,6 +68,7 @@ tbl_t tbl_new(long nslots)
   sz = sizeof(tbl_table_t) + sizeof(tbl_slot_t) * (nslots-1);
   tb = calloc(1, sz);
   if (!tb) tbl_outofmem();
+  
   tb->count = 0;
   tb->size  = nslots;
   return  tb;
@@ -80,17 +81,20 @@ tbl_t tbl_new(long nslots)
 #define TBL_SMALL 16
 #define tbl_issmall(tb) (tb->size <= TBL_SMALL)
 
-tbl_t tbl_reash(tbl_t tb, long size)
+tbl_t tbl_reash(tbl_t tb, long nslots)
 {
   tbl_slot_t slot_top;
   tbl_slot_t slot_bot;
+  tbl_t newtb;
   long ndx;
   
-  if (tbl->count > size) return tb;
+  nslots = roundpow2(nslots);
+  if (tbl->count > nslots) return tb;
   
-  if (size <= TBL_SMALL) {
-    /* compact the table in the upper side */
+  if (nslots <= TBL_SMALL) {
+    /* It will be a small-table */
     if (tbl->size > TBL_SMALL) {
+      /* It was a hash table: compact the table in the upper side */
       slot_top = tb->slot;
       slot_bot = tb->slot + tb->size-1;
       while (slot_top < slot_bot) {
@@ -102,17 +106,27 @@ tbl_t tbl_reash(tbl_t tb, long size)
           *slot_top = *slot_bot;
           *slot_bot->key_type = '\0';
         }            
-         *slot_top++;                    
+        *slot_top++;                    
+        *slot_bot++;                    
       }
     }
-    tb = tbl_realloc(tb,size);
+    /* Only the first tbl->count slots are filled */
+    tb = realloc(tb,nslots);
     if (!tb) tbl_outofmem();
-    if (size > tb->size) 
-      memset(tb->slot + tb->size, 0, (size - tb->size) * sizeof(tbl_slot_t));
-    tb->size = size
+    if (nslots > tb->size) 
+      memset(tb->slot + tb->size, 0, (nslots - tb->size) * sizeof(tbl_slot_t));
+    tb->size = nslots
   }
   else {
     /* HASHTABLE REASH */
+    newtb = tbl_new(nslots);
+    slot_top = tb->slot;
+    for (ndx = 0; ndx < tb->size; ndx++, slot_top++) {
+      newtb = tbl_set(newtb, slot_top->key_type, slot_top->key,
+                             slot_top->val_type, slot_top->val);
+    }
+    free(tb);
+    tb = newtb;
   }
   return tb;
 }
@@ -122,6 +136,8 @@ tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   tbl_slot_t *slot;
   
+  if (tb->count >= tb->size) tb = tbl_reash(tb, tb->size * 2);
+
   slot = tb->slot + tb->count;
   slot->key_type = k_type;
   slot->val_type = v_type;
@@ -132,16 +148,29 @@ tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   return tb;
 }
 
+
+static tbl_t 
+tbl_set_hash(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
+{
+  tbl_slot_t *slot;
+  long h;
+  unsigned char d;
+  
+  h = key_hash(k_type, key) % tb->size;
+ 
+   
+  
+  return tb;
+}
+
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   if (tb == NULL)  tb = tbl_new();
   
-  if (tb->count >= tb->size) tb = tbl_reash(tb,tb_size * 2);
-
   if (tb->size <= TBL_SMALL) 
-    tb = tbl_set_small(tb,k_type,key,v_type,val);
+    tb = tbl_set_small(tb, k_type,key, v_type, val);
   else 
-    tb = tbl_set_hash(tb,k_type,key,v_type,val);
+    tb = tbl_set_hash(tb, k_type,key, v_type, val);
   return tb;
 }
 
