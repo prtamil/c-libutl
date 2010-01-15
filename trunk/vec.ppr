@@ -116,7 +116,7 @@ Caret=3,95
 TopLine=1
 Caret=1,1
 [src\rec.h]
-TopLine=61
+TopLine=74
 Caret=1,93
 [test\regress\rgr_rec.c]
 TopLine=4
@@ -125,14 +125,14 @@ Caret=67,18
 TopLine=57
 Caret=13,75
 [src\tbl2.c]
-TopLine=136
-Caret=3,161
+TopLine=143
+Caret=19,143
 [src\tbl2.h]
-TopLine=31
+TopLine=47
 Caret=2,66
 [src\T.h]
 TopLine=1
 Caret=1,1
 [src\tbl.c]
-TopLine=188
+TopLine=192
 Caret=1,211

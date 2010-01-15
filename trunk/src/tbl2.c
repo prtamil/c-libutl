@@ -135,16 +135,24 @@ static tbl_t
 tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   tbl_slot_t *slot;
+  long ndx;
   
-  if (tb->count >= tb->size) tb = tbl_reash(tb, tb->size * 2);
-
-  slot = tb->slot + tb->count;
-  slot->key_type = k_type;
-  slot->val_type = v_type;
-  slot->key = key;
-  slot->val = val;
-  tb->count++;
+  if (tbl_find_small(tb, k_type, key, &ndx) == -1) {
+    if (ndx == -1) {
+      tb = tbl_rehash(tb, tb->size * 2);
+      if (tb->size)
+      return tb_set(tb, k_type, key, v_type, val);
+    }
+    slot = tb->slot + tb->count ;
+    slot->key_type = k_type;
+    slot->val_type = v_type;
+    slot->key = key;
+    slot->val = val;
+    tb->count++;
+  }
+  else {
   
+  }
   return tb;
 }
 
@@ -167,6 +175,9 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   if (tb == NULL)  tb = tbl_new();
   
+  if (tb->size <= TBL_SMALL && tb->count >= tb->size)
+    tb = tbl_reash(tb, tb->size * 2);
+
   if (tb->size <= TBL_SMALL) 
     tb = tbl_set_small(tb, k_type,key, v_type, val);
   else 
@@ -174,11 +185,11 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   return tb;
 }
 
-long tbl_find_small(tbl_t tb, char k_type, val_u key)
+long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
 {
   tbl_slot_t *slot;
   long ndx;
-  
+
   if (tb) {
     ndx = 0;
     slot = tb->slot;
@@ -188,10 +199,13 @@ long tbl_find_small(tbl_t tb, char k_type, val_u key)
       ndx++; slot++;
     }
   }
+  if (candidate) {
+    *candidate = (tb->count < tb->size) ? tb->count : -1 ;
+  }
   return -1;
 }
 
-val_u tbl_get_small(tbl_t tb, char k_type, val_u key,val_u def)
+val_u tbl_get_small(tbl_t tb, char k_type, val_u key, val_u def)
 {
   long ndx;
   ndx = tbl_find_small(tb,k_type,key);
