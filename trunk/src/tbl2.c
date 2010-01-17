@@ -52,11 +52,49 @@ static unsigned short llog2(unsigned long x)
                      (v |= v >> 16), \
                       v++)
 
+/******************************************************************/
+
+#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
+                                 (tv == 'F') ? (void)((x).f = (fv)) : \
+                                               (void)((x).p = (pv))) 
+
+#define val_del(tv,v) do { switch (tv) { \
+                             case 'P' : (v).p = NULL; \
+                             case 'N' : (v).n = 0; \
+                             case 'U' : (v).u = 0; \
+                             case 'F' : (v).f = 0.0; \
+                           }\
+                      } while (0)
+
+static int val_cmp(char atype, val_u a, char btype, val_u b)
+{
+  int ret;
+  
+  ret = atype - btype;
+  if (ret == 0) {
+    switch (atype) {
+      case '\0': ret = 0;                                          break;
+      case 'P' : ret = (char *)(a.p) - (char *)(b.p);              break;
+      case 'S' : ret = strcmp(a.s, b.s);                           break;
+      case 'N' : ret = a.n - b.n;                                  break;
+      case 'U' : ret = (a.u == b.u) ? 0 : ((a.u > b.u) ? 1 : -1);  break;
+      case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
+      
+      default  : ret = -1;
+    }
+  }
+  return ret;
+}
+
+
+/******************************************************************/
+
 static void tbl_outofmem()
 { 
   if (stderr) fprintf(stderr,"OUT OF MEMORY");
   exit(1);
 }
+
 
 tbl_t tbl_new(long nslots)
 {
@@ -74,62 +112,163 @@ tbl_t tbl_new(long nslots)
   return  tb;
 }
 
-#define tbl_isnotempty(sl) (slot->key_type)
-#define tbl_setempty(sl)   (slot->key_type = '\0')
-#define tbl_slot(tb,k)     (tb->slot+k)
+#define isemptyslot(sl)    ((sl)->key_type == '\0')
+#define tbl_setempty(sl)   ((sl)->key_type = '\0')
+#define tbl_slot(tb, k)    ((tb)->slot+(k))
 
 #define TBL_SMALL 16
-#define tbl_issmall(tb) (tb->size <= TBL_SMALL)
+#define tbl_issmall(tb)    (tb->size <= TBL_SMALL)
 
-tbl_t tbl_reash(tbl_t tb, long nslots)
+static tbl_t tbl_compact(tbl_t tb)
 {
-  tbl_slot_t slot_top;
-  tbl_slot_t slot_bot;
+  tbl_slot_t *slot_top;
+  tbl_slot_t *slot_bot;
+  
+  slot_top = tb->slot;
+  slot_bot = tb->slot + tb->size-1;
+  
+  while (slot_top < slot_bot) {
+    while (slot_top < slot_bot &&  isemptyslot(slot_top))
+      slot_top++;
+    while (slot_top < slot_bot && !isemptyslot(slot_bot))
+      slot_bot--;
+    if (slot_top < slot_bot) {
+      *slot_top = *slot_bot;
+      tbl_setempty(slot_bot);
+      slot_top++;                    
+      slot_bot--;                    
+    }            
+  }
+}
+
+tbl_t tbl_rehash(tbl_t tb, long nslots)
+{
   tbl_t newtb;
+  tbl_slot_t *slot;
   long ndx;
   
   nslots = roundpow2(nslots);
-  if (tbl->count > nslots) return tb;
+  if (tb->count > nslots) return tb;
   
-  if (nslots <= TBL_SMALL) {
-    /* It will be a small-table */
-    if (tbl->size > TBL_SMALL) {
-      /* It was a hash table: compact the table in the upper side */
-      slot_top = tb->slot;
-      slot_bot = tb->slot + tb->size-1;
-      while (slot_top < slot_bot) {
-        while (slot_top < slot_bot && slot_top->key_type != '\0')
-          slot_top++;
-        while (slot_top < slot_bot && slot_bot->key_type == '\0')
-          slot_bot--;
-        if (slot_top < slot_bot) {
-          *slot_top = *slot_bot;
-          *slot_bot->key_type = '\0';
-        }            
-        *slot_top++;                    
-        *slot_bot++;                    
-      }
-    }
-    /* Only the first tbl->count slots are filled */
-    tb = realloc(tb,nslots);
+  if (nslots <= TBL_SMALL) { /* It will be a small-table */
+  
+     /* If it was a hash table compact slots in the upper side */
+    if (tb->size > TBL_SMALL) tb = tbl_compact(tb);
+      
+    /* Now only the first tbl->count slots are filled (and they are less than nslots)*/
+    tb = realloc(tb, nslots);
     if (!tb) tbl_outofmem();
-    if (nslots > tb->size) 
-      memset(tb->slot + tb->size, 0, (nslots - tb->size) * sizeof(tbl_slot_t));
-    tb->size = nslots
+    
+    if (nslots > tb->size) /* clear the newly added elemets */
+      memset(tb->slot + tb->size, 0x00, (nslots-tb->size) * sizeof(tbl_slot_t));
+      
+    tb->size = nslots;
   }
-  else {
-    /* HASHTABLE REASH */
+  else { /* create a new table and fill it with existing elements */
     newtb = tbl_new(nslots);
-    slot_top = tb->slot;
-    for (ndx = 0; ndx < tb->size; ndx++, slot_top++) {
-      newtb = tbl_set(newtb, slot_top->key_type, slot_top->key,
-                             slot_top->val_type, slot_top->val);
+    slot = tb->slot;
+    for (ndx = 0; ndx < tb->size; ndx++, slot++) {
+      if (!isemptyslot(slot))
+        newtb = tbl_set(newtb, slot->key_type, slot->key,
+                               slot->val_type, slot->val);
     }
     free(tb);
     tb = newtb;
   }
   return tb;
 }
+
+
+
+static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
+{
+  tbl_slot_t *slot;
+  
+  for (slot = tb->slot; slot < tb->slot + tb->count; slot++) 
+    if (val_cmp(k_type, key, slot->key_type, slot->key))
+      return slot - tb->slot;
+    
+  *candidate = (tb->count < tb->size) ? tb->count : -1 ;
+  return -1;
+}
+
+#define maxdist(tb) llog2(tb->size)
+
+static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
+{
+  long hk;  
+  long h;
+  long ndx;
+  long d;
+  long d_max;
+  unsigned char cand_dist;
+  tbl_slot_t *slot;
+  
+  d_max = maxdist(tb);
+  
+  *candidate = -1;
+  *distance = d_max-1;
+    
+  hk = key_hash(k_type, key) % tb->size;
+  ndx = hk;
+  d = 0;
+  
+  while (d < d_max) {
+    slot = tb->slot+ndx;
+    
+    if (isemptyslot(slot)) { 
+      *distance = d;
+      *candidate = ndx;
+      return -1;
+    }
+    
+    if (ndx + slot->dist == hk) {
+      if (val_cmp(k_type, key, slot->key_type, slot->key)) 
+        return ndx;
+    }
+    else if (slot->dist <= *distance) {
+      /* TODO: What's the best criteria for selecting candidate?
+      **       Currently, the latest slot with lowest distance is selected.
+      */
+      *candidate = ndx;
+      *distance = slot->dist;
+    }
+    
+    ndx = (ndx + 1) % tb->size;
+    d++;
+  }
+  return -1; 
+}
+
+static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
+{
+   *candidate = -1;
+   *distance = 0;
+         
+   if (!tb)  return -1;
+   
+   if (tb->size <= TBL_SMALL)
+     return tbl_find_small(tb, k_type, key, candidate);
+     
+   return tbl_find_hash(tb, k_type, key, candidate, distance);
+}
+
+
+val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
+{
+  tbl_slot_t *slot;
+  long ndx;
+  long cand;
+  unsigned char dist;
+  
+  ndx = tbl_find(tb, k_type, key, &cand, &dist);
+  
+  if (ndx < 0) return def;
+  if (tb->slot[ndx].val_type != v_type)  return def;
+  
+  return (tb->slot[ndx].val);    
+}
+
 
 static tbl_t 
 tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
@@ -141,7 +280,7 @@ tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     if (ndx == -1) {
       tb = tbl_rehash(tb, tb->size * 2);
       if (tb->size)
-      return tb_set(tb, k_type, key, v_type, val);
+        return tbl_set(tb, k_type, key, v_type, val);
     }
     slot = tb->slot + tb->count ;
     slot->key_type = k_type;
@@ -171,49 +310,61 @@ tbl_set_hash(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   return tb;
 }
 
+#define setslotkey(sl, k_t, k) \
+  (((sl)->key_type = (k_t)), ((sl)->key = (k)))
+
+#define setslotval(sl, v_t, v) \
+ (((sl)->val_type = (v_t)), ((sl)->val = (v)))
+
+#define setslotdist(sl, d) ((sl)->dist = (d))
+
+
+static tbl_t tbl_add(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
+{
+
+}
+
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
-  if (tb == NULL)  tb = tbl_new();
-  
-  if (tb->size <= TBL_SMALL && tb->count >= tb->size)
-    tb = tbl_reash(tb, tb->size * 2);
+  long ndx;
+  long cand = -1;
+  unsigned char dist = 0;
 
-  if (tb->size <= TBL_SMALL) 
-    tb = tbl_set_small(tb, k_type,key, v_type, val);
-  else 
-    tb = tbl_set_hash(tb, k_type,key, v_type, val);
+  
+  if (tb == NULL) {
+    tb = tbl_new(2);
+    tb->slot[0].key_type = k_type;
+    tb->slot[0].key = key;
+    tb->slot[0].val_type = v_type;
+    tb->slot[0].val = val;
+    tb->slot[0].dist = 0;
+    return tb;
+  }
+
+  ndx = tbl_find(tb, k_type, key, &cand, &dist);
+  
+  if (ndx < 0) {
+    if (cand >= 0) {
+      tb->slot[cand].key_type = k_type;
+      tb->slot[cand].key      = key;
+      tb->slot[cand].val_type = v_type;
+      tb->slot[cand].val      = val;
+      tb->slot[cand].dist     = dist;    
+    }
+    else     
+      tb = tbl_add(tb, k_type, key, v_type, val, cand, dist);
+  }
+  else { /* update existing slot */
+    val_del(k_type, key);
+    val_del(tbl->slot[ndx].val_type, tbl->slot[ndx].val);
+    tb->slot[ndx].val_type = v_type;
+    tb->slot[ndx].val = val;
+  }
+  
   return tb;
 }
 
-long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
-{
-  tbl_slot_t *slot;
-  long ndx;
-
-  if (tb) {
-    ndx = 0;
-    slot = tb->slot;
-    while (ndx< tb->count && slot->key_type) {
-      if (val_cmp(k_type, key, slot->key_type, slot->key))
-        return ndx;
-      ndx++; slot++;
-    }
-  }
-  if (candidate) {
-    *candidate = (tb->count < tb->size) ? tb->count : -1 ;
-  }
-  return -1;
-}
-
-val_u tbl_get_small(tbl_t tb, char k_type, val_u key, val_u def)
-{
-  long ndx;
-  ndx = tbl_find_small(tb,k_type,key);
-  if (ndx >=0)
-    return (tb->slot[ndx].val);
-  return def;
-}
-
+#if 0
 tbl_t tbl_del_small(tbl_t tb, char k_type, val_u key) 
 { 
   tbl_slot_t slot;
@@ -240,15 +391,15 @@ tbl_t tbl_del(tbl_t tb, char tk, val_u key)
 
 
 }
+#endif
 
 tbl_t tbl_free(tbl_t tb)
 {
-  tbl_slot_t slot;
+  tbl_slot_t *slot;
   long ndx;
 
   if (tb) {
-    for (ndx = 0; ndx <= tb->size; ndx++) {
-      slot = tb->slot[ndx];
+    for (slot = tb->slot; slot < tb->slot + tb->size; slot++) {
       val_del(slot->key_type, slot->key);
       val_del(slot->val_type, slot->val);
     }
