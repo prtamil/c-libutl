@@ -113,7 +113,7 @@ tbl_t tbl_new(long nslots)
 }
 
 #define isemptyslot(sl)    ((sl)->key_type == '\0')
-#define tbl_setempty(sl)   ((sl)->key_type = '\0')
+#define setemptyslot(sl)   ((sl)->key_type = '\0')
 #define tbl_slot(tb, k)    ((tb)->slot+(k))
 
 #define TBL_SMALL 16
@@ -134,7 +134,7 @@ static tbl_t tbl_compact(tbl_t tb)
       slot_bot--;
     if (slot_top < slot_bot) {
       *slot_top = *slot_bot;
-      tbl_setempty(slot_bot);
+      setemptyslot(slot_bot);
       slot_top++;                    
       slot_bot--;                    
     }            
@@ -179,20 +179,26 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
 }
 
 
+#define maxdist(tb) llog2(tb->size)
+
+#define FIND_CANDIDATE  (-1)
+#define FIND_EMPTY      (-2)
+#define FIND_FULLTABLE  (-3)
 
 static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
 {
   tbl_slot_t *slot;
   
-  for (slot = tb->slot; slot < tb->slot + tb->count; slot++) 
+  for (slot = tb->slot; slot < tb->slot + tb->count; slot++) {
     if (val_cmp(k_type, key, slot->key_type, slot->key))
       return slot - tb->slot;
-    
-  *candidate = (tb->count < tb->size) ? tb->count : -1 ;
-  return -1;
+  }
+  if (tb->count < tb->size) {
+    *candidate = tb->count;
+    return FIND_EMPTY;    
+  }      
+  return FIND_FULLTABLE;
 }
-
-#define maxdist(tb) llog2(tb->size)
 
 static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
 {
@@ -206,7 +212,6 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
   
   d_max = maxdist(tb);
   
-  *candidate = -1;
   *distance = d_max-1;
     
   hk = key_hash(k_type, key) % tb->size;
@@ -214,17 +219,20 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
   d = 0;
   
   while (d < d_max) {
-    slot = tb->slot+ndx;
+    slot = tbl_slot(tb, ndx);
     
     if (isemptyslot(slot)) { 
       *distance = d;
       *candidate = ndx;
-      return -1;
+      return FIND_EMPTY;
     }
     
-    if (ndx + slot->dist == hk) {
-      if (val_cmp(k_type, key, slot->key_type, slot->key)) 
+    if (ndx + slot->dist == hk) { /* same hash!! */
+      if (val_cmp(k_type, key, slot->key_type, slot->key)) {
+        *distance = d;
+        *candidate = ndx;
         return ndx;
+      }
     }
     else if (slot->dist <= *distance) {
       /* TODO: What's the best criteria for selecting candidate?
@@ -237,7 +245,8 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
     ndx = (ndx + 1) % tb->size;
     d++;
   }
-  return -1; 
+  if (*candidate >= 0) return FIND_CANDIDATE;
+  return FIND_FULLTABLE; 
 }
 
 static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
@@ -270,45 +279,7 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
 }
 
 
-static tbl_t 
-tbl_set_small(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
-{
-  tbl_slot_t *slot;
-  long ndx;
-  
-  if (tbl_find_small(tb, k_type, key, &ndx) == -1) {
-    if (ndx == -1) {
-      tb = tbl_rehash(tb, tb->size * 2);
-      if (tb->size)
-        return tbl_set(tb, k_type, key, v_type, val);
-    }
-    slot = tb->slot + tb->count ;
-    slot->key_type = k_type;
-    slot->val_type = v_type;
-    slot->key = key;
-    slot->val = val;
-    tb->count++;
-  }
-  else {
-  
-  }
-  return tb;
-}
 
-
-static tbl_t 
-tbl_set_hash(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
-{
-  tbl_slot_t *slot;
-  long h;
-  unsigned char d;
-  
-  h = key_hash(k_type, key) % tb->size;
- 
-   
-  
-  return tb;
-}
 
 #define setslotkey(sl, k_t, k) \
   (((sl)->key_type = (k_t)), ((sl)->key = (k)))
@@ -317,7 +288,6 @@ tbl_set_hash(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
  (((sl)->val_type = (v_t)), ((sl)->val = (v)))
 
 #define setslotdist(sl, d) ((sl)->dist = (d))
-
 
 static tbl_t tbl_add(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
@@ -338,28 +308,39 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     tb->slot[0].val_type = v_type;
     tb->slot[0].val = val;
     tb->slot[0].dist = 0;
+    tb->count++;
     return tb;
   }
 
-  ndx = tbl_find(tb, k_type, key, &cand, &dist);
-  
-  if (ndx < 0) {
-    if (cand >= 0) {
+  do {
+    ndx = tbl_find(tb, k_type, key, &cand, &dist);
+    
+    if (ndx >= 0) {
+      val_del(k_type, key);
+      val_del(tbl->slot[ndx].val_type, tbl->slot[ndx].val);
+      tb->slot[ndx].val_type = v_type;
+      tb->slot[ndx].val = val;
+      return tb;
+    }
+    
+    if (ndx == FIND_CANDIDATE) {
+      ndx = 
+    }
+    
+    if (ndx == FIND_EMPTY) {
       tb->slot[cand].key_type = k_type;
       tb->slot[cand].key      = key;
       tb->slot[cand].val_type = v_type;
       tb->slot[cand].val      = val;
-      tb->slot[cand].dist     = dist;    
+      tb->slot[cand].dist     = dist;
+      tb->count++;
+      return tb;
     }
-    else     
-      tb = tbl_add(tb, k_type, key, v_type, val, cand, dist);
-  }
-  else { /* update existing slot */
-    val_del(k_type, key);
-    val_del(tbl->slot[ndx].val_type, tbl->slot[ndx].val);
-    tb->slot[ndx].val_type = v_type;
-    tb->slot[ndx].val = val;
-  }
+    
+    if (ndx == FIND_FULLTABLE) {
+      tb = tbl_rehash(tb);
+    }
+  } while (ndx < 0);
   
   return tb;
 }
