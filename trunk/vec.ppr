@@ -125,10 +125,10 @@ Caret=67,18
 TopLine=57
 Caret=13,75
 [src\tbl2.c]
-TopLine=311
-Caret=13,327
+TopLine=170
+Caret=1,191
 [src\tbl2.h]
-TopLine=21
+TopLine=24
 Caret=1,57
 [src\T.h]
 TopLine=1
