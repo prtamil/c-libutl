@@ -87,6 +87,24 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
 }
 
 
+
+
+static long val_hash(char k_type, val_u key)
+{
+  char  *s;
+  float f;
+  
+  switch (k_type) {
+    case 'N' : return hsh_num1(key.n);
+    case 'F' : f = key.f + 1; /* avoid -0 */
+               return hsh_str1((char *)(&f),sizeof(f));    
+    case 'S' : return hsh_str1(key.p, strlen(key.p));
+  } 
+   
+  return hsh_ptr1(key.p);
+}
+
+
 /******************************************************************/
 
 static void tbl_outofmem()
@@ -179,21 +197,6 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
     tb = newtb;
   }
   return tb;
-}
-
-static long keyhash(char k_type, val_u key)
-{
-  char  *s;
-  float f;
-  
-  switch (k_type) {
-    case 'N' : return hsh_num1(key.n);
-    case 'F' : f = key.f + 1; /* avoid -0 */
-               return (hsh_str1((char *)(&f),sizeof(f))  % tb->size);    
-    case 'S' : return (hsh_str1(key.p, strlen(key.p)) % tb->size);
-  } 
-   
-  return (hsh_ptr1(key.p)                % tb->size);
 }
 
 
