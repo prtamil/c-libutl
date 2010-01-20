@@ -148,6 +148,9 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   long ndx;
   
   nslots = roundpow2(nslots);
+  
+  if (!tb) return tbl_new(nslots);
+  
   if (tb->count > nslots) return tb;
   
   if (nslots <= TBL_SMALL) { /* It will be a small-table */
@@ -178,11 +181,27 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   return tb;
 }
 
+static long keyhash(char k_type, val_u key)
+{
+  char  *s;
+  float f;
+  
+  switch (k_type) {
+    case 'N' : return hsh_num1(key.n);
+    case 'F' : f = key.f + 1; /* avoid -0 */
+               return (hsh_str1((char *)(&f),sizeof(f))  % tb->size);    
+    case 'S' : return (hsh_str1(key.p, strlen(key.p)) % tb->size);
+  } 
+   
+  return (hsh_ptr1(key.p)                % tb->size);
+}
+
 
 #define maxdist(tb) llog2(tb->size)
 
+#define FIND_NOPLACE    (-1)
 #define FIND_CANDIDATE  (-1)
-#define FIND_EMPTY      (-2)
+#define FIND_EMPTYPLACE (-2)
 #define FIND_FULLTABLE  (-3)
 
 static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
@@ -195,11 +214,13 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
   }
   if (tb->count < tb->size) {
     *candidate = tb->count;
-    return FIND_EMPTY;    
+    return FIND_EMPTYPLACE;    
   }      
   return FIND_FULLTABLE;
 }
 
+#define modsz(t,x) (((x) + (t)->size) % (t)->size)
+ 
 static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
 {
   long hk;  
@@ -212,23 +233,32 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
   
   d_max = maxdist(tb);
   
-  *distance = d_max-1;
-    
-  hk = key_hash(k_type, key) % tb->size;
-  ndx = hk;
-  d = 0;
+  if (*candidate >= 0) {
+    d   = *distance + 1;
+    ndx = modsz(tb, *candidate + 1);
+    hk  = modsz(tb, ndx - d);
+    k_type = '\0'; /* avoid checking for existing key */
+  }
+  else {
+    *distance = d_max-1;  
+    hk  = modsz(tb, key_hash(k_type, key));
+    ndx = hk;
+    d   = 0;
+  }
   
+  *candidate = -1;
+    
   while (d < d_max) {
     slot = tbl_slot(tb, ndx);
     
     if (isemptyslot(slot)) { 
       *distance = d;
       *candidate = ndx;
-      return FIND_EMPTY;
+      return FIND_EMPTYPLACE;
     }
     
-    if (ndx + slot->dist == hk) { /* same hash!! */
-      if (val_cmp(k_type, key, slot->key_type, slot->key)) {
+    if (modsz(tb, ndx - slot->dist) == hk) { /* same hash!! */
+      if (val_cmp(k_type, key, slot->key_type, slot->key)) { /* same value!! */
         *distance = d;
         *candidate = ndx;
         return ndx;
@@ -242,17 +272,23 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
       *distance = slot->dist;
     }
     
-    ndx = (ndx + 1) % tb->size;
+    ndx = modsz(tb, ndx + 1);
     d++;
   }
-  if (*candidate >= 0) return FIND_CANDIDATE;
-  return FIND_FULLTABLE; 
+  return FIND_NOPLACE; 
 }
+
+/*
+**   
+**
+**
+**
+*/
 
 static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
 {
    *candidate = -1;
-   *distance = 0;
+   *distance  = 0;
          
    if (!tb)  return -1;
    
@@ -278,30 +314,18 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
   return (tb->slot[ndx].val);    
 }
 
-
-
-
-#define setslotkey(sl, k_t, k) \
-  (((sl)->key_type = (k_t)), ((sl)->key = (k)))
-
-#define setslotval(sl, v_t, v) \
- (((sl)->val_type = (v_t)), ((sl)->val = (v)))
-
-#define setslotdist(sl, d) ((sl)->dist = (d))
-
-static tbl_t tbl_add(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
-{
-
-}
-
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   long ndx;
   long cand = -1;
   unsigned char dist = 0;
-
   
-  if (tb == NULL) {
+  #define swap(x,y,z) (z=x, x=y, y=z)
+  val_u tmp_val;
+  char  tmp_chr;
+  unsigned char tmp_dst;
+  
+  if (!tb) {
     tb = tbl_new(2);
     tb->slot[0].key_type = k_type;
     tb->slot[0].key = key;
@@ -311,23 +335,12 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     tb->count++;
     return tb;
   }
-
-  do {
+  
+  for(;;) {
+    
     ndx = tbl_find(tb, k_type, key, &cand, &dist);
     
-    if (ndx >= 0) {
-      val_del(k_type, key);
-      val_del(tbl->slot[ndx].val_type, tbl->slot[ndx].val);
-      tb->slot[ndx].val_type = v_type;
-      tb->slot[ndx].val = val;
-      return tb;
-    }
-    
-    if (ndx == FIND_CANDIDATE) {
-      ndx = 
-    }
-    
-    if (ndx == FIND_EMPTY) {
+    if (ndx == FIND_EMPTYPLACE) {
       tb->slot[cand].key_type = k_type;
       tb->slot[cand].key      = key;
       tb->slot[cand].val_type = v_type;
@@ -337,10 +350,26 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
       return tb;
     }
     
-    if (ndx == FIND_FULLTABLE) {
-      tb = tbl_rehash(tb);
+    if (ndx >= 0) {
+      val_del(k_type, key);
+      val_del(tb->slot[ndx].val_type, tb->slot[ndx].val);
+      
+      tb->slot[ndx].val_type = v_type;
+      tb->slot[ndx].val      = val;
+      return tb;
     }
-  } while (ndx < 0);
+    
+    if (cand >= 0) {
+      swap(k_type ,tb->slot[cand].key_type ,tmp_chr);
+      swap(key    ,tb->slot[cand].key      ,tmp_val);      
+      swap(v_type ,tb->slot[cand].val_type ,tmp_chr);
+      swap(val    ,tb->slot[cand].val      ,tmp_val);
+      swap(dist   ,tb->slot[cand].dist     ,tmp_dst);      
+    }    
+    else {
+      tb = tbl_rehash(tb, tb->size * 2);
+    }
+  }
   
   return tb;
 }
