@@ -24,6 +24,9 @@ typedef union {
 #define valGetU(v)   ((v).u)
 #define valGetF(v)   ((v).f)
 
+char *val_Sdup(char *s);
+char *val_Sfree(char *s);
+
 
 /* A table slot.
 */ 
@@ -52,5 +55,12 @@ tbl_t tbl_new(long nslots);
 #define tblCount(tb) (tb?tb->count:0)
 
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
+ 
+#define tbl_setXX(tb,tk,k,fk,tv,v,fv) \
+   do {val_u ak,av; ak.fk = k; av.fv = v; tb = tbl_set(tb,tk,ak,tv,av);} while (0)
+ 
+#define tblSetNS(tb,k,v) tbl_setXX(tb,'N',k,n,'S',val_Sdup(v),s)
+ 
+
  
 #endif
