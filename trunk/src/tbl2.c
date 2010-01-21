@@ -11,6 +11,13 @@
 #include "tbl2.h"
 
 /************************/
+static void utl_outofmem()
+{ 
+  if (stderr) fprintf(stderr,"OUT OF MEMORY");
+  exit(1);
+}
+
+/************************/
 
 /*
 ** Integer log base 2 of a 32 bits integer values.
@@ -59,12 +66,32 @@ static unsigned short llog2(unsigned long x)
                                                (void)((x).p = (pv))) 
 
 #define val_del(tv,v) do { switch (tv) { \
+                             case 'S' : (v).s = val_Sfree((v).s); \
                              case 'P' : (v).p = NULL; \
                              case 'N' : (v).n = 0; \
                              case 'U' : (v).u = 0; \
                              case 'F' : (v).f = 0.0; \
                            }\
                       } while (0)
+
+
+char *val_Sdup(char *s)
+{
+  char *str = NULL;
+  int k;
+  if (s && *s) {
+    k = strlen(s);
+    str = malloc(k+1);
+    if (str) memcpy(str,s,k);
+  } 
+  return str;
+}
+
+char *val_Sfree(char *s)
+{
+  free(s);
+  return NULL;
+}
 
 static int val_cmp(char atype, val_u a, char btype, val_u b)
 {
@@ -86,32 +113,62 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
   return ret;
 }
 
+/* Bernstein hash */
+static unsigned long hash_djb(unsigned char *str)
+{
+  unsigned long hash = 5381;
+  while (*str) {
+    hash = ((hash << 5) + hash) + *str++; /* hash = hash*33 + c */
+  }
+  return hash;
+}
 
+/* Bernstein hash */
+static unsigned long hash_djbL(unsigned char *str, int len)
+{
+  unsigned long hash = 5381;
+  while (len-- > 0) {
+    hash = ((hash << 5) + hash) + *str++; /* hash = hash*33 + c */
+  }
+  return hash;
+}
 
+/* Thomas Wang */
+static unsigned long hash_num(unsigned long a)
+{
+    a = (a ^ 61) ^ (a >> 16);
+    a =  a + (a << 3);
+    a =  a ^ (a >> 4);
+    a =  a * 0x27d4eb2d;
+    a =  a ^ (a >> 15);
+    return a;
+}
+
+static unsigned long hash_float(float f)
+{
+  f = f + 1.0;
+  return hash_djbL((unsigned char *)(&f),sizeof(float));  
+}
+
+static unsigned long hash_ptr(void *p)
+{
+  return hash_djbL((unsigned char *)(&p),sizeof(void *));  
+}
 
 static long val_hash(char k_type, val_u key)
 {
-  char  *s;
-  float f;
-  
+  unsigned long h;
   switch (k_type) {
-    case 'N' : return hsh_num1(key.n);
-    case 'F' : f = key.f + 1; /* avoid -0 */
-               return hsh_str1((char *)(&f),sizeof(f));    
-    case 'S' : return hsh_str1(key.p, strlen(key.p));
+    case 'N' : h = hash_num((unsigned long)key.n);    break;
+    case 'F' : h = hash_float(key.f);                 break;
+    case 'S' : h = hash_djb((unsigned char *)key.s);  break;
+    default  : h = hash_ptr(key.p);                   break;
   } 
    
-  return hsh_ptr1(key.p);
+  return (long)(h & 0x7FFFFFFF);
 }
-
 
 /******************************************************************/
-
-static void tbl_outofmem()
-{ 
-  if (stderr) fprintf(stderr,"OUT OF MEMORY");
-  exit(1);
-}
 
 
 tbl_t tbl_new(long nslots)
@@ -123,7 +180,7 @@ tbl_t tbl_new(long nslots)
   if (nslots < 2) nslots = 2;
   sz = sizeof(tbl_table_t) + sizeof(tbl_slot_t) * (nslots-1);
   tb = calloc(1, sz);
-  if (!tb) tbl_outofmem();
+  if (!tb) utl_outofmem();
   
   tb->count = 0;
   tb->size  = nslots;
@@ -178,7 +235,7 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
       
     /* Now only the first tbl->count slots are filled (and they are less than nslots)*/
     tb = realloc(tb, nslots);
-    if (!tb) tbl_outofmem();
+    if (!tb) utl_outofmem();
     
     if (nslots > tb->size) /* clear the newly added elemets */
       memset(tb->slot + tb->size, 0x00, (nslots-tb->size) * sizeof(tbl_slot_t));
@@ -244,7 +301,7 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
   }
   else {
     *distance = d_max-1;  
-    hk  = modsz(tb, key_hash(k_type, key));
+    hk  = modsz(tb, val_hash(k_type, key));
     ndx = hk;
     d   = 0;
   }
@@ -427,6 +484,9 @@ int main()
   tbl_t tb;
   
   tblNew(tb);
+  
+  tblSetNS(tb,32,"hello world!");
+  
   tblFree(tb);   
   return 0; 
 }
