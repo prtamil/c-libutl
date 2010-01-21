@@ -27,24 +27,32 @@ static unsigned short llog2(unsigned long x)
 {
   long l = 0;
 
-    if (x==0) return 0;
+  if (x==0) return 0;
+  
+  #ifndef UTL_NOASM
     #if defined(__POCC__) || defined(_MSC_VER) || defined (__WATCOMC__)
         /* Pelles C            MS Visual C++         OpenWatcom*/
       __asm { mov eax, [x]
               bsr ecx, eax
               mov  l, ecx
       }
-      return (unsigned short)l;
     #elif defined(__GNUC__)
-      return (unsigned short) __builtin_clzl(x);
+      l = (unsigned short) (31 - __builtin_clzl(x));
     #elif
-      if (x & 0xFFFF0000)         {l += 16; x >>= 16;}
-      if (x & 0xFF00)             {l += 8;  x >>= 8 ;}
-      if (x & 0xF0)               {l += 4;  x >>= 4 ;}
-      if (x & 0xC)                {l += 2;  x >>= 2 ;}
-      if (x & 2)                  {l += 1;           }
-      return (unsigned short)l;
+      #define UTL_NOASM
     #endif  
+  #endif
+  
+  #ifdef UTL_NOASM  /* Make a binary search.*/
+    if (x & 0xFFFF0000) {l += 16; x >>= 16;} /* 11111111111111110000000000000000 */
+    if (x & 0xFF00)     {l += 8;  x >>= 8 ;} /* 1111111100000000*/
+    if (x & 0xF0)       {l += 4;  x >>= 4 ;} /* 11110000*/
+    if (x & 0xC)        {l += 2;  x >>= 2 ;} /* 1100 */
+    if (x & 2)          {l += 1;  }          /* 10 */
+    return l;
+  #endif
+  
+  return (unsigned short)l;
 }
 
 /******************************************************************/
@@ -82,7 +90,7 @@ char *val_Sdup(char *s)
   if (s && *s) {
     k = strlen(s);
     str = malloc(k+1);
-    if (str) memcpy(str,s,k);
+    if (str) memcpy(str,s,k+1);
   } 
   return str;
 }
@@ -191,7 +199,7 @@ tbl_t tbl_new(long nslots)
 #define setemptyslot(sl)   ((sl)->key_type = '\0')
 #define tbl_slot(tb, k)    ((tb)->slot+(k))
 
-#define TBL_SMALL 16
+#define TBL_SMALL 4
 #define tbl_issmall(tb)    (tb->size <= TBL_SMALL)
 
 static tbl_t tbl_compact(tbl_t tb)
@@ -221,8 +229,7 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   tbl_t newtb;
   tbl_slot_t *slot;
   long ndx;
-  
-  nslots = roundpow2(nslots);
+  long sz;
   
   if (!tb) return tbl_new(nslots);
   
@@ -234,7 +241,8 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
     if (tb->size > TBL_SMALL) tb = tbl_compact(tb);
       
     /* Now only the first tbl->count slots are filled (and they are less than nslots)*/
-    tb = realloc(tb, nslots);
+    sz = sizeof(tbl_table_t) + sizeof(tbl_slot_t) * (nslots-1);
+    tb = realloc(tb, sz);
     if (!tb) utl_outofmem();
     
     if (nslots > tb->size) /* clear the newly added elemets */
@@ -269,7 +277,7 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
   tbl_slot_t *slot;
   
   for (slot = tb->slot; slot < tb->slot + tb->count; slot++) {
-    if (val_cmp(k_type, key, slot->key_type, slot->key))
+    if (val_cmp(k_type, key, slot->key_type, slot->key) == 0)
       return slot - tb->slot;
   }
   if (tb->count < tb->size) {
@@ -318,7 +326,7 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
     }
     
     if (modsz(tb, ndx - slot->dist) == hk) { /* same hash!! */
-      if (val_cmp(k_type, key, slot->key_type, slot->key)) { /* same value!! */
+      if (val_cmp(k_type, key, slot->key_type, slot->key) == 0) { /* same value!! */
         *distance = d;
         *candidate = ndx;
         return ndx;
@@ -483,9 +491,21 @@ int main()
   int k;
   tbl_t tb;
   
+  
+  
+  for (k=0;k<10;k++)
+    printf("llog(%4d) = %d\n",k,llog2(k));
+  
+  exit(1);
+  
   tblNew(tb);
   
-  tblSetNS(tb,32,"hello world!");
+  tblSetNN(tb,101,201);
+  tblSetNN(tb,102,202);
+  tblSetNN(tb,103,203);
+  tblSetNN(tb,104,204);
+  
+  tblSetNN(tb,555,205);
   
   tblFree(tb);   
   return 0; 

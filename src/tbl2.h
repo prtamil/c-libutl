@@ -61,6 +61,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
  
 #define tblSetNS(tb,k,v) tbl_setXX(tb,'N',k,n,'S',val_Sdup(v),s)
  
+#define tblSetNN(tb,k,v) tbl_setXX(tb,'N',k,n,'N',v,n)
 
  
 #endif
