@@ -108,7 +108,7 @@ vec
 8=src\tbl.c
 [Selected Project Files]
 Main=
-Selected=src\tbl2.c
+Selected=src\tbl.c
 [doc\usersguide.txt]
 TopLine=95
 Caret=3,95
@@ -116,7 +116,7 @@ Caret=3,95
 TopLine=1
 Caret=1,1
 [src\rec.h]
-TopLine=60
+TopLine=52
 Caret=1,93
 [test\regress\rgr_rec.c]
 TopLine=4
@@ -126,13 +126,13 @@ TopLine=57
 Caret=13,75
 [src\tbl2.c]
 TopLine=460
-Caret=15,478
+Caret=1,478
 [src\tbl2.h]
-TopLine=34
+TopLine=23
 Caret=1,52
 [src\T.h]
 TopLine=1
 Caret=1,1
 [src\tbl.c]
-TopLine=412
-Caret=1,434
+TopLine=467
+Caret=1,496
