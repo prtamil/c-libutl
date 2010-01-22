@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include "tbl2.h"
 
 /************************/
@@ -27,6 +29,8 @@ static unsigned short llog2(unsigned long x)
 {
   long l = 0;
 
+  x &= 0xFFFFFFFF;
+  
   if (x==0) return 0;
   
   #ifndef UTL_NOASM
@@ -141,14 +145,12 @@ static unsigned long hash_djbL(unsigned char *str, int len)
   return hash;
 }
 
-/* Thomas Wang */
 static unsigned long hash_num(unsigned long a)
 {
-    a = (a ^ 61) ^ (a >> 16);
-    a =  a + (a << 3);
-    a =  a ^ (a >> 4);
-    a =  a * 0x27d4eb2d;
-    a =  a ^ (a >> 15);
+    /* Bob Jenkins */
+    a -= (a<<6); a ^= (a>>17);  a -= (a<<9);
+    a ^= (a<<4); a -= (a<<3);   a ^= (a<<10);
+    a ^= (a>>15);
     return a;
 }
 
@@ -233,6 +235,8 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   
   if (!tb) return tbl_new(nslots);
   
+  fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size);
+  
   if (tb->count > nslots) return tb;
   
   if (nslots <= TBL_SMALL) { /* It will be a small-table */
@@ -265,8 +269,6 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
 }
 
 
-#define maxdist(tb) llog2(tb->size)
-
 #define FIND_NOPLACE    (-1)
 #define FIND_CANDIDATE  (-1)
 #define FIND_EMPTYPLACE (-2)
@@ -287,9 +289,11 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
   return FIND_FULLTABLE;
 }
 
-#define modsz(t,x) (((x) + (t)->size) % (t)->size)
- 
-static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
+#define modsz(t,x)  (((x) + (t)->size) & ((t)->size - 1))
+#define maxdist(tb) (llog2(tb->size)+1)
+
+static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
+                                       long *candidate, unsigned char *distance)
 {
   long hk;  
   long h;
@@ -302,19 +306,19 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
   d_max = maxdist(tb);
   
   if (*candidate >= 0) {
+    hk  = modsz(tb, *candidate - *distance);
     d   = *distance + 1;
     ndx = modsz(tb, *candidate + 1);
-    hk  = modsz(tb, ndx - d);
     k_type = '\0'; /* avoid checking for existing key */
   }
   else {
-    *distance = d_max-1;  
     hk  = modsz(tb, val_hash(k_type, key));
     ndx = hk;
     d   = 0;
   }
   
   *candidate = -1;
+  *distance = d_max-1;  
     
   while (d < d_max) {
     slot = tbl_slot(tb, ndx);
@@ -354,10 +358,7 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key, long *candidate, uns
 */
 
 static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
-{
-   *candidate = -1;
-   *distance  = 0;
-         
+{         
    if (!tb)  return -1;
    
    if (tb->size <= TBL_SMALL)
@@ -419,6 +420,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     }
     
     if (ndx >= 0) {
+      fprintf(stderr,"Found: [%d] %d \n",cand, key.n);
       val_del(k_type, key);
       val_del(tb->slot[ndx].val_type, tb->slot[ndx].val);
       
@@ -428,6 +430,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     }
     
     if (cand >= 0) {
+      fprintf(stderr,"Collision: [%d] %d (%d)\n",cand, key.n,tb->slot[cand].key.n);
       swap(k_type ,tb->slot[cand].key_type ,tmp_chr);
       swap(key    ,tb->slot[cand].key      ,tmp_val);      
       swap(v_type ,tb->slot[cand].val_type ,tmp_chr);
@@ -490,14 +493,7 @@ int main()
 {
   int k;
   tbl_t tb;
-  
-  
-  
-  for (k=0;k<10;k++)
-    printf("llog(%4d) = %d\n",k,llog2(k));
-  
-  exit(1);
-  
+    
   tblNew(tb);
   
   tblSetNN(tb,101,201);
@@ -507,6 +503,9 @@ int main()
   
   tblSetNN(tb,555,205);
   
+  for (k=0; k< 1000; k++)  
+    tblSetNN(tb,k,-k);
+    
   tblFree(tb);   
   return 0; 
 }
