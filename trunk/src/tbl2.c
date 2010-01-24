@@ -180,6 +180,22 @@ static long val_hash(char k_type, val_u key)
 
 /******************************************************************/
 
+void tbl_print(tbl_t tb)
+{
+  long ndx;
+  tbl_slot_t *slot;
+  
+  if (!tb) return ;
+  
+  for (ndx = 0; ndx < tb->size; ndx++) {
+    slot = &tb->slot[ndx];
+    fprintf(stderr,"[%04d] %c %c <%d,%d> (%d)\n",ndx, 
+                slot->key_type ? slot->key_type :'X',
+                slot->val_type ? slot->val_type :'X',
+                slot->key.n,slot->val.n,
+                slot->dist);
+  }
+}
 
 tbl_t tbl_new(long nslots)
 {
@@ -290,7 +306,7 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
 }
 
 #define modsz(t,x)  (((x) + (t)->size) & ((t)->size - 1))
-#define maxdist(tb) (llog2(tb->size)+1)
+#define maxdist(tb) (llog2(tb->size))
 
 static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
                                        long *candidate, unsigned char *distance)
@@ -347,6 +363,8 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
     ndx = modsz(tb, ndx + 1);
     d++;
   }
+  if (tb->count >= tb->size)
+    *candidate = -1;
   return FIND_NOPLACE; 
 }
 
@@ -368,12 +386,12 @@ static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned
 }
 
 
-val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
+static val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
 {
   tbl_slot_t *slot;
   long ndx;
-  long cand;
-  unsigned char dist;
+  long cand = -1;
+  unsigned char dist = 0;
   
   ndx = tbl_find(tb, k_type, key, &cand, &dist);
   
@@ -381,6 +399,14 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
   if (tb->slot[ndx].val_type != v_type)  return def;
   
   return (tb->slot[ndx].val);    
+}
+
+
+val_u tbl_getN(tbl_t tb, long key, long def)
+{
+  val_u ak, ad;
+  ak.n = key; ad.n = def;
+  return tbl_get(tb, 'N', ak, 'N', ad);
 }
 
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
@@ -430,7 +456,6 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     }
     
     if (cand >= 0) {
-      fprintf(stderr,"Collision: [%d] %d (%d)\n",cand, key.n,tb->slot[cand].key.n);
       swap(k_type ,tb->slot[cand].key_type ,tmp_chr);
       swap(key    ,tb->slot[cand].key      ,tmp_val);      
       swap(v_type ,tb->slot[cand].val_type ,tmp_chr);
@@ -503,9 +528,17 @@ int main()
   
   tblSetNN(tb,555,205);
   
-  for (k=0; k< 1000; k++)  
+  tbl_print(tb);  
+
+  for (k=0; k< 20; k++)  
     tblSetNN(tb,k,-k);
-    
+  
+  tbl_print(tb);  
+  for (k=0; k< 20; k++)  
+    if (tblGetNN(tb,k,k+1) != -k) 
+      fprintf(stderr,"ARGH: %d\n",k);
+      
+  fprintf(stderr,"101 = %d\n",tblGetNN(tb,101,-1));
   tblFree(tb);   
   return 0; 
 }
