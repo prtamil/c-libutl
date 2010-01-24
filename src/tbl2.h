@@ -63,5 +63,10 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
  
 #define tblSetNN(tb,k,v) tbl_setXX(tb,'N',k,n,'N',v,n)
 
- 
+
+val_u tbl_getN(tbl_t tb, long key, long def);
+
+#define tblGetNN(tb,k,d) valGetN(tbl_getN(tb,k,d))
+#define tblGetNS(tb,k,d) valGetS(tbl_getN(tb,k,d))
+
 #endif
