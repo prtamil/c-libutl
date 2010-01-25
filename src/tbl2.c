@@ -147,11 +147,14 @@ static unsigned long hash_djbL(unsigned char *str, int len)
 
 static unsigned long hash_num(unsigned long a)
 {
-    /* Bob Jenkins */
-    a -= (a<<6); a ^= (a>>17);  a -= (a<<9);
-    a ^= (a<<4); a -= (a<<3);   a ^= (a<<10);
-    a ^= (a>>15);
-    return a;
+   /* Thomas Wang */
+  a = ~a + (a << 15); // a = (a << 15) - a - 1;
+  a =  a ^ (a >> 12);
+  a =  a + (a << 2);
+  a =  a ^ (a >> 4);
+  a =  a * 2057;
+  a =  a ^ (a >> 16);
+  return a;
 }
 
 static unsigned long hash_float(float f)
@@ -252,6 +255,7 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   if (!tb) return tbl_new(nslots);
   
   fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size);
+  tbl_print(tb);
   
   if (tb->count > nslots) return tb;
   
@@ -284,7 +288,6 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   return tb;
 }
 
-
 #define FIND_NOPLACE    (-1)
 #define FIND_CANDIDATE  (-1)
 #define FIND_EMPTYPLACE (-2)
@@ -298,15 +301,14 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
     if (val_cmp(k_type, key, slot->key_type, slot->key) == 0)
       return slot - tb->slot;
   }
-  if (tb->count < tb->size) {
-    *candidate = tb->count;
-    return FIND_EMPTYPLACE;    
-  }      
-  return FIND_FULLTABLE;
+  *candidate = -1;
+  if (tb->count < tb->size) 
+    return tb->count;    
+  return FIND_NOPLACE;
 }
 
 #define modsz(t,x)  (((x) + (t)->size) & ((t)->size - 1))
-#define maxdist(tb) (llog2(tb->size))
+#define maxdist(tb) (llog2(tb->size) + 2)
 
 static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
                                        long *candidate, unsigned char *distance)
@@ -341,8 +343,8 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
     
     if (isemptyslot(slot)) { 
       *distance = d;
-      *candidate = ndx;
-      return FIND_EMPTYPLACE;
+      *candidate = -1;
+      return ndx;
     }
     
     if (modsz(tb, ndx - slot->dist) == hk) { /* same hash!! */
@@ -356,8 +358,8 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
       /* TODO: What's the best criteria for selecting candidate?
       **       Currently, the latest slot with lowest distance is selected.
       */
+      *distance = d;
       *candidate = ndx;
-      *distance = slot->dist;
     }
     
     ndx = modsz(tb, ndx + 1);
@@ -367,13 +369,6 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
     *candidate = -1;
   return FIND_NOPLACE; 
 }
-
-/*
-**   
-**
-**
-**
-*/
 
 static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
 {         
@@ -414,6 +409,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   long ndx;
   long cand = -1;
   unsigned char dist = 0;
+  unsigned char d = 0;
   
   #define swap(x,y,z) (z=x, x=y, y=z)
   val_u tmp_val;
@@ -421,6 +417,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   unsigned char tmp_dst;
   
   if (!tb) {
+    // fprintf(stderr,"Empty: [%d] %d (0)\n",0, key.n);
     tb = tbl_new(2);
     tb->slot[0].key_type = k_type;
     tb->slot[0].key = key;
@@ -435,32 +432,33 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     
     ndx = tbl_find(tb, k_type, key, &cand, &dist);
     
-    if (ndx == FIND_EMPTYPLACE) {
-      tb->slot[cand].key_type = k_type;
-      tb->slot[cand].key      = key;
-      tb->slot[cand].val_type = v_type;
-      tb->slot[cand].val      = val;
-      tb->slot[cand].dist     = dist;
-      tb->count++;
-      return tb;
-    }
-    
     if (ndx >= 0) {
-      fprintf(stderr,"Found: [%d] %d \n",cand, key.n);
-      val_del(k_type, key);
-      val_del(tb->slot[ndx].val_type, tb->slot[ndx].val);
-      
-      tb->slot[ndx].val_type = v_type;
-      tb->slot[ndx].val      = val;
+      if (ndx == cand) {
+        // fprintf(stderr,"Found: [%d] %d \n",cand, key.n);
+        val_del(k_type, key);
+        val_del(tb->slot[ndx].val_type, tb->slot[ndx].val);
+        tb->slot[ndx].val_type = v_type;
+        tb->slot[ndx].val      = val;      
+      }
+      else {
+        // fprintf(stderr,"Empty: [%d] %d (%d)\n",cand, key.n,dist);
+        tb->slot[ndx].key_type = k_type;
+        tb->slot[ndx].key      = key;
+        tb->slot[ndx].val_type = v_type;
+        tb->slot[ndx].val      = val;
+        tb->slot[ndx].dist     = dist;
+        tb->count++;
+      }
       return tb;
     }
     
     if (cand >= 0) {
+      // fprintf(stderr,"swapping: [%d] %d (%d)  <%d,%d>\n",cand, key.n,dist,tb->slot[cand].key.n,tb->slot[cand].dist);
       swap(k_type ,tb->slot[cand].key_type ,tmp_chr);
       swap(key    ,tb->slot[cand].key      ,tmp_val);      
       swap(v_type ,tb->slot[cand].val_type ,tmp_chr);
       swap(val    ,tb->slot[cand].val      ,tmp_val);
-      swap(dist   ,tb->slot[cand].dist     ,tmp_dst);      
+      swap(dist   ,tb->slot[cand].dist     ,tmp_dst); 
     }    
     else {
       tb = tbl_rehash(tb, tb->size * 2);
@@ -530,11 +528,11 @@ int main()
   
   tbl_print(tb);  
 
-  for (k=0; k< 20; k++)  
+  for (k=0; k< 120; k++)  
     tblSetNN(tb,k,-k);
   
   tbl_print(tb);  
-  for (k=0; k< 20; k++)  
+  for (k=0; k< 120; k++)  
     if (tblGetNN(tb,k,k+1) != -k) 
       fprintf(stderr,"ARGH: %d\n",k);
       
