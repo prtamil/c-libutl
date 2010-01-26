@@ -42,7 +42,11 @@ typedef struct {
 typedef struct {
   long count;
   long size;
-  tbl_slot_t slot[1];  /* start of the slot's array */
+  unsigned char max_dist;
+  unsigned char flags;
+  unsigned char pad1;
+  unsigned char pad2;
+  tbl_slot_t slot[1];  /* start of the slots array */
 } tbl_table_t;
 
 typedef tbl_table_t *tbl_t;
@@ -68,5 +72,7 @@ val_u tbl_getN(tbl_t tb, long key, long def);
 
 #define tblGetNN(tb,k,d) valGetN(tbl_getN(tb,k,d))
 #define tblGetNS(tb,k,d) valGetS(tbl_getN(tb,k,d))
+
+#define tblDelN(tb,k) do {val_u key; key.n = k; tb = tbl_del(tb,'N',key);} while (0)
 
 #endif

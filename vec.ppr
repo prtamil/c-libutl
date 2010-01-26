@@ -107,14 +107,14 @@ vec
 7=src\T.h
 8=src\tbl.c
 9=src\t.txt
-10=..\..\dnld\MurmurHash2.cpp
-11=..\..\Documents and Settings\dzf3vm\Desktop\MurmurHashNeutral2.cpp
+10=New1.h
+11=doc\tables.txt
 [Selected Project Files]
 Main=
-Selected=src\tbl2.c
+Selected=New1.h
 [doc\usersguide.txt]
-TopLine=95
-Caret=3,95
+TopLine=29
+Caret=10,22
 [src\rec.c]
 TopLine=1
 Caret=1,1
@@ -128,24 +128,24 @@ Caret=67,18
 TopLine=75
 Caret=13,75
 [src\tbl2.c]
-TopLine=429
-Caret=38,448
+TopLine=28
+Caret=31,44
 Mark1=1,191
 [src\tbl2.h]
-TopLine=27
-Caret=40,59
+TopLine=43
+Caret=50,61
 [src\T.h]
 TopLine=1
 Caret=1,1
 [src\tbl.c]
-TopLine=496
+TopLine=1
 Caret=1,496
 [src\t.txt]
-TopLine=233
-Caret=1,1
-[..\..\dnld\MurmurHash2.cpp]
-TopLine=28
-Caret=3,44
-[..\..\Documents and Settings\dzf3vm\Desktop\MurmurHashNeutral2.cpp]
-TopLine=11
-Caret=1,1
+TopLine=18
+Caret=25,27
+[New1.h]
+TopLine=1
+Caret=15,1
+[doc\tables.txt]
+TopLine=1
+Caret=1,35

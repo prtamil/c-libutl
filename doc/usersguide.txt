@@ -34,8 +34,19 @@ in wide use. There are three main reasons for its longevity:
        
   Unfortunately, its simplicity is also the cause of its main drawbacks. 
 Being a low-level language means that the programmer is responsible for many
-tedious tasks.   
+tedious tasks like manual memory management and implementation of more complex
+data structures.   
 
+  The objectives of '|libutl| is to ease some of those tasks and speed up
+the development cycle.  It is meant to be used in diverse scenarios and tries
+to provide solutions that are "good enough" in the majority of cases.  This
+means that it's up to the programmer to profile the application and provide
+alternatives.
+
+  Instead of trying to provide a '/definitive/ answer to C programmers, the
+library tries to offer easy to use tools that are appropriate in the vast
+majority of cases so that the programmer is free to concentrate on those part
+of the application that are really critical.
   
 .% Using the library
 ====================
