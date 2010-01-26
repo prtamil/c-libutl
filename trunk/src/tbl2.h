@@ -63,9 +63,19 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
 #define tbl_setXX(tb,tk,k,fk,tv,v,fv) \
    do {val_u ak,av; ak.fk = k; av.fv = v; tb = tbl_set(tb,tk,ak,tv,av);} while (0)
  
+#define tblSetPT(tb,k,v) tbl_setXX(tb,'P',k,p,'T',v,p)
+#define tblSetPP(tb,k,v) tbl_setXX(tb,'P',k,p,'P',v,p)
+#define tblSetPS(tb,k,v) tbl_setXX(tb,'P',k,p,'S',val_Sdup(v),s)
+#define tblSetPN(tb,k,v) tbl_setXX(tb,'P',k,p,'N',v,n)
+#define tblSetPU(tb,k,v) tbl_setXX(tb,'P',k,p,'U',v,u)
+#define tblSetPF(tb,k,v) tbl_setXX(tb,'P',k,p,'F',v,f)
+
+#define tblSetNT(tb,k,v) tbl_setXX(tb,'N',k,n,'T',v,p)
+#define tblSetNP(tb,k,v) tbl_setXX(tb,'N',k,n,'P',v,p)
 #define tblSetNS(tb,k,v) tbl_setXX(tb,'N',k,n,'S',val_Sdup(v),s)
- 
 #define tblSetNN(tb,k,v) tbl_setXX(tb,'N',k,n,'N',v,n)
+#define tblSetNU(tb,k,v) tbl_setXX(tb,'N',k,n,'U',v,u)
+#define tblSetNF(tb,k,v) tbl_setXX(tb,'N',k,n,'F',v,f)
 
 
 val_u tbl_getN(tbl_t tb, long key, long def);
@@ -73,6 +83,12 @@ val_u tbl_getN(tbl_t tb, long key, long def);
 #define tblGetNN(tb,k,d) valGetN(tbl_getN(tb,k,d))
 #define tblGetNS(tb,k,d) valGetS(tbl_getN(tb,k,d))
 
-#define tblDelN(tb,k) do {val_u key; key.n = k; tb = tbl_del(tb,'N',key);} while (0)
+#define tbl_delX(tb,tk,k,fk) do {val_u key; key.fk = k; tb = tbl_del(tb,tk,key);} while (0)
+
+#define tblDelP(tb,k) tbl_delX(tb,'P',k,p)
+#define tblDelS(tb,k) tbl_delX(tb,'S',k,s)
+#define tblDelN(tb,k) tbl_delX(tb,'N',k,n)
+#define tblDelU(tb,k) tbl_delX(tb,'U',k,u)
+#define tblDelF(tb,k) tbl_delX(tb,'F',k,f)
 
 #endif
