@@ -561,6 +561,9 @@ tbl_t tbl_free(tbl_t tb)
   return NULL;
 }
 
+
+
+
 int main()
 {
   int k;
