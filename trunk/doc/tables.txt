@@ -1,0 +1,34 @@
+
+.T                       A generic container for C
+                      --===========================--
+
+.A                     Remo Dentato (rdentato@gmail.com)
+
+
+.% Introduction
+---------------
+
+.% Values
+---------
+
+.%% Integers
+''''''''''''
+
+.%% Float
+''''''''''''
+
+.%% Strings
+''''''''''''
+
+.%% Tables
+''''''''''''
+
+.%% Vectors
+''''''''''''
+
+.%% Records
+''''''''''''
+
+.% Hash table
+-------------
+
