@@ -253,9 +253,9 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   
   if (!tb) return tbl_new(nslots);
   
-  /* fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size); */
+  /* fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size);
   tbl_print(tb);
-  
+  */
   if (tb->count > nslots) return tb;
   
   if (nslots <= TBL_SMALL) { /* It will be a small-table */
@@ -383,8 +383,9 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
   
   ndx = tbl_search(tb, k_type, key, &cand, &dist);
   
-  if (ndx < 0) return def;
-  if (tb->slot[ndx].val_type != v_type)  return def;
+  if (ndx < 0 || ndx != cand ||
+      tb->slot[ndx].val_type != v_type)
+    return def;
   
   return (tb->slot[ndx].val);    
 }
@@ -587,7 +588,7 @@ tblptr_t tbl_find(tbl_t tb, char k_type, val_u key)
   unsigned char dist = 0;
   
   ndx = tbl_search(tb, k_type, key, &cand, &dist);
-  return (ndx < 0) ? 0 : ndx +1;  
+  return (ndx < 0 || ndx != cand) ? 0 : ndx +1;  
 }
 
 int main()
@@ -607,11 +608,11 @@ int main()
   
   ndx = tblFindN(tb,104);
   if (ndx) printf("found: %c\n",tblKeyType(tb,ndx));  
-  else printf("found: %c\n",tblKeyType(tb,ndx));  
+  else printf("not found\n");  
     
   ndx = tblFindN(tb,109);
   if (ndx) printf("found: %c\n",tblKeyType(tb,ndx));  
-  else printf("found: %c\n",tblKeyType(tb,ndx));  
+  else printf("not found\n");  
     
   tbl_print(tb);  
 
