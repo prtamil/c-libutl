@@ -73,19 +73,16 @@ static unsigned short llog2(unsigned long x)
 
 /******************************************************************/
 
-#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
-                                 (tv == 'F') ? (void)((x).f = (fv)) : \
-                                               (void)((x).p = (pv))) 
-
 #define val_del(tv,v) do { switch (tv) { \
-                             case 'S' : (v).s = val_Sfree((v).s); \
-                             case 'P' : (v).p = NULL; \
-                             case 'N' : (v).n = 0; \
-                             case 'U' : (v).u = 0; \
-                             case 'F' : (v).f = 0.0; \
+                             case 'S' : (v).s = val_Sfree((v).s); break; \
+                             case 'P' : (v).p = NULL; break;\
+                             case 'N' : (v).n = 0; break; \
+                             case 'U' : (v).u = 0; break; \
+                             case 'F' : (v).f = 0.0; break; \
+                             case 'T' : tblFree((v).p); break; \
+                             case 'M' : free((v).p); (v).p = NULL; break;\
                            }\
                       } while (0)
-
 
 char *val_Sdup(char *s)
 {
@@ -113,13 +110,11 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
   if (ret == 0) {
     switch (atype) {
       case '\0': ret = 0;                                          break;
-      case 'P' : ret = (char *)(a.p) - (char *)(b.p);              break;
       case 'S' : ret = strcmp(a.s, b.s);                           break;
       case 'N' : ret = a.n - b.n;                                  break;
       case 'U' : ret = (a.u == b.u) ? 0 : ((a.u > b.u) ? 1 : -1);  break;
       case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
-      
-      default  : ret = -1;
+      default  : ret = (char *)(a.p) - (char *)(b.p);              break;
     }
   }
   return ret;
@@ -148,7 +143,7 @@ static unsigned long hash_djbL(unsigned char *str, int len)
 static unsigned long hash_num(unsigned long a)
 {
    /* Thomas Wang */
-  a = ~a + (a << 15); // a = (a << 15) - a - 1;
+  a = ~a + (a << 15); /* a = (a << 15) - a - 1; */
   a =  a ^ (a >> 12);
   a =  a + (a << 2);
   a =  a ^ (a >> 4);
@@ -172,9 +167,10 @@ static long val_hash(char k_type, val_u key)
 {
   unsigned long h;
   switch (k_type) {
-    case 'N' : h = hash_num((unsigned long)key.n);    break;
-    case 'F' : h = hash_float(key.f);                 break;
     case 'S' : h = hash_djb((unsigned char *)key.s);  break;
+    case 'N' : h = hash_num((unsigned long)key.n);    break;
+    case 'U' : h = hash_num(key.u);                   break;
+    case 'F' : h = hash_float(key.f);                 break;
     default  : h = hash_ptr(key.p);                   break;
   } 
    
@@ -192,7 +188,7 @@ void tbl_print(tbl_t tb)
   
   for (ndx = 0; ndx < tb->size; ndx++) {
     slot = &tb->slot[ndx];
-    fprintf(stderr,"[%04d] %c %c <%d,%d> (%d)\n",ndx, 
+    fprintf(stderr,"[%04ld] %c %c <%ld,%ld> (%d)\n",ndx, 
                 slot->key_type ? slot->key_type :'X',
                 slot->val_type ? slot->val_type :'X',
                 slot->key.n,slot->val.n,
@@ -226,7 +222,7 @@ tbl_t tbl_new(long nslots)
 #define TBL_SMALL 4
 #define tbl_issmall(tb)    (tb->size <= TBL_SMALL)
 
-static tbl_t tbl_compact(tbl_t tb)
+static void tbl_compact(tbl_t tb)
 {
   tbl_slot_t *slot_top;
   tbl_slot_t *slot_bot;
@@ -257,7 +253,7 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
   
   if (!tb) return tbl_new(nslots);
   
-  fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size);
+  /* fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size); */
   tbl_print(tb);
   
   if (tb->count > nslots) return tb;
@@ -295,7 +291,7 @@ tbl_t tbl_rehash(tbl_t tb, long nslots)
 #define FIND_NOPLACE    (-1)
 #define FIND_NONE       (-1)
 
-static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
+static long tbl_search_small(tbl_t tb, char k_type, val_u key, long *candidate)
 {
   tbl_slot_t *slot;
   
@@ -312,15 +308,13 @@ static long tbl_find_small(tbl_t tb, char k_type, val_u key, long *candidate)
 #define modsz(t,x)  (((x) + (t)->size) & ((t)->size - 1))
 #define MAX_ATTEMPT 2
 
-static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
+static long tbl_search_hash(tbl_t tb, char k_type, val_u key,
                                        long *candidate, unsigned char *distance)
 {
   long hk;  
-  long h;
   long ndx;
   long d;
   long d_max;
-  unsigned char cand_dist;
   tbl_slot_t *slot;
   
   d_max = tb->max_dist;
@@ -371,25 +365,23 @@ static long tbl_find_hash(tbl_t tb, char k_type, val_u key,
   return FIND_NOPLACE; 
 }
 
-static long tbl_find(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
+static long tbl_search(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
 {         
    if (!tb)  { *candidate = FIND_NONE;  return FIND_NOPLACE; }
       
    if (tb->size <= TBL_SMALL)
-     return tbl_find_small(tb, k_type, key, candidate);
+     return tbl_search_small(tb, k_type, key, candidate);
      
-   return tbl_find_hash(tb, k_type, key, candidate, distance);
+   return tbl_search_hash(tb, k_type, key, candidate, distance);
 }
 
-
-static val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
+val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
 {
-  tbl_slot_t *slot;
   long ndx;
   long cand = FIND_NONE;
   unsigned char dist = 0;
   
-  ndx = tbl_find(tb, k_type, key, &cand, &dist);
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
   
   if (ndx < 0) return def;
   if (tb->slot[ndx].val_type != v_type)  return def;
@@ -397,20 +389,17 @@ static val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
   return (tb->slot[ndx].val);    
 }
 
-
-val_u tbl_getN(tbl_t tb, long key, long def)
-{
-  val_u ak, ad;
-  ak.n = key; ad.n = def;
-  return tbl_get(tb, 'N', ak, 'N', ad);
-}
+val_u valP(void *val)         {val_u v; v.p = val; return v;}
+val_u valS(char *val)         {val_u v; v.s = val; return v;}
+val_u valN(long val)          {val_u v; v.n = val; return v;}
+val_u valU(unsigned long val) {val_u v; v.u = val; return v;}
+val_u valF(float val)         {val_u v; v.f = val; return v;}
 
 tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
 {
   long ndx;
   long cand = FIND_NONE;
   unsigned char dist = 0;
-  int  d = 0;
   int attempt;
   
   #define swap(x,y,z) (z=x, x=y, y=z)
@@ -419,7 +408,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
   unsigned char tmp_dst;
   
   if (!tb) {
-    // fprintf(stderr,"Empty: [%d] %d (0)\n",0, key.n);
+    /* fprintf(stderr,"Empty: [%d] %d (0)\n",0, key.n); */
     tb = tbl_new(2);
     tb->slot[0].key_type = k_type;
     tb->slot[0].key = key;
@@ -438,18 +427,19 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
       cand = FIND_NONE;
     }
     
-    ndx = tbl_find(tb, k_type, key, &cand, &dist);
+    ndx = tbl_search(tb, k_type, key, &cand, &dist);
     
     if (ndx >= 0) {
       if (ndx == cand) {
-        // fprintf(stderr,"Found: [%d] %d \n",cand, key.n);
-        val_del(k_type, key);
+        /* fprintf(stderr,"Found: [%d] %d \n",cand, key.n); */
+        if (k_type == 'S')
+          val_del(k_type, key);
         val_del(tb->slot[ndx].val_type, tb->slot[ndx].val);
         tb->slot[ndx].val_type = v_type;
         tb->slot[ndx].val      = val;      
       }
       else {
-        // fprintf(stderr,"Empty: [%d] %d (%d)\n",cand, key.n,dist);
+        /* fprintf(stderr,"Empty: [%d] %d (%d)\n",cand, key.n,dist); */
         tb->slot[ndx].key_type = k_type;
         tb->slot[ndx].key      = key;
         tb->slot[ndx].val_type = v_type;
@@ -478,7 +468,7 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
     }
     
     if (cand >= 0 ) {
-      // fprintf(stderr,"swapping: [%d] %d (%d)  <%d,%d>\n",cand, key.n,dist,tb->slot[cand].key.n,tb->slot[cand].dist);
+      /* fprintf(stderr,"swapping: [%d] %d (%d)  <%d,%d>\n",cand, key.n,dist,tb->slot[cand].key.n,tb->slot[cand].dist); */
       swap(k_type ,tb->slot[cand].key_type ,tmp_chr);
       swap(key    ,tb->slot[cand].key      ,tmp_val);      
       swap(v_type ,tb->slot[cand].val_type ,tmp_chr);
@@ -530,7 +520,7 @@ tbl_t tbl_del(tbl_t tb, char k_type, val_u key)
   long cand = FIND_NONE;
   unsigned char dist = 0;
   
-  ndx = tbl_find(tb, k_type, key, &cand, &dist);
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
   
   if (ndx >= 0) {
     slot = tbl_slot(tb, ndx);
@@ -549,7 +539,6 @@ tbl_t tbl_del(tbl_t tb, char k_type, val_u key)
 tbl_t tbl_free(tbl_t tb)
 {
   tbl_slot_t *slot;
-  long ndx;
 
   if (tb) {
     for (slot = tb->slot; slot < tb->slot + tb->size; slot++) {
@@ -561,13 +550,50 @@ tbl_t tbl_free(tbl_t tb)
   return NULL;
 }
 
+tblptr_t tblNext(tbl_t tb, tblptr_t ndx)
+{  
+  while (0 <= ndx && ndx < tb->size) {
+    if (tb->slot[ndx++].key_type != '\0') return ndx;
+  }
+  return (tblptr_t)0;
+}
 
+char tblKeyType(tbl_t tb, tblptr_t ndx)
+{
+   return (0 < ndx && ndx <= tb->size) ? tb->slot[ndx-1].key_type : '\0';
+}
 
+char tblValType(tbl_t tb, tblptr_t ndx)
+{
+   return (0 < ndx && ndx <= tb->size) ? tb->slot[ndx-1].val_type : '\0';
+}
+
+val_u tbl_key(tbl_t tb, tblptr_t ndx)
+{
+  val_u def; def.n = 0;
+  return (0 < ndx && ndx <= tb->size) ? tb->slot[ndx-1].key : def;
+}
+
+val_u tbl_val(tbl_t tb, tblptr_t ndx)
+{
+  val_u def; def.n = 0;
+  return (0 < ndx && ndx <= tb->size) ? tb->slot[ndx-1].val : def;
+}
+
+tblptr_t tbl_find(tbl_t tb, char k_type, val_u key)
+{
+  tblptr_t ndx;
+  long cand = FIND_NONE;
+  unsigned char dist = 0;
+  
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
+  return (ndx < 0) ? 0 : ndx +1;  
+}
 
 int main()
 {
-  int k;
   tbl_t tb;
+  tblptr_t ndx;
     
   tblNew(tb);
   
@@ -579,6 +605,14 @@ int main()
   tblSetNN(tb,555,205);
   tblSetNN(tb,666,206);
   
+  ndx = tblFindN(tb,104);
+  if (ndx) printf("found: %c\n",tblKeyType(tb,ndx));  
+  else printf("found: %c\n",tblKeyType(tb,ndx));  
+    
+  ndx = tblFindN(tb,109);
+  if (ndx) printf("found: %c\n",tblKeyType(tb,ndx));  
+  else printf("found: %c\n",tblKeyType(tb,ndx));  
+    
   tbl_print(tb);  
 
   tblDelN(tb,101);
