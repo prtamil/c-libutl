@@ -101,11 +101,13 @@ tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
 
 val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
-#define tblGetNP(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'P',valP(d)))
-#define tblGetNS(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'S',valS(d)))
+#define tblGetNM(tb,k,d) valGetM(tbl_get(tb,'N',valN(k),'M',valM(d)))
+#define tblGetNT(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'T',valT(d)))
+#define tblGetNP(tb,k,d) valGetP(tbl_get(tb,'N',valN(k),'P',valP(d)))
+#define tblGetNS(tb,k,d) valGetS(tbl_get(tb,'N',valN(k),'S',valS(d)))
 #define tblGetNN(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'N',valN(d)))
-#define tblGetNU(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'U',valU(d)))
-#define tblGetNF(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'F',valF(d)))
+#define tblGetNU(tb,k,d) valGetU(tbl_get(tb,'N',valN(k),'U',valU(d)))
+#define tblGetNF(tb,k,d) valGetF(tbl_get(tb,'N',valN(k),'F',valF(d)))
 
 #define tbl_delX(tb,tk,k,fk) \
        do {val_u key; key.fk = k; tb = tbl_del(tb,tk,key);} while (0)
