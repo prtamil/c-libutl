@@ -693,23 +693,24 @@ vec_t vec_move(vec_t vt, long from, long to)
   vec_slot_t *slot_to;
   
   if (vt && vt->count) {
-    if (from < vt->count) {
-      if (to > from) { /* make room */
-        n = vt->count - from;
-        if (vt->count + n >= vec->size) {
+    if (to > from) { /* make room */
+      if (from < vt->count) {
+        n = to - from;
+        if ( vt->count + n >= vec->size) {
           vt = vec_setsize(vt, vt->count + n + lsqrt(vt->count+n));
         }
         slot_from = slot_ptr(vt,from);
-        memmove(slot_ptr(vt,to), slot_from, n * sizeof(vec_slot_t));
-        memset(slot_from, 0, (to-from) * sizeof(vec_slot_t));
+        memmove(slot_ptr(vt,to), slot_from, (vt->count - from) * sizeof(vec_slot_t));
+        memset(slot_from, 0, n * sizeof(vec_slot_t));
+        vt->count += n;
       }
-      else if (to < from) {
-        n = from - to;
-        slot_to = slot_ptr(vt,to;
-        while (n-- > 0) {
-          val_del(slot_val_type(slot_to), slot_val(slot_to));
-          slot_to++;
-        }
+    }
+    else if (to < from) {
+      n = from - to;
+      slot_to = slot_ptr(vt,to);
+      while (n-- > 0) {
+        val_del(slot_val_type(slot_to), slot_val(slot_to));
+        slot_to++;
       }
     }
   }  
