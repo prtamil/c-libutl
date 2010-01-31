@@ -17,7 +17,6 @@ typedef union {
   float           f;
 } val_u;
 
-
 #define valGetM(v)   ((v).p)
 #define valGetT(v)   ((tbl_t)((v).p))
 #define valGetP(v)   ((v).p)
@@ -38,16 +37,15 @@ val_u   valF(float val);
 char *val_Sdup(char *s);
 char *val_Sfree(char *s);
 
+/********************************************/
 
 /* A table slot.
 */ 
+
 typedef struct {
-  val_u  key;
   val_u  val;
-  char key_type;
-  char val_type;
-  unsigned char dist;
-  unsigned char flags;
+  val_u  key;
+  char   info[sizeof(val_u)]; /* to ensure alignment */
 } tbl_slot_t;    
 
 typedef struct {
@@ -156,5 +154,74 @@ val_u tbl_val(tbl_t tb, tblptr_t ndx);
 #define tblValN(tb,n)  valGetN(tbl_val(tb,n))
 #define tblValU(tb,n)  valGetU(tbl_val(tb,n))
 #define tblValF(tb,n)  valGetF(tbl_val(tb,n))
+
+
+/******************/
+
+typedef struct {
+  val_u  val;
+  char   info[sizeof(val_u)]; /* to ensure alignment */
+} vec_slot_t;    
+
+typedef struct {
+  long count;
+  long size;
+  long cur;
+  vec_slot_t slot[1];
+} vec_vector_t;
+
+typedef vec_vector_t *vec_t;
+
+vec_t vec_setsize(vec_t vt, long nslots);
+
+#define vecNew(v)  (v = vec_setsize(NULL, 2))
+
+vec_t vec_free(vec_t vt) ;
+#define vecFree(v) (v = vec_free(v));
+
+long vecSize(vec_t vt);
+
+vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val);
+
+#define vecSetM(vt,n,v)  (vt = vec_set(vt, n, 'M', valM(v)))
+#define vecSetT(vt,n,v)  (vt = vec_set(vt, n, 'T', valT(v)))
+#define vecSetP(vt,n,v)  (vt = vec_set(vt, n, 'P', valP(v)))
+#define vecSetS(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(val_Sdup(v))))
+#define vecSetN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v)))
+#define vecSetU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v)))
+#define vecSetF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v)))
+                          
+val_u vec_get(vec_t vt, long ndx, char v_type, val_u def);
+
+#define vecGetM(vt,n,d) valGetM(vec_get(vt,n,'M',valM(d)))
+#define vecGetT(vt,n,d) valGetT(vec_get(vt,n,'T',valT(d)))
+#define vecGetP(vt,n,d) valGetP(vec_get(vt,n,'P',valP(d)))
+#define vecGetS(vt,n,d) valGetS(vec_get(vt,n,'S',valS(d)))
+#define vecGetN(vt,n,d) valGetN(vec_get(vt,n,'N',valN(d)))
+#define vecGetU(vt,n,d) valGetU(vec_get(vt,n,'U',valU(d)))
+#define vecGetF(vt,n,d) valGetF(vec_get(vt,n,'F',valF(d)))
+
+#define vecAddM(vt,v)   vecSetM(vt,vecCount(vt),v)
+#define vecAddT(vt,v)   vecSetT(vt,vecCount(vt),v)
+#define vecAddP(vt,v)   vecSetP(vt,vecCount(vt),v)
+#define vecAddS(vt,v)   vecSetS(vt,vecCount(vt),v)
+#define vecAddN(vt,v)   vecSetN(vt,vecCount(vt),v)
+#define vecAddU(vt,v)   vecSetU(vt,vecCount(vt),v)
+#define vecAddF(vt,v)   vecSetF(vt,vecCount(vt),v)
+
+vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val);
+
+#define vecInsM(vt,n,v)  (vt = vec_ins(vt, n, 'M', valM(v)))
+#define vecInsT(vt,n,v)  (vt = vec_ins(vt, n, 'T', valT(v)))
+#define vecInsP(vt,n,v)  (vt = vec_ins(vt, n, 'P', valP(v)))
+#define vecInsS(vt,n,v)  (vt = vec_ins(vt, n, 'S', valS(val_Sdup(v))))
+#define vecInsN(vt,n,v)  (vt = vec_ins(vt, n, 'N', valN(v)))
+#define vecInsU(vt,n,v)  (vt = vec_ins(vt, n, 'U', valU(v)))
+#define vecInsF(vt,n,v)  (vt = vec_ins(vt, n, 'F', valF(v)))
+                          
+vec_t vec_del(vec_t vt, long ndx);
+#define vedDel(vt,n)  (vt = vec_del(vt, n))
+
+/*****************/
 
 #endif
