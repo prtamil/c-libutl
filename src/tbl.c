@@ -597,7 +597,7 @@ vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
   k = vecCount(vt);
   
   if (nkey >= k) 
-    return vt = vec_set(vt, nkey, tv, nval, pval,fval);
+    return vec_set(vt, nkey, tv, nval, pval,fval);
     
   vt = vec_set(vt, k, tv, nval, pval,fval);
   

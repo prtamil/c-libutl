@@ -104,9 +104,11 @@ vec
 4=src\tbl2.c
 5=src\tbl2.h
 6=src\tbl.c
+7=src\tbl.h
+8=src\chs.c
 [Selected Project Files]
 Main=
-Selected=src\tbl2.h
+Selected=src\tbl.c
 [doc\usersguide.txt]
 TopLine=22
 Caret=10,22
@@ -120,12 +122,18 @@ Caret=1,93
 TopLine=4
 Caret=67,18
 [src\tbl2.c]
-TopLine=600
-Caret=19,619
+TopLine=434
+Caret=7,448
 Mark1=1,187
 [src\tbl2.h]
-TopLine=116
+TopLine=89
 Caret=9,134
 [src\tbl.c]
-TopLine=460
-Caret=6,462
+TopLine=576
+Caret=1,601
+[src\tbl.h]
+TopLine=281
+Caret=17,300
+[src\chs.c]
+TopLine=29
+Caret=1,1
