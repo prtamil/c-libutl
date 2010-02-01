@@ -219,8 +219,8 @@ vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val);
 #define vecInsU(vt,n,v)  (vt = vec_ins(vt, n, 'U', valU(v)))
 #define vecInsF(vt,n,v)  (vt = vec_ins(vt, n, 'F', valF(v)))
                           
-vec_t vec_del(vec_t vt, long ndx);
-#define vedDel(vt,n)  (vt = vec_del(vt, n))
+vec_t vec_del(vec_t vt, long from, long to);
+#define vedDel(vt,f,t)  (vt = vec_del(vt, f,t))
 
 /*****************/
 
