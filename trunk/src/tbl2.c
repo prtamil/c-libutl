@@ -42,7 +42,7 @@ static unsigned short llog2(unsigned long x)
       }
     #elif defined(__GNUC__)
       l = (unsigned short) ((sizeof(long)*8 -1) - __builtin_clzl(x));
-    #elif
+    #else
       #define UTL_NOASM
     #endif  
   #endif
@@ -688,32 +688,48 @@ vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val)
 
 vec_t vec_move(vec_t vt, long from, long to)
 {
-  long n;
+  long slots_to_move = 0;
+  long gap_size = 0;
+  
   vec_slot_t *slot_from;
   vec_slot_t *slot_to;
   
-  if (vt && vt->count) {
-    if (to > from) { /* make room */
-      if (from < vt->count) {
-        n = to - from;
-        if ( vt->count + n >= vec->size) {
-          vt = vec_setsize(vt, vt->count + n + lsqrt(vt->count+n));
-        }
-        slot_from = slot_ptr(vt,from);
-        memmove(slot_ptr(vt,to), slot_from, (vt->count - from) * sizeof(vec_slot_t));
-        memset(slot_from, 0, n * sizeof(vec_slot_t));
-        vt->count += n;
-      }
+  if (!vt || vt->count == 0) return vt;
+	  
+  if (from == to || (from >= vt->count && to >= vt->count))
+	  return vt;
+    
+  if (from > vt->count)
+    from = vt->count; 
+    
+  slots_to_move = vt->count - from;
+  slot_from = slot_ptr(vt,from);
+  slot_to =slot_ptr(vt,to);
+	  
+  if (to > from) { /* make room */
+    if (slots_to_move > 0) {
+      gap_size = to - from;
+      if ( vt->count + gap_size >= vt->size) 
+        vt = vec_setsize(vt, vt->count + gap_size + lsqrt(vt->count + gap_size));
+
+      memmove(slot_to, slot_from, slots_to_move * sizeof(vec_slot_t));
+      memset(slot_from, 0, gap_size * sizeof(vec_slot_t));
+      vt->count += gap_size;
     }
-    else if (to < from) {
-      n = from - to;
-      slot_to = slot_ptr(vt,to);
-      while (n-- > 0) {
-        val_del(slot_val_type(slot_to), slot_val(slot_to));
-        slot_to++;
-      }
+  }
+  else {
+    gap_size = from - to;
+    while (slot_to < slot_from ) {
+      val_del(slot_val_type(slot_to), slot_val(slot_to));
+      slot_to++;
     }
-  }  
+    slot_to = slot_ptr(vt,to);
+    if (slots_to_move > 0) 
+       memmove(slot_to, slot_from, slots_to_move * sizeof(vec_slot_t));
+   
+    vt->count -= gap_size;
+  }
+   
   return vt;
 }
 
@@ -743,22 +759,15 @@ vec_t vec_del(vec_t vt, long from, long to)
   vec_slot_t *slot;
   long sq;
   
-  from = fixndx(vt,ndx);
+  from = fixndx(vt,from);
   to = fixndx(vt,to);
   
-  if (vt && ndx < vt->count) {
-    slot = slot_ptr(vt,ndx);
+  vt = vec_move(vt,from+1,to);
   
-    val_del(slot_val_type(slot), slot_val(slot));
+  sq = lsqrt(vt->size);
+  if (vt->count + (2 * sq) < vt->size) 
+    vt = vec_setsize(vt, vt->count + sq + 1);
  
-    if (ndx < vec->count-1) 
-      memmove(slot, slot+1, (vt->count - ndx - 1) * sizeof(vec_slot_t));
-
-    vt->count--:
-    sq = lsqrt(vt->size);
-    if (vt->count + (2 * sq) < vt->size) 
-      vt = vec_setsize(vt, vt->count + sq + 1);
-  }
   return vt;  
 }
 
@@ -794,9 +803,13 @@ int main()
   vec_t vt = NULL;
   
   vecSetS(vt,15,"Hi there!");
+  vecSetN(vt,18,35);
+  
+  printf("%s %d\n",vecGetS(vt,15,"X"), vecGetN(vt,16,-1));
+  
   vecFree(vt);
   
-  
+   
 #if 0
   tbl_t tb;
   tblptr_t ndx; 
