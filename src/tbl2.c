@@ -81,13 +81,15 @@ unsigned long lsqrt(unsigned long x)
 
 #define val_del(tv,v) do { switch (tv) { \
                              case '\0': break; \
-                             case 'S' : (v).s = val_Sfree((v).s); break; \
+                             case 'M' : free((v).p); (v).p = NULL; break;\
+                             case 'T' : tblFree((v).p); break; \
+                             case 'V' : vecFree((v).p); break; \
+                             case 'R' : recFree((v).p); break; \
                              case 'P' : (v).p = NULL; break;\
+                             case 'S' : (v).s = val_Sfree((v).s); break; \
                              case 'N' : (v).n = 0; break; \
                              case 'U' : (v).u = 0; break; \
                              case 'F' : (v).f = 0.0; break; \
-                             case 'T' : tblFree((v).p); break; \
-                             case 'M' : free((v).p); (v).p = NULL; break;\
                            }\
                       } while (0)
 
@@ -121,6 +123,7 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
       case 'N' : ret = a.n - b.n;                                  break;
       case 'U' : ret = (a.u == b.u) ? 0 : ((a.u > b.u) ? 1 : -1);  break;
       case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
+      case 'R' : ret = recCmp(a.p,b.p);                            break;
       default  : ret = (char *)(a.p) - (char *)(b.p);              break;
     }
   }
@@ -617,7 +620,7 @@ vec_t vec_setsize(vec_t vt, long nslots)
   if (!vt) {
     vt = calloc(1,sz);
     if (!vt) utl_outofmem();
-    vt->size  = 0;
+    vt->size  = nslots;
     vt->count = 0;
     vt->cur   = 0 ;
     return vt;
@@ -762,7 +765,7 @@ vec_t vec_del(vec_t vt, long from, long to)
   from = fixndx(vt,from);
   to = fixndx(vt,to);
   
-  vt = vec_move(vt,from+1,to);
+  vt = vec_move(vt,from,to+1); 
   
   sq = lsqrt(vt->size);
   if (vt->count + (2 * sq) < vt->size) 
@@ -797,6 +800,30 @@ char vecType(vec_t vt, long ndx)
 
 /*******************************************/
 
+void *rec_cpy(rec_t a, rec_t b) 
+{
+  if (b != a) { 
+    if (!b)  recFree(a);
+    else {
+      if (!a) a = malloc(recSize(b));
+      if (!a) utl_outofmem();
+      memcpy(a,b,recSize(b));
+      b->rec_f->cpy((void *)a,(void *)b);
+    }
+  }
+  return a;
+}
+
+int rec_cmp(rec_t a, rec_t b)
+{
+   if (a == b) return 0;
+   if (!a) return 1;
+   if (!b) return -1;
+   if (a->rec_f != b->rec_f) return (recPtrCmp(a->rec_f,b->rec_f));
+   return (a->rec_f->cmp(a,b));
+}
+
+/*******************************************/
 int main()
 {
   
@@ -805,8 +832,12 @@ int main()
   vecSetS(vt,15,"Hi there!");
   vecSetN(vt,18,35);
   
-  printf("%s %d\n",vecGetS(vt,15,"X"), vecGetN(vt,16,-1));
+  printf("%s %d %d\n",vecGetS(vt,15,"X"), vecGetN(vt,15,-1), vecGetN(vt,16,-1));
   
+  vecSetP(vt,13,NULL);
+  printf("%c %c %c\n",vecType(vt,13),vecType(vt,15),vecType(vt,18));
+   
+  //vecDel(vt,15,15);
   vecFree(vt);
   
    
