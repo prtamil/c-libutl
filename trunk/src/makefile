@@ -49,4 +49,12 @@ clean:
 	$(RM) $(DIST)/*
 	$(RM) gmon.out
 
+gdb_t2: t2$(_EXE) XXX
+	-$(GDB) t2
+
+t2$(_EXE): tbl2.c tbl2.h
+	gcc -g -o t2 tbl2.c
+
+XXX:
+
 include $(TOP)targets.mk

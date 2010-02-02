@@ -26,9 +26,11 @@ endif
 _LIB=.a
 _OBJ=.o
 _EXE=
+GDB=gdb
 
 ifeq ($(SYS),MINGW)
 _EXE=.exe
+GDB=run insight
 endif
 
 CC=gcc
