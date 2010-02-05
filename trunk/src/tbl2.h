@@ -353,6 +353,57 @@ vec_t vec_del(vec_t vt, long from, long to);
 
 /*****************/
 
+#define que_t vec_t
+
+#define queNew(qu)       vecNew(qu)
+#define queFree(qu)      vecFree(qu)
+#define queAddM(qu,v)      
+#define queDel
+#define queAddFront
+#define queDelRear
+#define queCount
+
+#define queFront
+#define queRear
+
+/*****************/
+
+#define btrNew
+#define btrFree
+
+#define btrAddLeft
+#define btrAddRight
+#define btrDelLeft
+
+#define btrIsRoot
+#define btrRoot
+#define btrLeft
+#define btrRight
+#define btrParent
+
+#define btrGetM
+#define btrGetT
+#define btrGetV
+#define btrGetR
+#define btrGetP
+#define btrGetS
+#define btrGetN
+#define btrGetU
+#define btrGetF
+
+#define btrSetM
+#define btrSetT
+#define btrSetV
+#define btrSetR
+#define btrSetP
+#define btrSetS
+#define btrSetN
+#define btrSetU
+#define btrSetF
+
+
+
+/*****************/
 struct rec_f_t {
   int size;
   char  *name; 
