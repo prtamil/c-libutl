@@ -357,50 +357,19 @@ vec_t vec_del(vec_t vt, long from, long to);
 
 #define queNew(qu)       vecNew(qu)
 #define queFree(qu)      vecFree(qu)
-#define queAddM(qu,v)      
-#define queDel
-#define queAddFront
-#define queDelRear
-#define queCount
+#define quePush(qu,v)
+#define quePop(qu)
+#define queAdd(qu,v)
+#define queDel(qu)
+#define queCount(qu)
+
+#define queFrontType(qu)
+#define queRearType(qu)
 
 #define queFront
 #define queRear
 
 /*****************/
-
-#define btrNew
-#define btrFree
-
-#define btrAddLeft
-#define btrAddRight
-#define btrDelLeft
-
-#define btrIsRoot
-#define btrRoot
-#define btrLeft
-#define btrRight
-#define btrParent
-
-#define btrGetM
-#define btrGetT
-#define btrGetV
-#define btrGetR
-#define btrGetP
-#define btrGetS
-#define btrGetN
-#define btrGetU
-#define btrGetF
-
-#define btrSetM
-#define btrSetT
-#define btrSetV
-#define btrSetR
-#define btrSetP
-#define btrSetS
-#define btrSetN
-#define btrSetU
-#define btrSetF
-
 
 
 /*****************/
