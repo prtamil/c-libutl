@@ -6,6 +6,7 @@ rgr_tbl$(_EXE)\
 rgr_vec$(_EXE)\
 
 allall: $(RGR_TESTS)
+
 rgr_chs$(_EXE): $(CHKLIB) rgr_chs$(_OBJ)
 	$(LN)$@ rgr_chs$(_OBJ) -lutl
 

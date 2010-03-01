@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "tbl2.h"
+
+#include "libutl.h"
 
 /************************/
 static void utl_outofmem()
@@ -801,7 +802,7 @@ char vecType(vec_t vt, long ndx)
 
 /*******************************************/
 
-
+#if 0
 que_t que_add(que_t qu, char v_type, val_u v)
 {
   long old_size;
@@ -815,17 +816,17 @@ que_t que_add(que_t qu, char v_type, val_u v)
     old_size = qu->size;
     old_front = (qu->cur + qu->count - 1) % qu->size;
     new_size = (qu->size+1) + lsqrt(qu->size+1);
-    vt = vec_setsize( vt, new_size );
+    qu = vec_setsize( qu, new_size );
     if (old_front  < qu->cur) {
-      for (ndx = 0; ndx <= old_from ; ndx++) {
-        qt->slot[(old_size+ndx) % qu->size] = qt->slot[ndx];  
+      for (ndx = 0; ndx <= old_front ; ndx++) {
+        qu->slot[(old_size+ndx) % qu->size] = qu->slot[ndx];  
       }
-      for (ndx = old_from; (ndx > 0) &&  )
     }
   }
   
   return qu;
 }
+#endif
 
 /*******************************************/
 

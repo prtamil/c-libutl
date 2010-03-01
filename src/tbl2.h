@@ -190,19 +190,19 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 #define tblGetNF(tb,k,d) valGetF(tbl_get(tb,'N',valN(k),'F',valF(d)))
 
 
+tbl_t tbl_del(tbl_t tb, char k_type, val_u key);
 
-#define tbl_delX(tb,tk,k,fk) \
-       do {val_u key; key.fk = k; tb = tbl_del(tb,tk,key);} while (0)
-
-#define tblDelM(tb,k) tbl_delX(tb,'M',k,p)
-#define tblDelT(tb,k) tbl_delX(tb,'T',k,p)
-#define tblDelP(tb,k) tbl_delX(tb,'P',k,p)
-#define tblDelS(tb,k) tbl_delX(tb,'S',k,s)
-#define tblDelN(tb,k) tbl_delX(tb,'N',k,n)
-#define tblDelU(tb,k) tbl_delX(tb,'U',k,u)
-#define tblDelF(tb,k) tbl_delX(tb,'F',k,f)
-
-typedef long tblptr_t;
+#define tblDelM(tb,k) tbl_del(tb,'M',valM(k))
+#define tblDelT(tb,k) tbl_del(tb,'T',valT(k))
+#define tblDelV(tb,k) tbl_del(tb,'V',valV(k))
+#define tblDelR(tb,k) tbl_del(tb,'R',valR(k))
+#define tblDelP(tb,k) tbl_del(tb,'P',valP(k))
+#define tblDelS(tb,k) tbl_del(tb,'S',valS(k))
+#define tblDelN(tb,k) tbl_del(tb,'N',valN(k))
+#define tblDelU(tb,k) tbl_del(tb,'U',valU(k))
+#define tblDelF(tb,k) tbl_del(tb,'F',valF(k))
+                                     
+typedef long tblptr_t;               
 
 tblptr_t tblNext(tbl_t tb, tblptr_t ndx);
 #define tblFirst(tb) tblNext(tb,0)
@@ -357,20 +357,37 @@ vec_t vec_del(vec_t vt, long from, long to);
 
 #define queNew(qu)       vecNew(qu)
 #define queFree(qu)      vecFree(qu)
-#define quePush(qu,v)
-#define quePop(qu)
-#define queAdd(qu,v)
-#define queDel(qu)
+#define queAddFirst(qu,v)
+#define queAddLast(qu,v)
+#define queDelFirst(qu)
+#define queDelLast(qu)
 #define queCount(qu)
 
-#define queFrontType(qu)
-#define queRearType(qu)
+#define queFirstType(qu)
+#define queLastType(qu)
 
-#define queFront
-#define queRear
+#define queFirst
+#define queLast
 
 /*****************/
 
+#define que_t vec_t
+
+#define prqNew(qu)       vecNew(qu)
+#define prqFree(qu)      vecFree(qu)
+#define prqAdd(qu,v,p)
+#define prqDelFirst(qu)
+#define prqDelLast(qu)
+#define prqCount(qu)
+
+#define prqFirstType(qu)
+#define prqLastType(qu)
+
+#define prqFirstPri(qu)
+#define prqLastPri(qu)
+
+#define prqFirst
+#define prqLast
 
 /*****************/
 struct rec_f_t {

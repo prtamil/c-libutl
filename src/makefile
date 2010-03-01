@@ -11,9 +11,9 @@ UNC=$(TOP)examples/uncomment
 
 include $(TOP)config.mk
 
-LIBSRC = utl.c pmx.c chs.c rec.c tbl.c 
-LIBHDR = utl.h pmx.h chs.h rec.h tbl.h
-LIBOBJ = chs$(_OBJ) pmx$(_OBJ) rec$(_OBJ) \
+LIBSRC = utl.c pmx.c chs.c tbl.c 
+LIBHDR = utl.h pmx.h chs.h tbl.h
+LIBOBJ = chs$(_OBJ) pmx$(_OBJ) \
          tbl$(_OBJ) utl$(_OBJ)
 
 libutl$(_LIB) : $(LIBOBJ) 
@@ -35,8 +35,6 @@ libutl.h : $(LIBHDR)
 	$(CAT) pmx.h             >> $@
 	echo "#line 1 \"chs.h\"" >> $@
 	$(CAT) chs.h             >> $@
-	echo "#line 1 \"rec.h\"" >> $@
-	$(CAT) rec.h             >> $@
 	echo "#line 1 \"tbl.h\"" >> $@
 	$(CAT) tbl.h             >> $@
 	echo "#endif "           >> $@

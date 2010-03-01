@@ -1,50 +1,109 @@
 /* 
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
-** This sofwtare is distributed under the terms of the BSD license:
+** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
 **   http://opensource.org/licenses/bsd-license.php 
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 #include "libutl.h"
-#include <assert.h> 
 
-long tbl_i;
+/************************/
+static void utl_outofmem()
+{ 
+  if (stderr) fprintf(stderr,"OUT OF MEMORY");
+  exit(1);
+}
 
-static unsigned long hsh_num1(unsigned long a);
-static unsigned long hsh_str1(const void *data, int len);
-static unsigned long hsh_ptr1(void *p);
-#if 0
-static unsigned long hsh_num2(unsigned long a);
-static unsigned long hsh_str2(const void *data, int len);
-static unsigned long hsh_ptr2(void *p);
-#endif 
-static unsigned short llog2(unsigned long x);
+/************************/
 
+/*
+** Integer log base 2 of a 32 bits integer values.
+**   llog2(0) == llog2(1) == 0
+*/
+static unsigned short llog2(unsigned long x)
+{
+  long l = 0;
 
-#define tblslot(tb,n)   ((tb)->slot + n)
-#define slotpos(tb,sl)  (sl - (tb)->slot) 
+  x &= 0xFFFFFFFF;
+  
+  if (x==0) return 0;
+  
+  #ifndef UTL_NOASM
+    #if defined(__POCC__) || defined(_MSC_VER) || defined (__WATCOMC__)
+        /* Pelles C            MS Visual C++         OpenWatcom*/
+      __asm { mov eax, [x]
+              bsr ecx, eax
+              mov  l, ecx
+      }
+    #elif defined(__GNUC__)
+      l = (unsigned short) ((sizeof(long)*8 -1) - __builtin_clzl(x));
+    #else
+      #define UTL_NOASM
+    #endif  
+  #endif
+  
+  #ifdef UTL_NOASM  /* Make a binary search.*/
+    if (x & 0xFFFF0000) {l += 16; x >>= 16;} /* 11111111111111110000000000000000 */
+    if (x & 0xFF00)     {l += 8;  x >>= 8 ;} /* 1111111100000000*/
+    if (x & 0xF0)       {l += 4;  x >>= 4 ;} /* 11110000*/
+    if (x & 0xC)        {l += 2;  x >>= 2 ;} /* 1100 */
+    if (x & 2)          {l += 1;  }          /* 10 */
+    return l;
+  #endif
+  
+  return (unsigned short)l;
+}
 
-#define properslot(sl)  ((sl)->flg[3])
-#define linkedslot(sl)  ((sl)->aux.n)
-#define isnotempty(sl)  tbl_keytype(sl)
+unsigned long lsqrt(unsigned long x)
+{
+  /* lsqrt(x) = 2 ^ (1/2 * lg2(x)) */
+  return (x == 0) ? 0 : (1 << (llog2(x) >> 1));
+}
 
+/******************************************************************/
 
-#define val_set(x, tv,nv,pv,fv) ((tv == 'N') ? (void)((x).n = (nv)) : \
-                                 (tv == 'F') ? (void)((x).f = (fv)) : \
-                                               (void)((x).p = (pv))) 
+/* from Bit Twiddling Hacks 
+** http://www-graphics.stanford.edu/~seander/bithacks.html
+*/ 
+
+#define roundpow2(v) (v--,\
+                     (v |= v >> 1), (v |= v >> 2), \
+                     (v |= v >> 4), (v |= v >> 8), \
+                     (v |= v >> 16), \
+                      v++)
+
+/******************************************************************/
 
 #define val_del(tv,v) do { switch (tv) { \
-                             case 'S' : chsFree((v).p); break; \
+                             case '\0': break; \
+                             case 'M' : free((v).p); (v).p = NULL; break;\
                              case 'T' : tblFree((v).p); break; \
                              case 'V' : vecFree((v).p); break; \
                              case 'R' : recFree((v).p); break; \
-                             case 'P' : (v).p = NULL; \
-                             case 'N' : (v).n = 0; \
-                             case 'F' : (v).f = 0.0; \
+                             case 'P' : (v).p = NULL; break;\
+                             case 'S' : (v).s = val_Sfree((v).s); break; \
+                             case 'N' : (v).n = 0; break; \
+                             case 'U' : (v).u = 0; break; \
+                             case 'F' : (v).f = 0.0; break; \
                            }\
-                      } while (utlZero)
+                      } while (0)
+
+char *val_Sdup(char *s)
+{
+  return chsDup(s);
+}
+
+char *val_Sfree(char *s)
+{
+  free(s);
+  return NULL;
+}
 
 static int val_cmp(char atype, val_u a, char btype, val_u b)
 {
@@ -53,683 +112,721 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
   ret = atype - btype;
   if (ret == 0) {
     switch (atype) {
+      case '\0': ret = 0;                                          break;
+      case 'S' : ret = strcmp(a.s, b.s);                           break;
       case 'N' : ret = a.n - b.n;                                  break;
-      case 'S' : ret = strcmp(a.p, b.p);                           break;
+      case 'U' : ret = (a.u == b.u) ? 0 : ((a.u > b.u) ? 1 : -1);  break;
       case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
       case 'R' : ret = recCmp(a.p,b.p);                            break;
-      case 'P' :
-      case 'T' :
-      case 'V' : ret = (char *)(a.p) - (char *)(b.p);              break;
-      default  : ret = -1;
+      default  : ret = (char *)(a.p) - (char *)(b.p);              break;
     }
   }
   return ret;
 }
 
-tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                        char tv, long nval, void *pval, float fdef);
+/* Bernstein hash */
+static unsigned long hash_djb(unsigned char *str)
+{
+  unsigned long hash = 5381;
+  while (*str) {
+    hash = ((hash << 5) + hash) + *str++; /* hash = hash*33 + c */
+  }
+  return hash;
+}
+
+/* Bernstein hash */
+static unsigned long hash_djbL(unsigned char *str, int len)
+{
+  unsigned long hash = 5381;
+  while (len-- > 0) {
+    hash = ((hash << 5) + hash) + *str++; /* hash = hash*33 + c */
+  }
+  return hash;
+}
+
+static unsigned long hash_num(unsigned long a)
+{
+   /* Thomas Wang */
+  a = ~a + (a << 15); /* a = (a << 15) - a - 1; */
+  a =  a ^ (a >> 12);
+  a =  a + (a << 2);
+  a =  a ^ (a >> 4);
+  a =  a * 2057;
+  a =  a ^ (a >> 16);
+  return a;
+}
+
+static unsigned long hash_float(float f)
+{
+  f = f + 1.0;
+  return hash_djbL((unsigned char *)(&f),sizeof(float));  
+}
+
+static unsigned long hash_ptr(void *p)
+{
+  return hash_djbL((unsigned char *)(&p),sizeof(void *));  
+}
+
+static long val_hash(char k_type, val_u key)
+{
+  unsigned long h;
+  switch (k_type) {
+    case 'S' : h = hash_djb((unsigned char *)key.s);  break;
+    case 'N' : h = hash_num((unsigned long)key.n);    break;
+    case 'U' : h = hash_num(key.u);                   break;
+    case 'F' : h = hash_float(key.f);                 break;
+    default  : h = hash_ptr(key.p);                   break;
+  } 
+   
+  return (long)(h & 0x7FFFFFFF);
+}
+
+/******************************************************************/
+
+#define slot_val_type(s) ((s)->info[0])
+#define slot_key_type(s) ((s)->info[1])
+#define slot_dist(s)     ((s)->info[2])
+#define slot_val(s)      ((s)->val)
+#define slot_key(s)      ((s)->key)
+
+#define slot_isempty(sl)    (slot_val_type(sl) == '\0')
+#define slot_setempty(sl)   (slot_val_type(sl) =  '\0')
+#define slot_ptr(tb, k)     ((tb)->slot+(k))
+
+#define TBL_SMALL 4
+#define tbl_issmall(tb)    (tb->size <= TBL_SMALL)
+
+#define MAX_DIST(tb) (llog2(tb->size) + 2)
+
+void tbl_print(tbl_t tb)
+{
+  long ndx;
+  tbl_slot_t *slot;
+  
+  if (!tb) return ;
+  
+  for (ndx = 0; ndx < tb->size; ndx++) {
+    slot = &tb->slot[ndx];
+    if (slot_isempty(slot))
+      fprintf(stderr,"[%04ld] X X <0,0> (0)\n",ndx);
+    else
+      fprintf(stderr,"[%04ld] %c %c <%ld,%ld> (%d)\n",ndx, 
+                slot_key_type(slot) ? slot_key_type(slot) :'X',
+                slot_val_type(slot) ? slot_val_type(slot) :'X',
+                slot_key(slot).n,slot_val(slot).n,
+                slot_dist(slot));
+  }
+}
+
 
 tbl_t tbl_new(long nslots)
 {
-  tbl_t tb;
+  tbl_t tb = NULL;
+  long sz;
   
+  if (nslots & (nslots - 1)) roundpow2(nslots);
   if (nslots < 2) nslots = 2;
+  sz = sizeof(tbl_table_t) + sizeof(tbl_slot_t) * (nslots-1);
+  tb = calloc(1, sz);
+  if (!tb) utl_outofmem();
+  
+  tb->count    = 0;
+  tb->size     = nslots;
+  tb->max_dist = MAX_DIST(tb);
+  return  tb;
+}
 
-  tb = calloc(1, sizeof(*tb) + (sizeof(tbl_slot_t)*(nslots-1)));
+static void tbl_compact(tbl_t tb)
+{
+  tbl_slot_t *slot_top;
+  tbl_slot_t *slot_bot;
   
-  if (!tb)  utlError(6911,utlErrInternal);
+  slot_top = tb->slot;
+  slot_bot = tb->slot + tb->size-1;
   
-  tb->count  = 0;
-  tb->size = nslots;
-  tb->cur = 0;
+  while (slot_top < slot_bot) {
+    while ((slot_top < slot_bot) && !slot_isempty(slot_top))
+      slot_top++;
+    while ((slot_top < slot_bot) &&  slot_isempty(slot_bot))
+      slot_bot--;
+    if (slot_top < slot_bot) {
+      *slot_top = *slot_bot;
+      slot_setempty(slot_bot);
+      slot_top++;                    
+      slot_bot--;                    
+    }            
+  }
+}
+
+tbl_t tbl_rehash(tbl_t tb, long nslots)
+{
+  tbl_t newtb;
+  tbl_slot_t *slot;
+  long ndx;
+  long sz;
+  
+  if (!tb) return tbl_new(nslots);
+  
+  /* fprintf(stderr, "REASH: %d/%d\n",tb->count,tb->size);
+  tbl_print(tb);
+  */
+  if (tb->count > nslots) return tb;
+  
+  if (nslots <= TBL_SMALL) { /* It will be a small-table */
+  
+     /* If it was a hash table compact slots in the upper side */
+    if (tb->size > TBL_SMALL) tbl_compact(tb);
+      
+    /* Now only the first tbl->count slots are filled (and they are less than nslots)*/
+    sz = sizeof(tbl_table_t) + sizeof(tbl_slot_t) * (nslots-1);
+    tb = realloc(tb, sz);
+    if (!tb) utl_outofmem();
+    
+    if (nslots > tb->size) /* clear the newly added elemets */
+      memset(tb->slot + tb->size, 0x00, (nslots-tb->size) * sizeof(tbl_slot_t));
+      
+    tb->size     = nslots;
+    tb->max_dist = MAX_DIST(tb);
+  }
+  else { /* create a new table and fill it with existing elements */
+    newtb = tbl_new(nslots);
+    slot = tb->slot;
+    for (ndx = 0; ndx < tb->size; ndx++, slot++) {
+      if (!slot_isempty(slot))
+        newtb = tbl_set(newtb, slot_key_type(slot), slot_key(slot),
+                               slot_val_type(slot), slot_val(slot));
+    }
+    free(tb);
+    tb = newtb;
+  }
   return tb;
 }
 
-tbl_t tbl_free(tbl_t tb, char wipe)
+#define FIND_NOPLACE    (-1)
+#define FIND_NONE       (-1)
+#define FIND_EMPTY      (-2)
+
+static long tbl_search_small(tbl_t tb, char k_type, val_u key, long *candidate)
 {
-  tbl_slot_t *cur_slot;
-  int k;
-  if (tb) {
-    cur_slot = tb->slot;
-    if (wipe) {  
-      for (k = 0; k< tb->size; k++, cur_slot++) {
-        if (isnotempty(cur_slot)) {
-          val_del(tbl_keytype(cur_slot),cur_slot->key);
-          val_del(tbl_valtype(cur_slot),cur_slot->val);
-        }
+  tbl_slot_t *slot;
+  
+  for (slot = tb->slot; slot < tb->slot + tb->count; slot++) {
+    if (val_cmp(k_type, key, slot_key_type(slot), slot_key(slot)) == 0)
+      return slot - tb->slot;
+  }
+  if (tb->count < tb->size) {
+    *candidate =  tb->count ;
+    return FIND_EMPTY;
+  }
+  
+  *candidate = FIND_NONE;
+  return FIND_NONE;
+}
+
+#define modsz(t,x)  (((x) + (t)->size) & ((t)->size - 1))
+#define MAX_ATTEMPT 2
+
+static long tbl_search_hash(tbl_t tb, char k_type, val_u key,
+                                       long *candidate, unsigned char *distance)
+{
+  long hk;  
+  long ndx;
+  long d;
+  long d_max;
+  tbl_slot_t *slot;
+  
+  d_max = tb->max_dist;
+  
+  if (*candidate >= 0) {
+    hk  = modsz(tb, *candidate - *distance);
+    d   = *distance + 1;
+    ndx = modsz(tb, *candidate + 1);
+    k_type = '\0'; /* avoid checking for existing key */
+  }
+  else {
+    hk  = modsz(tb, val_hash(k_type, key));
+    ndx = hk;
+    d   = 0;
+  }
+  
+  *candidate = FIND_NONE;
+  *distance = d_max-1;  
+    
+  while (d < d_max) {
+    slot = slot_ptr(tb, ndx);
+    
+    if (slot_isempty(slot)) { 
+      *distance  = d;
+      *candidate = ndx;
+      return FIND_EMPTY;
+    }
+    
+    if (modsz(tb, ndx - slot_dist(slot)) == hk) { /* same hash!! */
+      if (val_cmp(k_type, key, slot_val_type(slot), slot_key(slot)) == 0) { /* same value!! */
+        *distance  = d;
+        *candidate = ndx;
+        return ndx;
       }
-    }  
+    }
+    else if (slot_dist(slot) <= *distance) {
+      /* TODO: What's the best criteria for selecting candidate?
+      **       Currently, the latest slot with lowest distance is selected.
+      */
+      *distance = d;
+      *candidate = ndx;
+    }
+    
+    ndx = modsz(tb, ndx + 1);
+    d++;
+  }
+  if (tb->count >= tb->size)  *candidate = FIND_NONE;
+  return FIND_NONE; 
+}
+
+static long tbl_search(tbl_t tb, char k_type, val_u key, long *candidate, unsigned char *distance)
+{         
+   if (!tb)  { *candidate = FIND_NONE;  return FIND_NOPLACE; }
+      
+   if (tb->size <= TBL_SMALL)
+     return tbl_search_small(tb, k_type, key, candidate);
+     
+   return tbl_search_hash(tb, k_type, key, candidate, distance);
+}
+
+val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def)
+{
+  long ndx;
+  long cand = FIND_NONE;
+  unsigned char dist = 0;
+  
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
+  
+  if (ndx < 0  || slot_val_type(slot_ptr(tb,ndx)) != v_type)
+    return def;
+  
+  return slot_val(slot_ptr(tb,ndx));    
+}
+
+val_u valP(void *val)         {val_u v; v.p = val; return v;}
+val_u valS(char *val)         {val_u v; v.s = val; return v;}
+val_u valN(long val)          {val_u v; v.n = val; return v;}
+val_u valU(unsigned long val) {val_u v; v.u = val; return v;}
+val_u valF(float val)         {val_u v; v.f = val; return v;}
+
+tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val)
+{
+  long ndx;
+  long cand = FIND_NONE;
+  unsigned char dist = 0;
+  int attempt;
+  tbl_slot_t *slot;
+  
+  #define swap(x,y,z) (z=x, x=y, y=z)
+  val_u tmp_val;
+  char  tmp_chr;
+  unsigned char tmp_dst;
+  
+  if (!tb) {
+    tb = tbl_new(2);
+    slot = slot_ptr(tb,0);
+    
+    slot_key_type(slot) = k_type;
+    slot_key(slot)      = key;
+    slot_val_type(slot) = v_type;
+    slot_val(slot)      = val;
+    slot_dist(slot)     = 0;
+    
+    tb->count++;
+    return tb;
+  }
+  
+  for(attempt = 0; ;attempt++) {
+    
+    if (attempt >= MAX_ATTEMPT) {
+      tb = tbl_rehash(tb, tb->size * 2);
+      attempt = -1;
+      cand = FIND_NONE;
+      continue;
+    }
+    
+    ndx = tbl_search(tb, k_type, key, &cand, &dist);
+
+    if (ndx >= 0) {
+      if (k_type == 'S')  val_del(k_type, key);
+      slot = slot_ptr(tb,ndx);
+      
+      val_del(slot_val_type(slot), slot_val(slot));
+      slot_val_type(slot) = v_type;
+      slot_val(slot)      = val;      
+      
+      return tb;
+    }
+    
+    if (ndx == FIND_EMPTY) {
+      slot = slot_ptr(tb,cand);
+      
+      slot_key_type(slot) = k_type;
+      slot_key(slot)      = key;
+      slot_val_type(slot) = v_type;
+      slot_val(slot)      = val;
+      slot_dist(slot)     = dist;
+      
+      tb->count++;
+      return tb;
+    }
+    
+    if (cand >= 0 ) {
+      slot = slot_ptr(tb,cand);
+      
+      swap(k_type ,slot_key_type(slot) ,tmp_chr);
+      swap(key    ,slot_key(slot)      ,tmp_val);      
+      swap(v_type ,slot_val_type(slot) ,tmp_chr);
+      swap(val    ,slot_val(slot)      ,tmp_val);
+      swap(dist   ,slot_dist(slot)     ,tmp_dst); 
+    }
+    else 
+      attempt = MAX_ATTEMPT;
+  }
+  
+  return tb;
+}
+
+static tbl_t fillhole_small(tbl_t tb, long ndx)
+{
+  if (ndx != tb->count) { 
+    tb->slot[ndx] = tb->slot[tb->count];
+    slot_setempty(slot_ptr(tb,tb->count));
+  }
+  return tb;
+}
+
+static tbl_t fillhole_hash(tbl_t tb, long ndx)
+{
+  int d=1;
+  long cand;
+  
+  while (d < tb->max_dist) { 
+    cand = modsz(tb,ndx + d);
+    if (slot_dist(slot_ptr(tb,cand)) >= d)  {
+      tb->slot[ndx] = tb->slot[cand];
+      slot_dist(slot_ptr(tb,ndx)) -= d;
+      slot_setempty(slot_ptr(tb,cand));
+      ndx = cand;
+      d = 0;
+    }
+    d++;
+  }
+  if (tb->count <= (tb->size / 4))
+    tb = tbl_rehash(tb,tb->size / 2);
+    
+  return tb;
+}
+
+tbl_t tbl_del(tbl_t tb, char k_type, val_u key)
+{
+  tbl_slot_t *slot;
+  long ndx;
+  long cand = FIND_NONE;
+  unsigned char dist = 0;
+  
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
+  
+  if (ndx >= 0) {
+    slot = slot_ptr(tb, ndx);
+      
+    val_del(slot_key_type(slot), slot_key(slot));
+    val_del(slot_val_type(slot), slot_val(slot));
+    slot_setempty(slot);
+    tb->count--;
+    if (tb->size <= TBL_SMALL)
+      tb = fillhole_small(tb,ndx);   
+    else 
+      tb = fillhole_hash(tb,ndx); 
+  }
+  return tb;    
+}
+
+tbl_t tbl_free(tbl_t tb)
+{
+  tbl_slot_t *slot;
+
+  if (tb) {
+    for (slot = tb->slot; slot < tb->slot + tb->size; slot++) {
+      val_del(slot_key_type(slot), slot_key(slot));
+      val_del(slot_val_type(slot), slot_val(slot));
+    }
     free(tb);
   }
   return NULL;
 }
 
-#define isnotpow2(x)  ((x) & ((x)-1))
-
-unsigned long keyhash(tbl_t tb, char tk, val_u key)
-{
-  char  *s;
-  float f;
-  
-  switch (tk) {
-    case 'N' : return (hsh_num1(key.n) % tb->size);
-    case 'R' : s = recUid(key.p);
-               return (hsh_str1(s, strlen(s)) % tb->size);
-    case 'F' : f = key.f + 1; /* avoid -0 */
-               return (hsh_str1((char *)(&f),sizeof(f))  % tb->size);    
-    case 'S' : return (hsh_str1(key.p, strlen(key.p)) % tb->size);
-  } 
-   
-  return (hsh_ptr1(key.p)                % tb->size);
-}
-
-static tbl_slot_t *tbl_search(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                                                              tbl_slot_t **head)
-{
-  tbl_slot_t *cur_slot;
-  val_u key;  
-  int cmp;
-  unsigned long h;
- 
-  val_set(key,tk,nkey,pkey,fkey);
-  h = keyhash(tb, tk, key);
-  cur_slot = tblslot(tb,h); 
-  if (head) *head = cur_slot;
-  
-  if (!properslot(cur_slot)) return NULL;
-    
-  do {
-    cmp = val_cmp(tk, key, tbl_keytype(cur_slot), cur_slot->key);
-    
-    if (cmp == 0)                 return cur_slot;
-    if (linkedslot(cur_slot) < 0) break;
-    
-    cur_slot = tblslot(tb, linkedslot(cur_slot));
-  } while (1); 
-   
-  return NULL;
-}
-
-val_u tbl_get(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                        char tv, long ndef, void *pdef, float fdef)
-{
-  tbl_slot_t *cur_slot;
-  val_u val;
-    
-  if (tb) {
-    cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,NULL);
-    if (cur_slot) return cur_slot->val;
+tblptr_t tblNext(tbl_t tb, tblptr_t ndx)
+{  
+  while (0 <= ndx && ndx < tb->size) {
+    if (slot_key_type(slot_ptr(tb,ndx++)) != '\0') return ndx;
   }
-  val_set(val,tv,ndef,pdef,fdef);
-  return val; 
+  return (tblptr_t)0;
 }
 
-long tbl_find(tbl_t tb, char tk, long nkey, void *pkey, float fkey)
+char tblKeyType(tbl_t tb, tblptr_t ndx)
 {
-  tbl_slot_t *cur_slot;
- 
-  cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,NULL);
-  if (cur_slot) return slotpos(tb,cur_slot)+1;
-  
-  return 0; 
+   return (0 < ndx && ndx <= tb->size) ? slot_key_type(slot_ptr(tb,ndx-1)) : '\0';
 }
 
-long tblNext(tbl_t tb, long cur)
+char tblValType(tbl_t tb, tblptr_t ndx)
 {
-  if (cur >= 0) {
-    while (cur < tb->size) {
-      if (isnotempty(tb->slot + cur++)) return cur;
-    } 
-  }
-  return -1; 
+   return (0 < ndx && ndx <= tb->size) ? slot_val_type(slot_ptr(tb,ndx-1)) : '\0';
 }
 
-#define two_raised(n) (1<<(n))
-#define div_by_two(n) ((n)>>1)
-                
-tbl_t tbl_MaxSlot(tbl_t tb, long nslots)
+val_u tbl_key(tbl_t tb, tblptr_t ndx)
 {
-  unsigned short lg;
-  long n;
-  tbl_t tt;
-  
-  _dbgmsg("SETMAX: %ld -> ",nslots);
-  if (nslots < 4) nslots = 4;
-  lg = two_raised(llog2(nslots));
-  
-  n = (3 * lg) / 2;
-  if (n < nslots) n = lg * 2;
-  
-  _dbgmsg("Actually: %ld (%ld)\n",n,lg);
-  
-  if (n <= tb->size) return tb;
-  
-  tt = realloc(tb,sizeof(*tb) + (sizeof(tbl_slot_t)*(n-1)));
-  if (!tt) return tb;
-  
-  memset(tt->slot + tt->size, 0, (n - tt->size) * sizeof(tbl_slot_t));
-  
-  tt->size = n; 
-  return tt; 
+  val_u def; def.n = 0;
+  return (0 < ndx && ndx <= tb->size) ? slot_key(slot_ptr(tb,ndx-1)) : def;
 }
-                        
-static tbl_t rehash(tbl_t tb, char resize)
+
+val_u tbl_val(tbl_t tb, tblptr_t ndx)
 {
-  tbl_t newtb;
-  tbl_slot_t *cur_slot;
-  long k;
+  val_u def; def.n = 0;
+  return (0 < ndx && ndx <= tb->size) ? slot_val(slot_ptr(tb,ndx-1)) : def;
+}
+
+tblptr_t tbl_find(tbl_t tb, char k_type, val_u key)
+{
+  tblptr_t ndx;
+  long cand = FIND_NONE;
+  unsigned char dist = 0;
+  
+  ndx = tbl_search(tb, k_type, key, &cand, &dist);
+  return (ndx < 0 || ndx != cand) ? 0 : ndx +1;  
+}
+
+
+/*******************************************/
+
+
+vec_t vec_setsize(vec_t vt, long nslots)
+{
   long sz;
   
-  sz = tb->size;
+  if (nslots < 2) nslots = 2;
   
-  if (resize == '+') { /* Expand */ 
-    sz = isnotpow2(sz) ? ((sz / 3) * 4) : ((sz / 2) * 3);
+  sz = sizeof(vec_vector_t) + sizeof(vec_slot_t) * (nslots-1);
+  
+  if (!vt) {
+    vt = calloc(1,sz);
+    if (!vt) utl_outofmem();
+    vt->size  = nslots;
+    vt->count = 0;
+    vt->cur   = 0 ;
+    return vt;
   }
-  else if (resize == '-') { /* Shrink */
-    sz = isnotpow2(sz) ? (sz / 3) : (sz / 2);
-  } 
-  else return tb;
-  
-  if (sz < 4) sz = 4;
-  if (sz <= tb->count) return tb; 
-  
-  newtb = tbl_new(sz);
-    
-  _dbgmsg("REHASH: %d -> %d\n",tb->size,newtb->size);
 
-  cur_slot = tb->slot;
-  for (k = 0; k < tb->size; k++, cur_slot++) {
-    if (isnotempty(cur_slot)) {
-      newtb = tbl_set(newtb, 
-         tbl_keytype(cur_slot), cur_slot->key.n, cur_slot->key.p, cur_slot->key.f,
-         tbl_valtype(cur_slot), cur_slot->val.n, cur_slot->val.p, cur_slot->val.f);
+  vt = realloc(vt,sz);
+  if (!vt) utl_outofmem();
+
+  if (nslots > vt->size)
+    memset(vt->slot+vt->size, 0, (nslots - vt->size) * sizeof(vec_slot_t));
+
+  vt->size = nslots;
+  if (vt->count > vt->size) vt->count = vt->size;
+
+  return vt;
+}
+
+vec_t vec_free(vec_t vt)
+{
+  vec_slot_t *slot;
+  long ndx;
+  
+  if (vt) {
+    for (ndx = 0, slot=slot_ptr(vt,0); ndx < vt->size ; ndx++, slot++) {
+      val_del(slot_val_type(slot), slot_val(slot));
     }
   }
-  tb = tbl_free(tb,0);
-  return newtb;
+  free(vt);
+  return NULL;  
 }
 
-static tbl_slot_t *nextfreeslot(tbl_t tb, unsigned long h)
+static long fixndx(vec_t vt, long n)
 {
-  tbl_slot_t *free_slot;
   
-  do {
-    if (++h >= (unsigned long)tb->size) h = 0;
-    free_slot = tblslot(tb,h);
-  } while (isnotempty(free_slot));
-
-  return free_slot;
-}
-
-tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                        char tv, long nval, void *pval, float fdef)
-{
-  tbl_slot_t *cur_slot, *head_slot;
-  tbl_slot_t *new_slot, *parent_slot;
-  tbl_slot_t  ins;
-  unsigned long h;
-  
-  if (!tb)
-    tb = tbl_new(4); 
-  
-  /* limit load factor to max 75% */
-  if (tb->count >= ((tb->size * 3) / 4) )  
-    tb = rehash(tb,'+');
-  
-  _dbgmsg("TBL SET: T[%c %ld %p] = (%c %ld %p)\n",tk, nkey,pkey,tv,nval,pval);
-  tbl_keytype(&ins) = tk; val_set(ins.key,tk,nkey,pkey,fkey); 
-  tbl_valtype(&ins) = tv; val_set(ins.val,tv,nval,pval,fdef);
-  linkedslot(&ins) = -1;
-  properslot(&ins) = 0; 
-
-  cur_slot = tbl_search(tb,tk,nkey,pkey,fkey,&head_slot);
-
-  if (cur_slot) {                      /* Key already present: replace value */
-    if (tbl_keytype(&ins) == 'S')
-      chsFree(ins.key.p);
-    if (tbl_valtype(cur_slot) == 'S' && (tv != 'S' || cur_slot->val.p != pval)) 
-      chsFree(cur_slot->val.p);
-    tbl_valtype(cur_slot) = tbl_valtype(&ins);
-    cur_slot->val = ins.val;
-    tb->count--; /* Not a new element */                
-  }
-  
-  else if (!isnotempty(head_slot)) {                /* An empty slot: insert */
-    properslot(&ins) = 1; 
-   *head_slot = ins;
-  }
-
-  else if (properslot(head_slot)) { /* A true collision: append to the chain */
-    new_slot = nextfreeslot(tb,slotpos(tb, head_slot));
-   *new_slot = ins;
-    linkedslot(new_slot) = linkedslot(head_slot);      
-    linkedslot(head_slot) = slotpos(tb, new_slot);      
-  }
-  
-  else  {   /* Slot used by another chain: move it somewhere else and insert */
-    new_slot = nextfreeslot(tb,slotpos(tb, head_slot));
-   *new_slot = *head_slot;
-
-    /* restore the link */      
-    h = keyhash(tb, tbl_keytype(head_slot), head_slot->key);
-    parent_slot = tblslot(tb, h);
-    while (tblslot(tb, linkedslot(parent_slot)) != head_slot) 
-      parent_slot = tblslot(tb, linkedslot(parent_slot));
-    linkedslot(parent_slot) = slotpos(tb, new_slot);
-
-    properslot(&ins) = 1; 
-   *head_slot = ins;   
-  }
-  
-  tb->count++;
-  return tb;
-}
-
-tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey, float fkey)
-{
-  tbl_slot_t *cur_slot, *parent_slot;
-  
-  cur_slot = tbl_search(tb, tk, nkey, pkey, fkey, &parent_slot);
-  
-  if (cur_slot) {
-    if (cur_slot != parent_slot) {
-      while (tblslot(tb, linkedslot(parent_slot)) != cur_slot) 
-        parent_slot = tblslot(tb, linkedslot(parent_slot));
-      linkedslot(parent_slot) = linkedslot(cur_slot);      
-    }
-    
-    val_del(tbl_keytype(cur_slot),cur_slot->key);
-    val_del(tbl_valtype(cur_slot),cur_slot->val);
-    
-    isnotempty(cur_slot) = 0;
-    properslot(cur_slot) = 0;
-    
-    tb->count--;
-  }
-   
-  return tb;
-}
-
-/** HASH FUNCTIONS *******************/
-
-/*
-** by Paul Hsie
-*/
-#undef get16bits
-#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
-  || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
-#define get16bits(d) (*((const unsigned short *) (d)))
-#endif
-
-#if !defined (get16bits)
-#define get16bits(d) ((((unsigned long)(((const unsigned char *)(d))[1])) << 8)\
-                       +(unsigned long)(((const unsigned char *)(d))[0]) )
-#endif
-
-static unsigned long SuperFastHash (const char *data, int len, unsigned long hash)
-{
-unsigned long tmp;
-int rem;
-
-    if (data == NULL) return 1;
-    if (len <= 0)     return 0;
-
-    rem = len & 3;
-    len >>= 2;
-
-    /* Main loop */
-    for (;len > 0; len--) {
-        hash  += get16bits (data);
-        tmp    = (get16bits (data+2) << 11) ^ hash;
-        hash   = (hash << 16) ^ tmp;
-        data  += 2*sizeof (unsigned short);
-        hash  += hash >> 11;
-    }
-
-    /* Handle end cases */
-    switch (rem) {
-        case 3: hash += get16bits (data);
-                hash ^= hash << 16;
-                hash ^= data[sizeof (unsigned short)] << 18;
-                hash += hash >> 11;
-                break;
-        case 2: hash += get16bits (data);
-                hash ^= hash << 11;
-                hash += hash >> 17;
-                break;
-        case 1: hash += *data;
-                hash ^= hash << 10;
-                hash += hash >> 1;
-    }
-
-    /* Force "avalanching" of final 127 bits */
-    hash ^= hash << 3;
-    hash += hash >> 5;
-    hash ^= hash << 4;
-    hash += hash >> 17;
-    hash ^= hash << 25;
-    hash += hash >> 6;
-    
-    return hash;
-}
-
-/*
-** by Bob Jenkins 
-*/
-static unsigned long hsh_num1 ( unsigned long a)
-{
-    a = (a+0x7ed55d16) + (a<<12);
-    a = (a^0xc761c23c) ^ (a>>19);
-    a = (a+0x165667b1) + (a<<5);
-    a = (a+0xd3a2646c) ^ (a<<9);
-    a = (a+0xfd7046c5) + (a<<3);
-    a = (a^0xb55a4f09) ^ (a>>16);
-    return a;
-}
-
-#if 0
-/*
-** by Thomas Wang
-*/
-static unsigned long hsh_num2( unsigned long a)
-{
-    a = (a ^ 61) ^ (a >> 16);
-    a =  a + (a << 3);
-    a =  a ^ (a >> 4);
-    a =  a * 0x27d4eb2d;
-    a =  a ^ (a >> 15);
-    return a;
-}
-#endif 
-
-/*********/
-static unsigned long hsh_str1(const void *data, int len)
-{
-  return SuperFastHash(data, len, 0x165667b1);
-} 
-#if 0
-static unsigned long hsh_str2(const void *data, int len)
-{
-  return SuperFastHash(data, len, 0x27d4eb2d);
-} 
-#endif
-
-static unsigned long hsh_ptr1(void *p)
-{
-  return hsh_num1((unsigned long)p);
-}
-
-#if 0
-static unsigned long hsh_ptr2(void *p)
-{
-  return hsh_num2((unsigned long)p);
-}
-#endif
-/************************/
-
-/*
-** Integer log base 2 of uint32 integer values.
-**   llog2(0) == llog2(1) == 0
-*/
-static unsigned short llog2(unsigned long x)
-{
-  long l;
-
-  l=0;
-
-  #ifndef UTL_NOASM   /* Use inline assembly instructions! */
-    #if defined(__POCC__) || defined(_MSC_VER) || defined (__WATCOMC__)
-        /* Pelles C            MS Visual C++         OpenWatcom*/
-      __asm { mov eax, [x]
-              cmp eax, 0
-              je  z
-              bsr ecx, eax
-              mov  l, ecx
-         z:
-      }
-    #elif defined(__GNUC__)
-      /* GCC */
-      __asm__( "bsrl %1,%0" :"=r" (l) :"r" (x));
-    #else
-      /* fallback to the C version */
-      #define UTL_NOASM
-    #endif
-  #endif
-
-  #ifdef UTL_NOASM  /* Make a binary search.*/
-  _dbgmsg("Standard llog\n");
-  if (x & 0xFFFF0000) {l += 16; x >>= 16;} /* 11111111111111110000000000000000 */
-  if (x & 0xFF00)     {l += 8;  x >>= 8 ;} /* 1111111100000000*/
-  if (x & 0xF0)       {l += 4;  x >>= 4 ;} /* 11110000*/
-  if (x & 0xC)        {l += 2;  x >>= 2 ;} /* 1100 */
-  if (x & 2)          {l += 1;  }          /* 10 */
-  #endif
-
-  return (unsigned short)l;
-}
-
-/** VEC *********************/
-
-vec_t vec_tmp;
-
-
-long vecCount(vec_t vt)
-{
-  return (vt ? vt->count: 0);
-}
-
-static long fixndx(vec_t s, long n)
-{
-  if (n < 0) n += vecCount(s);
+  if (n < 0 && vt) n += vt->count;
   if (n < 0) n = 0;
   
   return n;
 }
 
-vec_t vec_SetCount(vec_t vt, long max)
+long vecSize(vec_t vt)
 {
-  long nslots;
-  unsigned long lg;
-  long sz = vecCount(vt);
-  
-  if (max < 2)
-    nslots = 2;
-  else {
-    lg = two_raised(llog2(max));  
-    nslots = (3 * lg) / 2;
-    if (nslots <= max) nslots = lg * 2;
-  }
-  
-  vt = realloc(vt,sizeof(*vt) + (sizeof(vec_slot_t)*(nslots-1)));
-  if (!vt)  utlError(6815,utlErrInternal);
-  if (nslots > sz) {
-    memset(vt->slot+sz, 0, (nslots-sz)*sizeof(vec_slot_t));
-  }
-  
-  vt->size = nslots;
-  vt->count = max;
-  vt->cur = 0;
-  
-  return vt;
+  return vt? vt->size : 0;
 }
 
-vec_t vec_new(long nslots)
-{ 
-  vec_t vt;
-  vt = vec_SetCount(NULL, nslots);
-  vt->count = 0;
-  return vt;
+long vecCount(vec_t vt)
+{
+  return vt? vt->count : 0;
 }
 
-vec_t vec_set(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
+vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val)
 {
   vec_slot_t *slot;
   
-  _dbgmsg("vec_set: %ld %c\n",nkey,tv);
-  nkey = fixndx(vt,nkey);
+  ndx = fixndx(vt,ndx);
   
-  if (!vt || vt->size <= nkey)
-    vecSetCount(vt, nkey);
+  if ( ndx >= vecSize(vt) )
+    vt = vec_setsize( vt, (ndx+1) + lsqrt(ndx+1) );
   
-  slot = vt->slot + nkey;
-  val_del(vec_valtype(slot),slot->val);
-
-  vec_valtype(slot) = tv;
-  
-  if (tv == 'N') 
-    slot->val.n = nval;
-  else if (tv == 'F') 
-    slot->val.f = fval;
-  else
-    slot->val.p = pval;
-    
-  if (nkey >= vt->count) vt->count = nkey+1;
-  
-  return vt;
-}
-
-vec_t vec_ins(vec_t vt, long nkey, char tv, long nval, void *pval, float fval)
-{
-  vec_slot_t slot;
-  int k;
-  
-  nkey = fixndx(vt,nkey);
-  k = vecCount(vt);
-  
-  if (nkey >= k) 
-    return vec_set(vt, nkey, tv, nval, pval,fval);
-    
-  vt = vec_set(vt, k, tv, nval, pval,fval);
-  
-  if (nkey < vt->count-1) {
-    slot = vt->slot[vt->count-1];
-    memmove(vt->slot+nkey+1,vt->slot+nkey,((vt->count-1)-nkey)*sizeof(vec_slot_t));
-    vt->slot[nkey] = slot ; 
-  }
-  
-  return vt;
-}
-
-val_u vec_get(vec_t vt, long nkey, char tv, long ndef, void *pdef, float fdef)
-{
-  val_u v;
-  
-  nkey = fixndx(vt,nkey);
-  if (nkey >= vecCount(vt)) {
-    if      (tv == 'N') v.n = ndef; 
-    else if (tv == 'F') v.f = fdef; 
-    else                v.p = pdef;
-    return v;
-  }
-  return vt->slot[nkey].val;
-}
-
-vec_t vec_Del(vec_t vt, long kfrom, long kto)
-{ 
-  int k; 
-  vec_slot_t *slot;
-
-  if (!vt || vt->count == 0) return vt;
-  
-  kfrom = fixndx(vt,kfrom);
-  kto = fixndx(vt,kto);
-  
-  if (kto >= vt->count) kto = vt->count -1;
-  if (kfrom >= vt->count || kfrom > kto) return vt;
-  
-  for (k=kfrom, slot = vt->slot+kfrom; k<=kto; k++, slot++)
-    val_del(vec_valtype(slot),slot->val);
-  
-  if (kto < vt->count-1)
-    memmove(vt->slot+kfrom, vt->slot+(kto+1), ((vt->count-1)-kto)*sizeof(vec_slot_t));
-
-  vt->count -= (kto - kfrom) +1;
-  return vt;
-}
-
-vec_t vec_free(vec_t vt, char wipe)
-{
-  int k = 0;
-  vec_slot_t *slot;
-
-  if (vt) {
-    if (wipe) {  
-      for (k = 0, slot = vt->slot; k < vt->count; k++, slot++) {
-        val_del(vec_valtype(slot),slot->val);
-      }
-    }  
-    free(vt);
-  }
-  return NULL;
-}
-
-
-vec_t vecMove(vec_t vt, long kfrom, long kto)
-{
-  vec_slot_t slot;
-  
-  if (vecCount(vt) < 2) return vt;
-  
-  kfrom = fixndx(vt,kfrom);
-  kto = fixndx(vt,kto);
-  
-  if (kfrom == kto) return vt;
-  
-  slot = vt->slot[kfrom];
-
-  if (kfrom > kto) {
-    memmove(vt->slot+(kto+1), vt->slot+kto, (kfrom-kto)*sizeof(vec_slot_t));  
-  }
-  else { /* kto > kfrom */
-    memmove(vt->slot+kfrom, vt->slot+(kfrom+1), (kto-kfrom)*sizeof(vec_slot_t));  
-  }
-  vt->slot[kto] = slot;
-  return vt;
-}
-
-vec_t vec_split(char *s, char *sep,char *trim, int dup)
-{
-   char *p,*q,*pp;
-   vec_t t = NULL;
-   int k = 0;
-   
-   if (!s || !*s) return t;
+  slot = slot_ptr(vt,ndx);
+  slot_val_type(slot) = v_type;
+  slot_val(slot)      = val;
  
-   p = s; 
-   while (*p) {
-     if (trim)
-       while (strchr(trim,*p)) ++p;
-     q = p;
-     while (*p && !strchr(sep,*p)) ++p;
-     pp = p;
-     if (trim)
-       while (pp > q  &&  strchr(trim,pp[-1])) --pp;
-       
-     if (dup) {
-       t = vec_set(t, k++, 'S', 0, chsDupL(q, pp-q),0.0);
-       /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
-     }
-     else {
-       vecSetP(t, k++, q);
-       vecSetP(t, k++, pp);
-     }
-     
-     if (*p) p++;
-   }
+  if (ndx >= vt->count) vt->count = ndx+1;
+  
+  return vt;
+}
+
+vec_t vec_move(vec_t vt, long from, long to)
+{
+  long slots_to_move = 0;
+  long gap_size = 0;
+  
+  vec_slot_t *slot_from;
+  vec_slot_t *slot_to;
+  
+  if (!vt || vt->count == 0) return vt;
+	  
+  if (from == to || (from >= vt->count && to >= vt->count))
+	  return vt;
     
-   return t;  
+  if (from > vt->count)
+    from = vt->count; 
+    
+  slots_to_move = vt->count - from;
+  slot_from = slot_ptr(vt,from);
+  slot_to =slot_ptr(vt,to);
+	  
+  if (to > from) { /* make room */
+    if (slots_to_move > 0) {
+      gap_size = to - from;
+      if ( vt->count + gap_size >= vt->size) 
+        vt = vec_setsize(vt, vt->count + gap_size + lsqrt(vt->count + gap_size));
+
+      memmove(slot_to, slot_from, slots_to_move * sizeof(vec_slot_t));
+      memset(slot_from, 0, gap_size * sizeof(vec_slot_t));
+      vt->count += gap_size;
+    }
+  }
+  else {
+    gap_size = from - to;
+    while (slot_to < slot_from ) {
+      val_del(slot_val_type(slot_to), slot_val(slot_to));
+      slot_to++;
+    }
+    slot_to = slot_ptr(vt,to);
+    if (slots_to_move > 0) 
+       memmove(slot_to, slot_from, slots_to_move * sizeof(vec_slot_t));
+   
+    vt->count -= gap_size;
+  }
+   
+  return vt;
+}
+
+vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val)
+{
+  
+  vec_slot_t *slot;
+  
+  ndx = fixndx(vt,ndx);
+  
+  if (!vt || ndx >= vt->count )
+    return vec_set(vt, ndx, v_type, val);
+    
+  vt = vec_move(vt,ndx,ndx+1);
+  
+  slot = slot_ptr(vt,ndx);
+  
+  slot_val_type(slot) = v_type;
+  slot_val(slot)      = val;
+  
+  vt->count++;
+  return vt;
+}
+
+vec_t vec_del(vec_t vt, long from, long to)
+{
+  long sq;
+  
+  from = fixndx(vt,from);
+  to = fixndx(vt,to);
+  
+  vt = vec_move(vt,from,to+1); 
+  
+  sq = lsqrt(vt->size);
+  if (vt->count + (2 * sq) < vt->size) 
+    vt = vec_setsize(vt, vt->count + sq + 1);
+ 
+  return vt;  
+}
+
+val_u vec_get(vec_t vt, long ndx, char v_type, val_u def)
+{
+  vec_slot_t *slot;
+  
+  if (vt) {
+    ndx = fixndx(vt,ndx);
+    if (ndx < vt->count) {
+      slot = slot_ptr(vt,ndx);
+      if (slot_val_type(slot) == v_type)
+        return slot_val(slot);
+    }
+  }
+  return def;
+}
+
+
+char vecType(vec_t vt, long ndx)
+{
+  if (!vt || vt->count == 0) return '\0';
+  ndx = fixndx(vt,ndx);
+  return (ndx < vt->count) ? slot_val_type(slot_ptr(vt,ndx)) : '\0';
 }
 
 int vec_cmp (const void *a, const void *b)
 {
-  const vec_slot_t *va = a;
-  const vec_slot_t *vb = b;
-  return val_cmp(vec_valtype(va),va->val,vec_valtype(vb),vb->val);
+  vec_slot_t *sa = (vec_slot_t *)a;
+  vec_slot_t *sb = (vec_slot_t *)b;
+  return val_cmp(slot_val_type(sa), slot_val(sa), slot_val_type(sb), slot_val(sb));
 }
 
+/*******************************************/
 
+#if 0
+que_t que_add(que_t qu, char v_type, val_u v)
+{
+  long old_size;
+  long new_size;
+  long old_front;
+  long ndx;
+  
+  if (!qu) return vec_set(qu, 0, v_type, v);
 
-/*****************/
+  if (qu->count >= qu->size) {
+    old_size = qu->size;
+    old_front = (qu->cur + qu->count - 1) % qu->size;
+    new_size = (qu->size+1) + lsqrt(qu->size+1);
+    qu = vec_setsize( qu, new_size );
+    if (old_front  < qu->cur) {
+      for (ndx = 0; ndx <= old_front ; ndx++) {
+        qu->slot[(old_size+ndx) % qu->size] = qu->slot[ndx];  
+      }
+    }
+  }
+  
+  return qu;
+}
+#endif
+
+/*******************************************/
 
 void *rec_cpy(rec_t a, rec_t b) 
 {
@@ -737,7 +834,7 @@ void *rec_cpy(rec_t a, rec_t b)
     if (!b)  recFree(a);
     else {
       if (!a) a = malloc(recSize(b));
-      if (!a) utlError(8912,utlErrInternal);
+      if (!a) utl_outofmem();
       memcpy(a,b,recSize(b));
       b->rec_f->cpy((void *)a,(void *)b);
     }
@@ -754,4 +851,3 @@ int rec_cmp(rec_t a, rec_t b)
    return (a->rec_f->cmp(a,b));
 }
 
- /*************/

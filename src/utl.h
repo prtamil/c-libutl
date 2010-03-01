@@ -232,6 +232,10 @@ UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
                      
 /* to disable an intere test group , just prepend ''|_|' */
 #define _TSTGROUP(s) if (utlZero)  
+
+/* You may want to disable just a block of instructions */
+#define TSTBLOCK if (!utlZero) 
+#define _TSTBLOCK if (utlZero) 
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
 **   .['|s|] is a short string that identifies the test

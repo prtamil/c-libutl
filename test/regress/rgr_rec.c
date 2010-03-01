@@ -15,7 +15,7 @@ recDef(point,
  
 recDefCmp(point,a,b) { return (recPtrCmp(a,b)); }
 recDefCpy(point,a,b) { a=b; }
-recDefUid(point,a)   { static char uid[32]; return (recPtrUid(uid,a)); }
+recDefUid(point,a)   { static char uid[32]; sprintf(uid,"%p",a); return uid;}
 recDefFree(point,a)  { a=NULL; }
 recDefNew(point,a)   { a=a;}
 
