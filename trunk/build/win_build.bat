@@ -110,15 +110,6 @@
 @goto gotcc
 :nopelles
 
-:: ------------ Visual C++
-@call test_cc.bat "Microsoft" cl -v
-@if errorlevel 1 @goto nomsvc
-:msvc
-@set SYS=MSVC 
-:: @set NO_ASM=/DUTL_NOASM
-@goto gotcc
-:nomsvc
-
 :: ------------ Open Watcom
 @call test_cc.bat "Watcom" cl -v
 @if errorlevel 1 @goto nowatcom
@@ -127,6 +118,15 @@
 :: @set NO_ASM=-DUTL_NOASM
 @goto gotcc
 :nowatcom
+
+:: ------------ Visual C++
+@call test_cc.bat "Microsoft" cl -v
+@if errorlevel 1 @goto nomsvc
+:msvc
+@set SYS=MSVC 
+:: @set NO_ASM=/DUTL_NOASM
+@goto gotcc
+:nomsvc
 
 :: === BUILDING
 :gotcc
@@ -140,21 +140,21 @@
 cd ..\src
 @echo Building static library
 
-copy utl.h+pmx.h+chs.h+rec.h+tbl.h libutl.h
+copy utl.h+pmx.h+chs.h+tbl.h libutl.h
 @echo /**/ >>libutl.h
 
 %CC% %CCFLAGS% %NO_ASM% utl.c
 %CC% %CCFLAGS% %NO_ASM% chs.c
 %CC% %CCFLAGS% %NO_ASM% tbl.c
-%CC% %CCFLAGS% %NO_ASM% rec.c
 %CC% %CCFLAGS% %NO_ASM% pmx.c
 
-%AR% %AR_OUT%libutl.%A% utl.%O% chs.%O% tbl.%O% rec.%O% pmx.%O%
+%AR% %AR_OUT%libutl.%A% utl.%O% chs.%O% tbl.%O% pmx.%O%
 
 copy *.%O% ..\dist
 copy libutl.%A% ..\dist
 copy libutl.h ..\dist
 goto done
+
 cd ..\examples\uncomment
 
 %CC% %CCFLAGS% -I..\..\dist unc.c

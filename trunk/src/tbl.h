@@ -6,295 +6,271 @@
 **   http://opensource.org/licenses/bsd-license.php 
 */
 
-
 #ifndef TBL_H
 #define TBL_H
-#include <stdint.h>
-
-/*
-.v
-             _    _      _
-            / \  / \    / \
-         __/  (_/  /   /  /
-        (_   ___) (_  /  /
-         /  / /  __ \/  /
-        /  /_/  /_/ /  /
-       (_____)_____(__/
-..
-*/
-
-
-/***** libutl/Table
- * DESCRIPTION 
- * Generic Tables 
-******
-*/ 
-/* VAL *****************/
-
-
-/****t* Table/Values
-* DESCRIPTION
-*  Table Value. 
-*  The union that represents a value that can be used in a tbl_h table
-* 
-* BUGS 
-*   Assumes that it is safe to write in p a void * and read it
-*   back as a char * from s. 
-*   ACCORDING TO ANSI C STANDARD THIS COULD CAUSE
-*   AN UNDEFINED BEHAVIOUR.
-* SOURCE
-*/
 
 typedef union {
-  void  *p;    /* generic pointer */
-  char  *s;    /* string or chs */ 
-  long   n;    /* integer number */
-  float  f;    /* floating point number */
+  void           *p;
+  char           *s;
+  long            n;
+  unsigned long   u;
+  float           f;
 } val_u;
 
-/********/
-
-#define valGetN(v)   ((v).n)
-#define valGetF(v)   ((v).f)
-#define valGetS(v)   ((v).s)
-#define valGetP(v)   ((v).p)
+#define valGetM(v)   ((v).p)
 #define valGetT(v)   ((tbl_t)((v).p))
 #define valGetV(v)   ((vec_t)((v).p))
-#define valGetR(v)   ((rec_t)((v).p))
-#define valGetO(v)   ((v).p)
+#define valGetR(v)   (((v).p))
+#define valGetP(v)   ((v).p)
+#define valGetS(v)   ((v).s)
+#define valGetN(v)   ((v).n)
+#define valGetU(v)   ((v).u)
+#define valGetF(v)   ((v).f)
 
-/* TBL *****************/
-/**
-* A table slot.
+#define valM(x) valP(x)
+#define valT(x) valP(x)
+#define valV(x) valP(x)
+#define valR(x) valP(x)
+val_u   valP(void *val);        
+val_u   valS(char *val);         
+val_u   valN(long val);
+val_u   valU(unsigned long val);
+val_u   valF(float val);
+
+
+char *val_Sdup(char *s);
+char *val_Sfree(char *s);
+
+/********************************************/
+
+/* A table slot.
 */ 
+
 typedef struct {
-  unsigned char flg[4];  /* flags are used to store the type of key/value*/
-  val_u  val;  /*  stored value */
-  val_u  key;  /*  slot key */
-  val_u  aux;  /* The aux value will be used for different purposes */
+  val_u  val;
+  val_u  key;
+  char   info[sizeof(val_u)]; /* to ensure alignment */
 } tbl_slot_t;    
 
-/**
-* The table itself.
-* This structure can be reallocated due to insertion and deletion. 
-*/
-
 typedef struct {
-  long count;  /**< number of used slots */
-  long size;   /**< number of allocated slots */
-  long cur;    /**< "current" slot used for iterations*/
-  tbl_slot_t slot[1];  /**< start of the slot's array */
-} tbl_ht_t;
+  long count;
+  long size;
+  unsigned char max_dist;
+  unsigned char flags;
+  unsigned char pad1;
+  unsigned char pad2;
+  tbl_slot_t slot[1];  /* start of the slots array */
+} tbl_table_t;
 
-/**
-*  The type to use to define a table.
-*/ 
-
-typedef tbl_ht_t *tbl_t;
-
-tbl_t tbl_new(long nslots);
-
-#define tblNew(t) (t=tbl_new(4))
-
-val_u tbl_get(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                        char tv, long ndef, void *pdef, float fdef);
-
-#define tblGetNN(tb,k,d)  valGetN(tbl_get(tb,'N', k, NULL, 0.0,'N', d, NULL, 0.0))
-#define tblGetFN(tb,k,d)  valGetN(tbl_get(tb,'F', 0, NULL, k  ,'N', d, NULL, 0.0))
-#define tblGetSN(tb,k,d)  valGetN(tbl_get(tb,'S', 0, k   , 0.0,'N', d, NULL, 0.0))
-#define tblGetPN(tb,k,d)  valGetN(tbl_get(tb,'P', 0, k   , 0.0,'N', d, NULL, 0.0))
-#define tblGetTN(tb,k,d)  valGetN(tbl_get(tb,'T', 0, k   , 0.0,'N', d, NULL, 0.0))
-#define tblGetVN(tb,k,d)  valGetN(tbl_get(tb,'V', 0, k   , 0.0,'N', d, NULL, 0.0))
-#define tblGetRN(tb,k,d)  valGetN(tbl_get(tb,'R', 0, k   , 0.0,'N', d, NULL, 0.0))
-#define tblGetON(tb,k,d)  valGetN(tbl_get(tb,'O', 0, k   , 0.0,'N', d, NULL, 0.0))
-
-#define tblGetNF(tb,k,d)  valGetN(tbl_get(tb,'N', k, NULL, 0.0,'F', 0, NULL, d))
-#define tblGetFF(tb,k,d)  valGetN(tbl_get(tb,'F', 0, NULL, k  ,'F', 0, NULL, d))
-#define tblGetSF(tb,k,d)  valGetN(tbl_get(tb,'S', 0, k   , 0.0,'F', 0, NULL, d))
-#define tblGetPF(tb,k,d)  valGetN(tbl_get(tb,'P', 0, k   , 0.0,'F', 0, NULL, d))
-#define tblGetTF(tb,k,d)  valGetN(tbl_get(tb,'T', 0, k   , 0.0,'F', 0, NULL, d))
-#define tblGetVF(tb,k,d)  valGetN(tbl_get(tb,'V', 0, k   , 0.0,'F', 0, NULL, d))
-#define tblGetRF(tb,k,d)  valGetN(tbl_get(tb,'R', 0, k   , 0.0,'F', 0, NULL, d))
-#define tblGetOF(tb,k,d)  valGetN(tbl_get(tb,'O', 0, k   , 0.0,'F', 0, NULL, d))
-
-#define tblGetNS(tb,k,d)  valGetS(tbl_get(tb, 'N', k, NULL, 0.0,'S', 0, d, 0.0))
-#define tblGetFS(tb,k,d)  valGetS(tbl_get(tb, 'F', 0, NULL, k  ,'S', 0, d, 0.0))
-#define tblGetSS(tb,k,d)  valGetS(tbl_get(tb, 'S', 0, k   , 0.0,'S', 0, d, 0.0))
-#define tblGetPS(tb,k,d)  valGetS(tbl_get(tb, 'P', 0, k   , 0.0,'S', 0, d, 0.0))
-#define tblGetTS(tb,k,d)  valGetS(tbl_get(tb, 'T', 0, k   , 0.0,'S', 0, d, 0.0))
-#define tblGetVS(tb,k,d)  valGetS(tbl_get(tb, 'V', 0, k   , 0.0,'S', 0, d, 0.0))
-#define tblGetRS(tb,k,d)  valGetS(tbl_get(tb, 'R', 0, k   , 0.0,'S', 0, d, 0.0))
-#define tblGetOS(tb,k,d)  valGetS(tbl_get(tb, 'O', 0, k   , 0.0,'S', 0, d, 0.0))
-
-#define tblGetNP(tb,k,d)  valGetP(tbl_get(tb, 'N', k, NULL, 0.0,'P', 0, d, 0.0))
-#define tblGetFP(tb,k,d)  valGetP(tbl_get(tb, 'F', 0, NULL, k  ,'P', 0, d, 0.0))
-#define tblGetSP(tb,k,d)  valGetP(tbl_get(tb, 'S', 0, k   , 0.0,'P', 0, d, 0.0))
-#define tblGetPP(tb,k,d)  valGetP(tbl_get(tb, 'P', 0, k   , 0.0,'P', 0, d, 0.0))
-#define tblGetTP(tb,k,d)  valGetP(tbl_get(tb, 'T', 0, k   , 0.0,'P', 0, d, 0.0))
-#define tblGetVP(tb,k,d)  valGetP(tbl_get(tb, 'V', 0, k   , 0.0,'P', 0, d, 0.0))
-#define tblGetRP(tb,k,d)  valGetP(tbl_get(tb, 'R', 0, k   , 0.0,'P', 0, d, 0.0))
-#define tblGetOP(tb,k,d)  valGetP(tbl_get(tb, 'O', 0, k   , 0.0,'P', 0, d, 0.0))
-
-#define tblGetNT(tb,k,d)  valGetT(tbl_get(tb, 'N', k, NULL, 0.0,'T', 0, d, 0.0))
-#define tblGetFT(tb,k,d)  valGetT(tbl_get(tb, 'F', 0, NULL, k  ,'T', 0, d, 0.0))
-#define tblGetST(tb,k,d)  valGetT(tbl_get(tb, 'S', 0, k   , 0.0,'T', 0, d, 0.0))
-#define tblGetPT(tb,k,d)  valGetT(tbl_get(tb, 'P', 0, k   , 0.0,'T', 0, d, 0.0))
-#define tblGetTT(tb,k,d)  valGetT(tbl_get(tb, 'T', 0, k   , 0.0,'T', 0, d, 0.0))
-#define tblGetVT(tb,k,d)  valGetT(tbl_get(tb, 'V', 0, k   , 0.0,'T', 0, d, 0.0))
-#define tblGetRT(tb,k,d)  valGetT(tbl_get(tb, 'R', 0, k   , 0.0,'T', 0, d, 0.0))
-#define tblGetOT(tb,k,d)  valGetT(tbl_get(tb, 'P', 0, k   , 0.0,'T', 0, d, 0.0))
-
-#define tblGetNR(tb,k,d)  valGetP(tbl_get(tb, 'N', k, NULL, 0.0, 'R', 0, d, 0.0))
-#define tblGetFR(tb,k,d)  valGetP(tbl_get(tb, 'F', 0, NULL, k  , 'R', 0, d, 0.0))
-#define tblGetSR(tb,k,d)  valGetP(tbl_get(tb, 'S', 0, k   , 0.0, 'R', 0, d, 0.0))
-#define tblGetPR(tb,k,d)  valGetP(tbl_get(tb, 'P', 0, k   , 0.0, 'R', 0, d, 0.0))
-#define tblGetTR(tb,k,d)  valGetP(tbl_get(tb, 'T', 0, k   , 0.0, 'R', 0, d, 0.0))
-#define tblGetVR(tb,k,d)  valGetP(tbl_get(tb, 'V', 0, k   , 0.0, 'R', 0, d, 0.0))
-#define tblGetRR(tb,k,d)  valGetP(tbl_get(tb, 'R', 0, k   , 0.0, 'R', 0, d, 0.0))
-#define tblGetOR(tb,k,d)  valGetP(tbl_get(tb, 'O', 0, k   , 0.0, 'R', 0, d, 0.0))
-
-#define tblGetNV(tb,k,d)  valGetP(tbl_get(tb, 'N', k, NULL, 0.0, 'V', 0, d, 0.0))
-#define tblGetFV(tb,k,d)  valGetP(tbl_get(tb, 'F', 0, NULL, k  , 'V', 0, d, 0.0))
-#define tblGetSV(tb,k,d)  valGetP(tbl_get(tb, 'S', 0, k   , 0.0, 'V', 0, d, 0.0))
-#define tblGetPV(tb,k,d)  valGetP(tbl_get(tb, 'P', 0, k   , 0.0, 'V', 0, d, 0.0))
-#define tblGetTV(tb,k,d)  valGetP(tbl_get(tb, 'T', 0, k   , 0.0, 'V', 0, d, 0.0))
-#define tblGetVV(tb,k,d)  valGetP(tbl_get(tb, 'V', 0, k   , 0.0, 'V', 0, d, 0.0))
-#define tblGetRV(tb,k,d)  valGetP(tbl_get(tb, 'R', 0, k   , 0.0, 'V', 0, d, 0.0))
-#define tblGetOV(tb,k,d)  valGetP(tbl_get(tb, 'O', 0, k   , 0.0, 'V', 0, d, 0.0))
-
-#define tblGetNO(tb,k,d)  valGetP(tbl_get(tb, 'N', k, NULL, 0.0, 'O', 0, d, 0.0))
-#define tblGetFO(tb,k,d)  valGetP(tbl_get(tb, 'F', 0, NULL, k  , 'O', 0, d, 0.0))
-#define tblGetSO(tb,k,d)  valGetP(tbl_get(tb, 'S', 0, k   , 0.0, 'O', 0, d, 0.0))
-#define tblGetPO(tb,k,d)  valGetP(tbl_get(tb, 'P', 0, k   , 0.0, 'O', 0, d, 0.0))
-#define tblGetTO(tb,k,d)  valGetP(tbl_get(tb, 'T', 0, k   , 0.0, 'O', 0, d, 0.0))
-#define tblGetVO(tb,k,d)  valGetP(tbl_get(tb, 'V', 0, k   , 0.0, 'O', 0, d, 0.0))
-#define tblGetRO(tb,k,d)  valGetP(tbl_get(tb, 'R', 0, k   , 0.0, 'O', 0, d, 0.0))
-#define tblGetOO(tb,k,d)  valGetP(tbl_get(tb, 'O', 0, k   , 0.0, 'O', 0, d, 0.0))
-
-long    tblNext (tbl_t tb, long start);
-#define tblFirst(tb,i) tblNext(tb,0)
-
-#define tblForeach(tb,i) for(i=tblNext(tb,0); (long)i >= 0; \
-                                                     i = tblNext(tb,(long)i))
-
-#define tblNil 0
-        
-#define tbl_keytype(slot)  ((slot)->flg[0])
-#define tbl_valtype(slot)  ((slot)->flg[1])
-
-#define tblSlot(tb,i)  ((tb)->slot[(i)-1])
-
-#define tblCount(tb) ((tb)? (tb)->count : 0)
-
-extern long tbl_i;
-
-#define tblKeyType(tb,i) ((tbl_i=(i))? tbl_keytype(&tblSlot(tb,tbl_i)) : '\0') 
-#define tblValType(tb,i) ((tbl_i=(i))? tbl_valtype(&tblSlot(tb,tbl_i)) : '\0')
-                                     
-#define tblKeyN(tb,i) valGetN(tblSlot(tb,i).key) 
-#define tblKeyF(tb,i) valGetF(tblSlot(tb,i).key) 
-#define tblKeyS(tb,i) valGetS(tblSlot(tb,i).key) 
-#define tblKeyP(tb,i) valGetP(tblSlot(tb,i).key) 
-#define tblKeyT(tb,i) valGetT(tblSlot(tb,i).key)
-#define tblKeyR(tb,i) valGetR(tblSlot(tb,i).key)
-#define tblKeyO(tb,i) valGetO(tblSlot(tb,i).key) 
+typedef tbl_table_t *tbl_t;
  
-#define tblValN(tb,i) valGetN(tblSlot(tb,i).val) 
-#define tblValF(tb,i) valGetF(tblSlot(tb,i).val) 
-#define tblValS(tb,i) valGetS(tblSlot(tb,i).val) 
-#define tblValP(tb,i) valGetP(tblSlot(tb,i).val) 
-#define tblValR(tb,i) valGetR(tblSlot(tb,i).val) 
-#define tblValO(tb,i) valGetO(tblSlot(tb,i).val) 
+tbl_t tbl_new(long nslots);
+#define tblNew(tb) (tb = tbl_new(2))
 
-#define tblDel(tb,i) (tbl_keytype(&tblSlot(tb,i)) = '\0')
+tbl_t tbl_free(tbl_t tb);
+#define tblFree(tb) (tb = tbl_free(tb)) 
+ 
+#define tblCount(tb) (tb?(tb)->count:0)
 
-long tbl_find(tbl_t tb, char tk, long nkey, void *pkey, float fkey);
+tbl_t tbl_set(tbl_t tb, char k_type, val_u key, char v_type, val_u val);
 
-#define tblFindN(tb,k) tbl_find(tb, 'N', k, NULL, 0.0)
-#define tblFindF(tb,k) tbl_find(tb, 'F', 0, NULL, k  )
-#define tblFindS(tb,k) tbl_find(tb, 'S', 0, k   , 0.0)
-#define tblFindP(tb,k) tbl_find(tb, 'P', 0, k   , 0.0)
-#define tblFindT(tb,k) tbl_find(tb, 'T', 0, k   , 0.0)
-#define tblFindR(tb,k) tbl_find(tb, 'R', 0, k   , 0.0)
-#define tblFindO(tb,k) tbl_find(tb, 'O', 0, k   , 0.0)
+#define tblSetMM(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'M',valM(v)))
+#define tblSetMT(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'T',valT(v)))
+#define tblSetMV(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'V',valV(v)))
+#define tblSetMR(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'R',valR(v)))
+#define tblSetMP(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'P',valP(v)))
+#define tblSetMS(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'S',valS(val_Sdup(v))))
+#define tblSetMN(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'N',valN(v)))
+#define tblSetMU(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'U',valU(v)))
+#define tblSetMF(tb,k,v) (tb = tbl_set(tb,'M',valM(k),'F',valF(v)))
 
-tbl_t tbl_set(tbl_t tb, char tk, long nkey, void *pkey, float fkey,
-                        char tv, long nval, void *pval, float fdef);
+#define tblSetTM(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'M',valM(v)))
+#define tblSetTT(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'T',valT(v)))
+#define tblSetTV(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'V',valV(v)))
+#define tblSetTR(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'R',valR(v)))
+#define tblSetTP(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'P',valP(v)))
+#define tblSetTS(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'S',valS(val_Sdup(v))))
+#define tblSetTN(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'N',valN(v)))
+#define tblSetTU(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'U',valU(v)))
+#define tblSetTF(tb,k,v) (tb = tbl_set(tb,'T',valT(k),'F',valF(v)))
 
-#define tbl_Set(t,tk,nk,pk,fk,tv,nv,pv,fv) (t = tbl_set(t,tk,nk,pk,fk,tv,nv,pv,fv))
+#define tblSetVM(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'M',valM(v)))
+#define tblSetVT(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'T',valT(v)))
+#define tblSetVV(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'V',valV(v)))
+#define tblSetVR(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'R',valR(v)))
+#define tblSetVP(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'P',valP(v)))
+#define tblSetVS(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'S',valS(val_Sdup(v))))
+#define tblSetVN(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'N',valN(v)))
+#define tblSetVU(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'U',valU(v)))
+#define tblSetVF(tb,k,v) (tb = tbl_set(tb,'V',valV(k),'F',valF(v)))
 
-#define tblSetNN(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      0.0,'N', v, NULL, 0.0)
-#define tblSetFN(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,      k  ,'N', v, NULL, 0.0)
-#define tblSetSN(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 0.0,'N', v, NULL, 0.0)
-#define tblSetPN(tb,k,v)  tbl_Set(tb, 'P', 0, k,         0.0,'N', v, NULL, 0.0)
-#define tblSetTN(tb,k,v)  tbl_Set(tb, 'T', 0, k,         0.0,'N', v, NULL, 0.0)
-#define tblSetRN(tb,k,v)  tbl_Set(tb, 'R', 0, k,         0.0,'N', v, NULL, 0.0)
-#define tblSetON(tb,k,v)  tbl_Set(tb, 'O', 0, k,         0.0,'N', v, NULL, 0.0)
-                                   
-#define tblSetNS(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      0.0,'S', 0, chsDup(v), 0.0)
-#define tblSetFS(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,      k  ,'S', 0, chsDup(v), 0.0)
-#define tblSetSS(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 0.0,'S', 0, chsDup(v), 0.0)
-#define tblSetPS(tb,k,v)  tbl_Set(tb, 'P', 0, k,         0.0,'S', 0, chsDup(v), 0.0)
-#define tblSetTS(tb,k,v)  tbl_Set(tb, 'T', 0, k,         0.0,'S', 0, chsDup(v), 0.0)
-#define tblSetRS(tb,k,v)  tbl_Set(tb, 'R', 0, k,         0.0,'S', 0, chsDup(v), 0.0)
-#define tblSetOS(tb,k,v)  tbl_Set(tb, 'O', 0, k,         0.0,'S', 0, chsDup(v), 0.0)
+#define tblSetRM(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'M',valM(v)))
+#define tblSetRT(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'T',valT(v)))
+#define tblSetRV(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'V',valV(v)))
+#define tblSetRR(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'R',valR(v)))
+#define tblSetRP(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'P',valP(v)))
+#define tblSetRS(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'S',valS(val_Sdup(v))))
+#define tblSetRN(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'N',valN(v)))
+#define tblSetRU(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'U',valU(v)))
+#define tblSetRF(tb,k,v) (tb = tbl_set(tb,'R',valR(k),'F',valF(v)))
 
-#define tblSetNT(tb,k,v)  tbl_Set(tb, 'N', k, NULL,      0.0,'T', 0, v, 0.0)
-#define tblSetFT(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,      k  ,'T', 0, v, 0.0)
-#define tblSetST(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k), 0.0,'T', 0, v, 0.0)
-#define tblSetPT(tb,k,v)  tbl_Set(tb, 'P', 0, k   ,      0.0,'T', 0, v, 0.0)
-#define tblSetTT(tb,k,v)  tbl_Set(tb, 'T', 0, k   ,      0.0,'T', 0, v, 0.0)
-#define tblSetRT(tb,k,v)  tbl_Set(tb, 'R', 0, k   ,      0.0,'T', 0, v, 0.0)
-#define tblSetOT(tb,k,v)  tbl_Set(tb, 'O', 0, k   ,      0.0,'T', 0, v, 0.0)
+#define tblSetPM(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'M',valM(v)))
+#define tblSetPT(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'T',valT(v)))
+#define tblSetPV(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'V',valV(v)))
+#define tblSetPR(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'R',valR(v)))
+#define tblSetPP(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'P',valP(v)))
+#define tblSetPS(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'S',valS(val_Sdup(v))))
+#define tblSetPN(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'N',valN(v)))
+#define tblSetPU(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'U',valU(v)))
+#define tblSetPF(tb,k,v) (tb = tbl_set(tb,'P',valP(k),'F',valF(v)))
 
-#define tblSetNP(tb,k,v)  tbl_Set(tb, 'N', k, NULL,       0.0,'P', 0, v, 0.0)
-#define tblSetFP(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,       k  ,'P', 0, v, 0.0)
-#define tblSetSP(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k),  0.0,'P', 0, v, 0.0)
-#define tblSetPP(tb,k,v)  tbl_Set(tb, 'P', 0, k,          0.0,'P', 0, v, 0.0)
-#define tblSetTP(tb,k,v)  tbl_Set(tb, 'T', 0, k,          0.0,'P', 0, v, 0.0)
-#define tblSetRP(tb,k,v)  tbl_Set(tb, 'R', 0, k,          0.0,'P', 0, v, 0.0)
-#define tblSetOP(tb,k,v)  tbl_Set(tb, 'O', 0, k,          0.0,'P', 0, v, 0.0)
+#define tblSetSM(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'M',valM(v)))
+#define tblSetST(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'T',valT(v)))
+#define tblSetSV(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'V',valV(v)))
+#define tblSetSR(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'R',valR(v)))
+#define tblSetSP(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'P',valP(v)))
+#define tblSetSS(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'S',valS(val_Sdup(v))))
+#define tblSetSN(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'N',valN(v)))
+#define tblSetSU(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'U',valU(v)))
+#define tblSetSF(tb,k,v) (tb = tbl_set(tb,'S',valS(val_Sdup(k)),'F',valF(v)))
 
-#define tblSetNR(tb,k,v)  tbl_Set(tb, 'N', k, NULL,       0.0,'R', 0, v, 0.0)
-#define tblSetFR(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,       k  ,'R', 0, v, 0.0)
-#define tblSetSR(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k),  0.0,'R', 0, v, 0.0)
-#define tblSetPR(tb,k,v)  tbl_Set(tb, 'P', 0, k,          0.0,'R', 0, v, 0.0)
-#define tblSetTR(tb,k,v)  tbl_Set(tb, 'T', 0, k,          0.0,'R', 0, v, 0.0)
-#define tblSetRR(tb,k,v)  tbl_Set(tb, 'R', 0, k,          0.0,'R', 0, v, 0.0)
-#define tblSetOR(tb,k,v)  tbl_Set(tb, 'O', 0, k,          0.0,'R', 0, v, 0.0)
+#define tblSetNM(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'M',valM(v)))
+#define tblSetNT(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'T',valT(v)))
+#define tblSetNV(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'V',valV(v)))
+#define tblSetNR(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'R',valR(v)))
+#define tblSetNP(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'P',valP(v)))
+#define tblSetNS(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'S',valS(val_Sdup(v))))
+#define tblSetNN(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'N',valN(v)))
+#define tblSetNU(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'U',valU(v)))
+#define tblSetNF(tb,k,v) (tb = tbl_set(tb,'N',valN(k),'F',valF(v)))
 
-#define tblSetNO(tb,k,v)  tbl_Set(tb, 'N', k, NULL,       0.0,'O', 0, v, 0.0)
-#define tblSetFO(tb,k,v)  tbl_Set(tb, 'F', 0, NULL,       k  ,'O', 0, v, 0.0)
-#define tblSetSO(tb,k,v)  tbl_Set(tb, 'S', 0, chsDup(k),  0.0,'O', 0, v, 0.0)
-#define tblSetPO(tb,k,v)  tbl_Set(tb, 'P', 0, k,          0.0,'O', 0, v, 0.0)
-#define tblSetTO(tb,k,v)  tbl_Set(tb, 'T', 0, k,          0.0,'O', 0, v, 0.0)
-#define tblSetRO(tb,k,v)  tbl_Set(tb, 'R', 0, k,          0.0,'O', 0, v, 0.0)
-#define tblSetOO(tb,k,v)  tbl_Set(tb, 'O', 0, k,          0.0,'O', 0, v, 0.0)
+#define tblSetUM(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'M',valM(v)))
+#define tblSetUT(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'T',valT(v)))
+#define tblSetUV(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'V',valV(v)))
+#define tblSetUR(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'R',valR(v)))
+#define tblSetUP(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'P',valP(v)))
+#define tblSetUS(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'S',valS(val_Sdup(v))))
+#define tblSetUN(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'N',valN(v)))
+#define tblSetUU(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'U',valU(v)))
+#define tblSetUF(tb,k,v) (tb = tbl_set(tb,'U',valU(k),'F',valF(v)))
 
-tbl_t tbl_free(tbl_t tb,char wipe);
-#define tblFree(tb) (tb=tbl_free(tb,'w'))
+#define tblSetFM(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'M',valM(v)))
+#define tblSetFT(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'T',valT(v)))
+#define tblSetFV(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'V',valV(v)))
+#define tblSetFR(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'R',valR(v)))
+#define tblSetFP(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'P',valP(v)))
+#define tblSetFS(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'S',valS(val_Sdup(v))))
+#define tblSetFN(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'N',valN(v)))
+#define tblSetFU(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'U',valU(v)))
+#define tblSetFF(tb,k,v) (tb = tbl_set(tb,'F',valF(k),'F',valF(v)))
 
-tbl_t tbl_del(tbl_t tb, char tk, long nkey, void *pkey, float fkey);
+val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
-#define tbl_Del(t,tk,nk,pk,fk) (t = tbl_del(t,tk,nk,pk,fk))
+#define tblGetSM(tb,k,d) valGetM(tbl_get(tb,'S',valS(k),'M',valM(d)))
+#define tblGetST(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'T',valT(d)))
+#define tblGetSV(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'V',valV(d)))
+#define tblGetSR(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'R',valR(d)))
+#define tblGetSP(tb,k,d) valGetP(tbl_get(tb,'S',valS(k),'P',valP(d)))
+#define tblGetSS(tb,k,d) valGetS(tbl_get(tb,'S',valS(k),'S',valS(d)))
+#define tblGetSN(tb,k,d) valGetN(tbl_get(tb,'S',valS(k),'N',valN(d)))
+#define tblGetSU(tb,k,d) valGetU(tbl_get(tb,'S',valS(k),'U',valU(d)))
+#define tblGetSF(tb,k,d) valGetF(tbl_get(tb,'S',valS(k),'F',valF(d)))
 
-#define tblDelN(tb,k) tbl_Del(tb, 'N', k, NULL, 0.0)
-#define tblDelF(tb,k) tbl_Del(tb, 'F', 0, NULL, k  )
-#define tblDelS(tb,k) tbl_Del(tb, 'S', 0, k,    0.0)
-#define tblDelP(tb,k) tbl_Del(tb, 'P', 0, k,    0.0)
-#define tblDelT(tb,k) tbl_Del(tb, 'T', 0, k,    0.0)
-#define tblDelR(tb,k) tbl_Del(tb, 'R', 0, k,    0.0)
-#define tblDelO(tb,k) tbl_Del(tb, 'O', 0, k,    0.0)
+#define tblGetNM(tb,k,d) valGetM(tbl_get(tb,'N',valN(k),'M',valM(d)))
+#define tblGetNT(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'T',valT(d)))
+#define tblGetNV(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'V',valV(d)))
+#define tblGetNR(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'R',valR(d)))
+#define tblGetNP(tb,k,d) valGetP(tbl_get(tb,'N',valN(k),'P',valP(d)))
+#define tblGetNS(tb,k,d) valGetS(tbl_get(tb,'N',valN(k),'S',valS(d)))
+#define tblGetNN(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'N',valN(d)))
+#define tblGetNU(tb,k,d) valGetU(tbl_get(tb,'N',valN(k),'U',valU(d)))
+#define tblGetNF(tb,k,d) valGetF(tbl_get(tb,'N',valN(k),'F',valF(d)))
 
-tbl_t tbl_MaxSlot(tbl_t tb, long nslots);
+#define tblGetUM(tb,k,d) valGetM(tbl_get(tb,'U',valU(k),'M',valM(d)))
+#define tblGetUT(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'T',valT(d)))
+#define tblGetUV(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'V',valV(d)))
+#define tblGetUR(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'R',valR(d)))
+#define tblGetUP(tb,k,d) valGetP(tbl_get(tb,'U',valU(k),'P',valP(d)))
+#define tblGetUS(tb,k,d) valGetS(tbl_get(tb,'U',valU(k),'S',valS(d)))
+#define tblGetUN(tb,k,d) valGetN(tbl_get(tb,'U',valU(k),'N',valN(d)))
+#define tblGetUU(tb,k,d) valGetU(tbl_get(tb,'U',valU(k),'U',valU(d)))
+#define tblGetUF(tb,k,d) valGetF(tbl_get(tb,'U',valU(k),'F',valF(d)))
 
-#define tblMaxSlot(t,n) (t = tbl_MaxSlot(t,n))
+#define tblGetFM(tb,k,d) valGetM(tbl_get(tb,'F',valF(k),'M',valM(d)))
+#define tblGetFT(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'T',valT(d)))
+#define tblGetFV(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'V',valV(d)))
+#define tblGetFR(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'R',valR(d)))
+#define tblGetFP(tb,k,d) valGetP(tbl_get(tb,'F',valF(k),'P',valP(d)))
+#define tblGetFS(tb,k,d) valGetS(tbl_get(tb,'F',valF(k),'S',valS(d)))
+#define tblGetFN(tb,k,d) valGetN(tbl_get(tb,'F',valF(k),'N',valN(d)))
+#define tblGetFU(tb,k,d) valGetU(tbl_get(tb,'F',valF(k),'U',valU(d)))
+#define tblGetFF(tb,k,d) valGetF(tbl_get(tb,'F',valF(k),'F',valF(d)))
 
-/* VEC *****************/
+
+tbl_t tbl_del(tbl_t tb, char k_type, val_u key);
+
+#define tblDelM(tb,k) (tb = tbl_del(tb,'M',valM(k)))
+#define tblDelT(tb,k) (tb = tbl_del(tb,'T',valT(k)))
+#define tblDelV(tb,k) (tb = tbl_del(tb,'V',valV(k)))
+#define tblDelR(tb,k) (tb = tbl_del(tb,'R',valR(k)))
+#define tblDelP(tb,k) (tb = tbl_del(tb,'P',valP(k)))
+#define tblDelS(tb,k) (tb = tbl_del(tb,'S',valS(k)))
+#define tblDelN(tb,k) (tb = tbl_del(tb,'N',valN(k)))
+#define tblDelU(tb,k) (tb = tbl_del(tb,'U',valU(k)))
+#define tblDelF(tb,k) (tb = tbl_del(tb,'F',valF(k)))
+
+typedef long tblptr_t;
+
+tblptr_t tblNext(tbl_t tb, tblptr_t ndx);
+#define tblFirst(tb) tblNext(tb,0)
+
+#define tblForeach(tb,i) for(i=tblFirst(tb); i != 0; i = tblNext(tb,i))
+
+
+tblptr_t tbl_find(tbl_t tb, char k_type, val_u key);
+
+#define tblFindM(tb,k)  tbl_find(tb,'M',valM(k))
+#define tblFindT(tb,k)  tbl_find(tb,'T',valT(k))
+#define tblFindV(tb,k)  tbl_find(tb,'V',valT(k))
+#define tblFindR(tb,k)  tbl_find(tb,'R',valT(k))
+#define tblFindP(tb,k)  tbl_find(tb,'P',valP(k))
+#define tblFindS(tb,k)  tbl_find(tb,'S',valS(k))
+#define tblFindN(tb,k)  tbl_find(tb,'N',valN(k))
+#define tblFindU(tb,k)  tbl_find(tb,'U',valU(k))
+#define tblFindF(tb,k)  tbl_find(tb,'F',valF(k))
+
+char tblKeyType(tbl_t tb, tblptr_t ndx);
+char tblValType(tbl_t tb, tblptr_t ndx);
+
+val_u tbl_key(tbl_t tb, tblptr_t ndx);
+val_u tbl_val(tbl_t tb, tblptr_t ndx);
+
+#define tblKeyM(tb,n)  valGetM(tbl_key(tb,n))
+#define tblKeyT(tb,n)  valGetT(tbl_key(tb,n))
+#define tblKeyV(tb,n)  valGetV(tbl_key(tb,n))
+#define tblKeyR(tb,n)  valGetR(tbl_key(tb,n))
+#define tblKeyP(tb,n)  valGetP(tbl_key(tb,n))
+#define tblKeyS(tb,n)  valGetS(tbl_key(tb,n))
+#define tblKeyN(tb,n)  valGetN(tbl_key(tb,n))
+#define tblKeyU(tb,n)  valGetU(tbl_key(tb,n))
+#define tblKeyF(tb,n)  valGetF(tbl_key(tb,n))
+
+#define tblValM(tb,n)  valGetM(tbl_val(tb,n))
+#define tblValT(tb,n)  valGetT(tbl_val(tb,n))
+#define tblValV(tb,n)  valGetV(tbl_val(tb,n))
+#define tblValR(tb,n)  valGetR(tbl_val(tb,n))
+#define tblValP(tb,n)  valGetP(tbl_val(tb,n))
+#define tblValS(tb,n)  valGetS(tbl_val(tb,n))
+#define tblValN(tb,n)  valGetN(tbl_val(tb,n))
+#define tblValU(tb,n)  valGetU(tbl_val(tb,n))
+#define tblValF(tb,n)  valGetF(tbl_val(tb,n))
+
+
+/******************/
 
 typedef struct {
-  unsigned char flg[4];
   val_u  val;
+  char   info[sizeof(val_u)]; /* to ensure alignment */
 } vec_slot_t;
 
 typedef struct {
@@ -302,93 +278,76 @@ typedef struct {
   long size;
   long cur;
   vec_slot_t slot[1];
-} vec_st_t;
+} vec_vector_t;
 
-typedef vec_st_t *vec_t;
+typedef vec_vector_t *vec_t;
 
-extern vec_t vec_tmp;
- 
-#define vec_valtype(slot)  ((slot)->flg[1])
-#define vecValType(vt,i) \
- (vec_tmp = vt, \
- ((vec_tmp) && (vec_tmp->count > 0) && (vec_tmp->count > (i)))    ? \
-         ((vec_tmp)->slot+(i))->flg[1] : \
-         '\0')
+vec_t vec_setsize(vec_t vt, long nslots);
 
-val_u vec_get(vec_t tb, long nkey, char tv, long ndef, void *pdef, float fdef);
+#define vecNew(v)  (v = vec_setsize(NULL, 2))
 
-vec_t vec_SetCount(vec_t vt, long max);
-#define vecSetCount(vt,n) (vt = vec_SetCount(vt,n))
+vec_t vec_free(vec_t vt) ;
+#define vecFree(v) (v = vec_free(v));
 
+long vecSize(vec_t vt);
 long vecCount(vec_t vt);
 
-#define vecVoid ((vec_t)utlEmptyString)
 
-vec_t vec_new(long nslots);
-#define vecNew(v) (v = vec_new(2))
+vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val);
 
-vec_t vec_Del(vec_t vt, long kfrom, long kto);
-#define vecDel(v,f,t) (v = vec_Del(v,f,t))
+#define vecSetM(vt,n,v)  (vt = vec_set(vt, n, 'M', valM(v)))
+#define vecSetT(vt,n,v)  (vt = vec_set(vt, n, 'T', valT(v)))
+#define vecSetV(vt,n,v)  (vt = vec_set(vt, n, 'V', valV(v)))
+#define vecSetR(vt,n,v)  (vt = vec_set(vt, n, 'R', valR(v)))
+#define vecSetP(vt,n,v)  (vt = vec_set(vt, n, 'P', valP(v)))
+#define vecSetS(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(val_Sdup(v))))
+#define vecSetN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v)))
+#define vecSetU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v)))
+#define vecSetF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v)))
 
-vec_t vecMove(vec_t vt, long kfrom, long kto);
+#define vecAddM(vt,v)   vecSetM(vt,vecCount(vt),v)
+#define vecAddT(vt,v)   vecSetT(vt,vecCount(vt),v)
+#define vecAddV(vt,v)   vecSetV(vt,vecCount(vt),v)
+#define vecAddR(vt,v)   vecSetR(vt,vecCount(vt),v)
+#define vecAddP(vt,v)   vecSetP(vt,vecCount(vt),v)
+#define vecAddS(vt,v)   vecSetS(vt,vecCount(vt),v)
+#define vecAddN(vt,v)   vecSetN(vt,vecCount(vt),v)
+#define vecAddU(vt,v)   vecSetU(vt,vecCount(vt),v)
+#define vecAddF(vt,v)   vecSetF(vt,vecCount(vt),v)
 
-vec_t vec_free(vec_t vt, char wipe);
-#define vecFree(vt) (vt=vec_free(vt,1))
+vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val);
 
-vec_t vec_set(vec_t tb, long nkey, char tv, long nval, void *pval,float fval);
-#define vec_Set(t,n,tv,nv,pv,fv) (t = vec_set(t,n,tv,nv,pv,fv))
+#define vecInsM(vt,n,v)  (vt = vec_ins(vt, n, 'M', valM(v)))
+#define vecInsT(vt,n,v)  (vt = vec_ins(vt, n, 'T', valT(v)))
+#define vecInsV(vt,n,v)  (vt = vec_ins(vt, n, 'V', valV(v)))
+#define vecInsR(vt,n,v)  (vt = vec_ins(vt, n, 'R', valR(v)))
+#define vecInsP(vt,n,v)  (vt = vec_ins(vt, n, 'P', valP(v)))
+#define vecInsS(vt,n,v)  (vt = vec_ins(vt, n, 'S', valS(val_Sdup(v))))
+#define vecInsN(vt,n,v)  (vt = vec_ins(vt, n, 'N', valN(v)))
+#define vecInsU(vt,n,v)  (vt = vec_ins(vt, n, 'U', valU(v)))
+#define vecInsF(vt,n,v)  (vt = vec_ins(vt, n, 'F', valF(v)))
 
-#define vecSetN(tb,k,v)  vec_Set(tb, k, 'N', v, NULL      ,0.0)
-#define vecSetF(tb,k,v)  vec_Set(tb, k, 'F', 0, NULL      ,v  )
-#define vecSetS(tb,k,v)  vec_Set(tb, k, 'S', 0, chsDup(v) ,0.0)
-#define vecSetP(tb,k,v)  vec_Set(tb, k, 'P', 0, v         ,0.0)
-#define vecSetT(tb,k,v)  vec_Set(tb, k, 'T', 0, v         ,0.0)
-#define vecSetV(tb,k,v)  vec_Set(tb, k, 'V', 0, v         ,0.0)
-#define vecSetR(tb,k,v)  vec_Set(tb, k, 'R', 0, v         ,0.0)
-#define vecSetO(tb,k,v)  vec_Set(tb, k, 'O', 0, v         ,0.0)
+val_u vec_get(vec_t vt, long ndx, char v_type, val_u def);
 
-#define vecAddN(tb,v)    vec_Set(tb, vecCount(tb), 'N', v, NULL      ,0.0)
-#define vecAddF(tb,v)    vec_Set(tb, vecCount(tb), 'F', 0, NULL      ,f  )
-#define vecAddS(tb,v)    vec_Set(tb, vecCount(tb), 'S', 0, chsDup(v) ,0.0)
-#define vecAddP(tb,v)    vec_Set(tb, vecCount(tb), 'P', 0, v         ,0.0)
-#define vecAddT(tb,v)    vec_Set(tb, vecCount(tb), 'T', 0, v         ,0.0)
-#define vecAddV(tb,v)    vec_Set(tb, vecCount(tb), 'V', 0, v         ,0.0)
-#define vecAddR(tb,v)    vec_Set(tb, vecCount(tb), 'R', 0, v         ,0.0)
-#define vecAddO(tb,v)    vec_Set(tb, vecCount(tb), 'O', 0, v         ,0.0)
+#define vecGetM(vt,n,d) valGetM(vec_get(vt,n,'M',valM(d)))
+#define vecGetT(vt,n,d) valGetT(vec_get(vt,n,'T',valT(d)))
+#define vecGetV(vt,n,d) valGetV(vec_get(vt,n,'V',valV(d)))
+#define vecGetR(vt,n,d) valGetR(vec_get(vt,n,'R',valR(d)))
+#define vecGetP(vt,n,d) valGetP(vec_get(vt,n,'P',valP(d)))
+#define vecGetS(vt,n,d) valGetS(vec_get(vt,n,'S',valS(d)))
+#define vecGetN(vt,n,d) valGetN(vec_get(vt,n,'N',valN(d)))
+#define vecGetU(vt,n,d) valGetU(vec_get(vt,n,'U',valU(d)))
+#define vecGetF(vt,n,d) valGetF(vec_get(vt,n,'F',valF(d)))
 
-#define vecGetN(tb,k,d)  valGetN(vec_get(tb, k , 'N', d, NULL, 0.0))
-#define vecGetF(tb,k,d)  valGetF(vec_get(tb, k , 'F', 0, NULL, d  ))
-#define vecGetS(tb,k,d)  valGetS(vec_get(tb, k , 'S', 0, d   , 0.0))
-#define vecGetP(tb,k,d)  valGetP(vec_get(tb, k , 'P', 0, d   , 0.0))
-#define vecGetT(tb,k,d)  valGetT(vec_get(tb, k , 'T', 0, d   , 0.0))
-#define vecGetR(tb,k,d)  valGetR(vec_get(tb, k , 'R', 0, d   , 0.0))
-#define vecGetV(tb,k,d)  valGetV(vec_get(tb, k , 'V', 0, d   , 0.0))
-#define vecGetO(tb,k,d)  valGetP(vec_get(tb, k , 'O', 0, d   , 0.0))
+char vecType(vec_t vt, long ndx);
 
-vec_t vec_ins(vec_t tb, long nkey, char tv, long nval, void *pval, float fval);
-#define vec_Ins(t,nk,tv,nv,pv,fv) (t = vec_ins(t,nk,tv,nv,pv,fv))
-
-#define vecInsN(tb,k,v)  vec_Ins(tb,  k, 'N', v, NULL,      0.0)
-#define vecInsF(tb,k,v)  vec_Ins(tb,  k, 'F', v, NULL,      v)
-#define vecInsS(tb,k,v)  vec_Ins(tb,  k, 'S', 0, chsDup(v), 0.0)
-#define vecInsP(tb,k,v)  vec_Ins(tb,  k, 'P', 0, v        , 0.0)
-#define vecInsT(tb,k,v)  vec_Ins(tb,  k, 'T', 0, v        , 0.0)
-#define vecInsV(tb,k,v)  vec_Ins(tb,  k, 'V', 0, v        , 0.0)
-#define vecInsO(tb,k,v)  vec_Ins(tb,  k, 'O', 0, v        , 0.0)
-
-
-
-/* .%% Other functions
-   '''''''''''''''''''
-*/
-vec_t vec_split(char *s, char *sep,char *trim, int dup);
-
-#define vecSplit(s, sep, trim) vec_split(s,sep,trim,1)
-#define vecSplitP(s, sep, trim) vec_split(s,sep,trim,0)
+vec_t vec_del(vec_t vt, long from, long to);
+#define vecDel(vt,f,t)  (vt = vec_del(vt, f,t))
 
 int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
 
+/*****************/
 
 /* .%% Stack discipline */
 
@@ -397,27 +356,152 @@ int vec_cmp (const void *a, const void *b);
 #define stkNew(tb)       vecNew(tb)
 #define stkFree(tb)      vecFree(tb)
 
-#define stkPushN(tb,v)   vecAddN(tb,v)
-#define stkPushF(tb,v)   vecAddF(tb,v)
+#define stkPushM(tb,v)   vecAddM(tb,v)
+#define stkPushT(tb,v)   vecAddT(tb,v)
+#define stkPushV(tb,v)   vecAddV(tb,v)
+#define stkPushR(tb,v)   vecAddR(tb,v)
 #define stkPushP(tb,v)   vecAddP(tb,v)
-#define stkPushS(tb,v)   vecAddS(tb,v) 
-#define stkPushT(tb,v)   vecAddT(tb,v) 
-#define stkPushV(tb,v)   vecAddV(tb,v) 
-#define stkPushR(tb,v)   vecAddR(tb,v) 
-#define stkPushO(tb,v)   vecAddO(tb,v) 
+#define stkPushS(tb,v)   vecAddS(tb,v)
+#define stkPushN(tb,v)   vecAddN(tb,v)
+#define stkPushU(tb,v)   vecAddU(tb,v)
+#define stkPushF(tb,v)   vecAddF(tb,v)
 
 #define stkIsEmpty(tb)   (vecCount(tb) == 0)
-#define stkTopType(tb)   vecValType(tb,vecCount-1)
+#define stkTopType(tb)   vecType(tb,-1)
 
-#define stkTopN(tb)      vecGetN(tb,vecCount(tb),0)
-#define stkTopF(tb)      vecGetF(tb,vecCount(tb),0.0)
+#define stkTopM(tb)      vecGetM(tb,vecCount(tb),NULL)
+#define stkTopT(tb)      vecGetT(tb,vecCount(tb),NULL)
+#define stkTopV(tb)      vecGetV(tb,vecCount(tb),NULL)
+#define stkTopR(tb)      vecGetR(tb,vecCount(tb),NULL)
 #define stkTopP(tb)      vecGetP(tb,vecCount(tb),NULL)
 #define stkTopS(tb)      vecGetS(tb,vecCount(tb),NULL)
-#define stkTopT(tb)      vecGetT(tb,vecCount(tb),NULL)
-#define stkTopR(tb)      vecGetR(tb,vecCount(tb),NULL)
-#define stkTopV(tb)      vecGetV(tb,vecCount(tb),NULL)
-#define stkTopO(tb)      vecGetO(tb,vecCount(tb),NULL)
+#define stkTopN(tb)      vecGetN(tb,vecCount(tb),0)
+#define stkTopU(tb)      vecGetN(tb,vecCount(tb),0)
+#define stkTopF(tb)      vecGetF(tb,vecCount(tb),0.0)
 
 #define stkPop(tb)       vecDel(tb,-1,-1)
+
+/*****************/
+
+#define que_t vec_t
+
+#define queNew(qu)       vecNew(qu)
+#define queFree(qu)      vecFree(qu)
+#define queAddFirst(qu,v)
+#define queAddLast(qu,v)
+#define queDelFirst(qu)
+#define queDelLast(qu)
+#define queCount(qu)
+
+#define queFirstType(qu)
+#define queLastType(qu)
+
+#define queFirst
+#define queLast
+
+/*****************/
+
+#define que_t vec_t
+
+#define prqNew(qu)       vecNew(qu)
+#define prqFree(qu)      vecFree(qu)
+#define prqAdd(qu,v,p)
+#define prqDelFirst(qu)
+#define prqDelLast(qu)
+#define prqCount(qu)
+
+#define prqFirstType(qu)
+#define prqLastType(qu)
+
+#define prqFirstPri(qu)
+#define prqLastPri(qu)
+
+#define prqFirst
+#define prqLast
+
+/*****************/
+struct rec_f_t {
+  int size;
+  char  *name;
+  int   (*cmp)  (void * , void *) ;
+  void *(*cpy)  (void * , void *) ;
+  char *(*uid)  (void *) ;
+  void  (*free) (void *) ;
+};
+
+typedef struct { struct rec_f_t  *rec_f; } *rec_t;
+
+#define rec(t,y) \
+  struct rec_##t##_f;\
+  typedef struct t##_s { struct rec_##t##_f *rec_f; y } t; \
+  int    t##_cmp(t *a, t *b); \
+  void   t##_cpy(t *a, t *b);\
+  char  *t##_uid(t *a);\
+  void   t##_free(t *a); \
+  void   t##_init(t *); \
+  char  *t##_name = #t; \
+  struct rec_##t##_f {\
+    int    size;\
+    char  *name; \
+    int   (*cmp)  (t * , t *) ;\
+    void  (*cpy)  (t * , t *) ;\
+    char *(*uid)  (t *) ;\
+    void  (*free) (t *) ;\
+  }
+
+#define recFunCmp(t,a,b)   int   t##_cmp(t *a, t *b)
+#define recFunCpy(t,a,b)   void  t##_cpy(t *a, t *b)
+#define recFunUid(t,a)     char *t##_uid(t *a)
+#define recFunFree(t,a)    void  t##_free(t *a)
+
+#define recFunNew(t,a) \
+    static struct rec_##t##_f rec_##t##_func; \
+    t *t##_new() {\
+      t *p = calloc(1,sizeof(t));      \
+      rec_##t##_func.size = sizeof(t); \
+      rec_##t##_func.name = t##_name;  \
+      rec_##t##_func.cmp  = t##_cmp;   \
+      rec_##t##_func.cpy  = t##_cpy;   \
+      rec_##t##_func.uid  = t##_uid;   \
+      rec_##t##_func.free = t##_free;  \
+      if (p) {\
+        p->rec_f = &rec_##t##_func;\
+        t##_init(p);\
+      }\
+      return p;\
+    }\
+    void t##_init(t *a)
+
+#define recDef    rec
+#define recDefCmp recFunCmp
+#define recDefCpy recFunCpy
+#define recDefUid recFunUid
+#define recDefDel recFunFree
+#define recDefFree recFunFree
+#define recDefNew recFunNew
+
+#define recCpy(a,b)  (a = rec_cpy((rec_t)a,(rec_t)b))
+
+#define recNew(t,r)  (r = t##_new())
+
+#define recFree(r)  \
+  (r = (void *)(r? (( (rec_t)(r))->rec_f->free(r),free(r),NULL):NULL))
+
+#define recSize(a)   ((a)? ((rec_t)(a))->rec_f->size : 0)
+
+#define recUid(a)    ((a)? ((rec_t)(a))->rec_f->uid(a) : NULL)
+
+#define recName(a)   ((a)? ((rec_t)(a))->rec_f->name : NULL)
+
+#define recPtrCmp(a,b) ((char *)(a) - (char *)(b))
+
+void *rec_cpy(rec_t a, rec_t b);
+int   rec_cmp(rec_t a, rec_t b);
+
+#define recCmp(a,b) rec_cmp((rec_t)a, (rec_t)b)
+
+#define recIs(t,r) (r && (void *)(((rec_t)r)->rec_f) == (&rec_##t##_func))
+
+/******************************/
 
 #endif
