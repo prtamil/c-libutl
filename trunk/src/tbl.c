@@ -798,6 +798,40 @@ int vec_cmp (const void *a, const void *b)
   return val_cmp(slot_val_type(sa), slot_val(sa), slot_val_type(sb), slot_val(sb));
 }
 
+vec_t vec_split(char *s, char *sep, char *trim, int dup)
+{
+   char *p,*q,*pp;
+   vec_t t = NULL;
+   int k = 0;
+   
+   if (!s || !*s) return t;
+ 
+   p = s; 
+   while (*p) {
+     if (trim)
+       while (strchr(trim,*p)) ++p;
+     q = p;
+     while (*p && !strchr(sep,*p)) ++p;
+     pp = p;
+     if (trim)
+       while (pp > q  &&  strchr(trim,pp[-1])) --pp;
+       
+     if (dup) {
+       t = vec_set(t, k++, 'S', valS(chsDupL(q, pp-q)));
+       /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
+     }
+     else {
+       vecSetP(t, k++, q);
+       vecSetP(t, k++, pp);
+     }
+     
+     if (*p) p++;
+   }
+    
+   return t;  
+}
+
+
 /*******************************************/
 
 #if 0
