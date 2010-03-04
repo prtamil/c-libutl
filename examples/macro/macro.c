@@ -19,6 +19,8 @@
 ** is expanded as:
 **   "Curabitur [turpis] sed massa turpis."
 **
+** Macros can have "arguments": The strings $1,...,$9 
+**
 ** In general macros can have a type (e.g. |mrnd$x($a $b)| expands as |$a| or
 ** as |$b| at random). Macros in this form ar recognized but not handled in
 ** this example.
@@ -82,8 +84,11 @@ char *subargs(char *str, pmx_t capt)
   int k;
   char *r;
 
-  k = str[pmxStart(capt,0)+1]-'1';
-  r = vecGetS(args, k, NULL);
+  k  = str[pmxStart(capt,0)+1];
+  if (k == '$') return ("$");
+  
+  k -= '1';
+  r  = vecGetS(args, k, NULL);
   
   return (r? r : utlEmptyString);
 }
@@ -93,6 +98,8 @@ char *submacro(char *str, pmx_t capt)
   char *name;
   char *bd;
   char c;
+  
+  if (pmxLen(capt,1) == 0) return "";
   
   name = str+pmxStart(capt,1);
   c = name[pmxLen(capt,1)]; 
@@ -127,7 +134,7 @@ char *submacro(char *str, pmx_t capt)
   }
   
   /* replace args */
-  chsSubFun(rpl,0,">$<=1-9>",subargs);
+  chsSubFun(rpl,0,">$<=$1-9>",subargs);
   
   return rpl;
 }
@@ -152,7 +159,7 @@ int main(int argc, char *argv[])
   chsCpyFile(text, f);
   
   fputs(text,stdout);
-  fputs(\n"-----------------\n",stdout);
+  fputs("\n-----------------\n",stdout);
 
   /* the |&B| recognizer will get a balanced parenthesis*/
   chsSubFun(text, 0,"&Km(<*a>)$(<+a>)(&B())&K(&N)",getmacro);
@@ -166,7 +173,7 @@ int main(int argc, char *argv[])
   ** searched again looking for other occurence of the search
   ** pattern.    
   **/
-  chsSubFun(text, 0,"&*$(<+a>)(&B())",submacro);
+  chsSubFun(text, 0,"&*$(<*a>)(&B())",submacro);
   
   fputs(text,stdout);
   fputs("\n-----------------\n",stdout);
