@@ -1,2 +1,2 @@
-m$a(aaa)
-Fusce $a()vestibulum $b(x). m$b(B$1B$2) m$c Nam $b(y,z). Etiam $b et $b(,l).
+m$a(aaa) m$b($$1B$1B$2) m$c 
+Fusce $a()ve$$stibulum$()$a $b(x). Nam $b(y,z). Etiam $b et $b(,l).
