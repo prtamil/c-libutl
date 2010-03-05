@@ -143,8 +143,10 @@ int main(int argc, char *argv[])
 {
   FILE *f;
   int k;
+  char *fname;
   
-  if (argc < 2) usage(); 
+  if (argc < 2) fname="mm.txt";
+  else fname=argv[1]; 
     
   tblNew(macros);
   if (!macros) merr("Unable to create table for macro");
@@ -152,7 +154,7 @@ int main(int argc, char *argv[])
   chsNew(body);
   if (!body) merr("Unable to create temporary buffer");
   
-  f = fopen(argv[1],"r");
+  f = fopen(fname,"r");
   if (!f) merr("Unable to open file");
   
   /* Load text into the buffer */

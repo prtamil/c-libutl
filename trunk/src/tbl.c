@@ -101,8 +101,7 @@ char *val_Sdup(char *s)
 
 char *val_Sfree(char *s)
 {
-  free(s);
-  return NULL;
+  return chsFree(s);
 }
 
 static int val_cmp(char atype, val_u a, char btype, val_u b)
