@@ -24,7 +24,7 @@ vec
 			doc\stk.gif
 			doc\pmx.txt
 			doc\usersguide.txt
-		-examples
+		+examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -102,27 +102,19 @@ vec
 0=src\chs.h
 1=examples\mpad\1.mp
 2=doc\usersguide.txt
-3=New2.c
-4=examples\mpad\Meshuggah War.mp
-5=examples\mpad\mpad.c
+3=examples\mpad\mpad.c
 [Selected Project Files]
 Main=
 Selected=examples\mpad\mpad.c
 [src\chs.h]
-TopLine=327
-Caret=1,348
+TopLine=329
+Caret=17,354
 [examples\mpad\1.mp]
 TopLine=1
-Caret=26,6
+Caret=27,3
 [doc\usersguide.txt]
-TopLine=640
-Caret=1,1
-[New2.c]
-TopLine=1
-Caret=1,1
-[examples\mpad\Meshuggah War.mp]
-TopLine=538
-Caret=14,572
+TopLine=859
+Caret=8,873
 [examples\mpad\mpad.c]
-TopLine=212
-Caret=3,234
+TopLine=341
+Caret=17,356
