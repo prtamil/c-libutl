@@ -15,16 +15,16 @@ FileFormat=1
 ProjectFilesOnly=0
 [Project tree]
 vec
-	+build
+	-build
 		build\unix_gcc.sh
 		build\msys_mingw.sh
 		build\win_build.bat
 	+vec
-		-doc
+		+doc
 			doc\stk.gif
 			doc\pmx.txt
 			doc\usersguide.txt
-		+examples
+		-examples
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -99,74 +99,30 @@ vec
 		config.mk
 		mk.bat
 [Open project files]
-0=src\tbl.h
-1=src\tbl.c
-2=src\makefile
-3=test\regress\rgr_tbl.c
-4=test\regress\rgr_rec.c
-5=src\utl.h
-6=test\regress\makefile
-7=test\regress\rgr_tests.mk
-8=config.mk
-9=build\win_build.bat
-10=test\regress\rgr_vec.c
-11=src\chs.c
-12=..\clibutl_\src\tbl.c
-13=..\clibutl_\src\tbl.h
-14=examples\macro\macro.c
-15=examples\macro\m2.txt
-16=..\clibutl_\examples\macro\m2.txt
+0=src\chs.h
+1=examples\mpad\1.mp
+2=doc\usersguide.txt
+3=New2.c
+4=examples\mpad\Meshuggah War.mp
+5=examples\mpad\mpad.c
 [Selected Project Files]
 Main=
-Selected=examples\macro\macro.c
-[src\tbl.h]
-TopLine=279
-Caret=26,302
-[src\tbl.c]
-TopLine=80
-Caret=2,105
-[src\makefile]
-TopLine=14
-Caret=32,40
-[test\regress\rgr_tbl.c]
-TopLine=92
-Caret=10,99
-[test\regress\rgr_rec.c]
+Selected=examples\mpad\mpad.c
+[src\chs.h]
+TopLine=327
+Caret=1,348
+[examples\mpad\1.mp]
 TopLine=1
-Caret=15,13
-[src\utl.h]
-TopLine=231
-Caret=31,237
-[test\regress\makefile]
-TopLine=1
-Caret=1,21
-[test\regress\rgr_tests.mk]
-TopLine=1
-Caret=1,7
-[config.mk]
-TopLine=31
-Caret=10,58
-[build\win_build.bat]
-TopLine=114
-Caret=19,137
-[test\regress\rgr_vec.c]
-TopLine=14
-Caret=1,29
-[src\chs.c]
-TopLine=78
-Caret=1,100
-[..\clibutl_\src\tbl.c]
-TopLine=691
-Caret=1,690
-[..\clibutl_\src\tbl.h]
-TopLine=415
-Caret=1,388
-[examples\macro\macro.c]
-TopLine=151
-Caret=3,179
-[examples\macro\m2.txt]
-TopLine=1
-Caret=15,2
-[..\clibutl_\examples\macro\m2.txt]
+Caret=26,6
+[doc\usersguide.txt]
+TopLine=640
+Caret=1,1
+[New2.c]
 TopLine=1
 Caret=1,1
+[examples\mpad\Meshuggah War.mp]
+TopLine=538
+Caret=14,572
+[examples\mpad\mpad.c]
+TopLine=212
+Caret=3,234
