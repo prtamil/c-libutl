@@ -42,7 +42,7 @@ int globalvelvar_w = -1;
 int globalvelvar_q = -1;
 int globalguiton   = -1;
 
-chs_t text    = NULL;
+// chs_t text    = NULL;
 chs_t tmptext = NULL;
 tbl_t macros  = NULL;
 chs_t body    = NULL;
@@ -90,7 +90,6 @@ char *getmacro(char *str, pmx_t capt)
 /*  return (pmxLen(capt,4)  ? utlEmptyString : " "); */
   return utlEmptyString;
 }
-
 
 char *subargs(char *str, pmx_t capt)
 { 
@@ -154,7 +153,6 @@ char *submacro(char *str, pmx_t capt)
   return rpl;
 }
 
-
 char *mulstr(char *str, pmx_t capt)
 {
    int k;
@@ -203,6 +201,18 @@ char *mulpar(char *str, pmx_t capt)
    return tmptext;   
 }
 
+void blankit(char *str, int len)
+{
+  while (len-->0) *str++ = ' ';
+}
+
+void checktrackstart(chs_t text)
+{
+  char *s = text+1;
+  while(isspace((int)(*s))) s++;
+  if (*s == '|') *text = ' ';
+}
+
 char *gettrack(char *str, pmx_t capt)
 {
   static int track = 0;
@@ -210,19 +220,7 @@ char *gettrack(char *str, pmx_t capt)
   return NULL;
 }
 
-void blankit(char *str, int len)
-{
-  while (len-->0) *str++ = ' ';
-}
-
-void checktrackstart()
-{
-  char *s = text+1;
-  while(isspace((int)(*s))) s++;
-  if (*s == '|') *text = ' ';
-}
-
-void parseglobals()
+chs_t parseglobals(chs_t text)
 {
   /* remove comments */  
   chsSubStr(text,0,"&k#&l&n"," ");
@@ -347,17 +345,18 @@ void parseglobals()
   chsSubStr(text,0,"&s"," ");
   
   /* Now ensure there's a "|" at the beginning */
-  checktrackstart();
+  checktrackstart(text);
   
 //  chsSubFun(text,0,"|&K(%D)(<+!|>)",gettrack);
 
+  return text;
 }
 
 
-void loadmp(char *fname)
+chs_t loadmp(char *fname)
 {
   FILE *f;
-  
+  chs_t text = NULL;
   f = fopen(fname,"r");
   
   if (!f) merr("Unable to open file");
@@ -368,12 +367,15 @@ void loadmp(char *fname)
   chsAddChr(text,'\n');
    
   if (f != stdin) fclose(f);
+  
+  return text;
 }
 
 int main(int argc, char *argv[])
 {
   char *fname;
   int docleanup = 0;
+  chs_t text = NULL;
   
   if (argc < 2) fname="mm.txt";
   else fname=argv[1]; 
@@ -381,8 +383,8 @@ int main(int argc, char *argv[])
   tblNew(macros);
   chsNew(body);
   
-  loadmp(fname);
-  parseglobals();
+  text = loadmp(fname);
+  text = parseglobals(text);
   
   fputs("\n-----------------\n",stdout);
   fputs(text,stdout);
@@ -396,5 +398,6 @@ int main(int argc, char *argv[])
     vecFree(args);
     vecFree(tracks);
   }
+  
   exit(0);
 }
