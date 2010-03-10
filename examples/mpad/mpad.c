@@ -48,8 +48,9 @@ tbl_t macros  = NULL;
 chs_t body    = NULL;
 chs_t rpl     = NULL;
 vec_t args    = NULL;
-vec_t tracks  = NULL;
 
+#define MAXTRACK  64
+chs_t tracks[MAXTRACK];
 
 void usage()
 {
@@ -215,9 +216,23 @@ void checktrackstart(chs_t text)
 
 char *gettrack(char *str, pmx_t capt)
 {
-  static int track = 0;
+  static int cur_track = -1;
+  int len;
   
-  return NULL;
+  len = pmxLen(capt,2);
+  
+  if (len >0) {
+    if (pmxLen(capt,1)>0) 
+      cur_track = atoi(str + pmxStart(capt,1));
+    else cur_track++;
+    
+    if (cur_track >= MAXTRACK) cur_track = MAXTRACK-1;
+    
+    chsAddChr(tracks[cur_track],' ');
+    chsAddStrL(tracks[cur_track], str+pmxStart(capt ,2), len);
+  }
+    
+  return "";
 }
 
 chs_t parseglobals(chs_t text)
@@ -347,7 +362,7 @@ chs_t parseglobals(chs_t text)
   /* Now ensure there's a "|" at the beginning */
   checktrackstart(text);
   
-//  chsSubFun(text,0,"|&K(%D)(<+!|>)",gettrack);
+  chsSubFun(text,0,"|&K(&D)&K(<*!|>)",gettrack);
 
   return text;
 }
@@ -376,6 +391,7 @@ int main(int argc, char *argv[])
   char *fname;
   int docleanup = 0;
   chs_t text = NULL;
+  int k;
   
   if (argc < 2) fname="mm.txt";
   else fname=argv[1]; 
@@ -385,10 +401,15 @@ int main(int argc, char *argv[])
   
   text = loadmp(fname);
   text = parseglobals(text);
+
+  fprintf(stdout,"%s\n\n",text);
+
+  for (k=0; k< MAXTRACK; k++) {
+    if (tracks[k] != NULL) {
+       fprintf(stdout,"|%d %s\n",k,tracks[k]);
+    }
+  }  
   
-  fputs("\n-----------------\n",stdout);
-  fputs(text,stdout);
-  fputs("\n-----------------\n",stdout);
   
   if (docleanup) {
     chsFree(text);
@@ -396,7 +417,8 @@ int main(int argc, char *argv[])
     chsFree(body);
     chsFree(tmptext);
     vecFree(args);
-    vecFree(tracks);
+    for (k=0; k< MAXTRACK; k++)
+      chsFree(tracks[k]);
   }
   
   exit(0);

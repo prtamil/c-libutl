@@ -103,9 +103,10 @@ vec
 1=examples\mpad\1.mp
 2=doc\usersguide.txt
 3=examples\mpad\mpad.c
+4=..\middl\examples\mpad\mpad.c
 [Selected Project Files]
 Main=
-Selected=examples\mpad\mpad.c
+Selected=examples\mpad\1.mp
 [src\chs.h]
 TopLine=329
 Caret=17,354
@@ -116,5 +117,8 @@ Caret=27,3
 TopLine=859
 Caret=8,873
 [examples\mpad\mpad.c]
-TopLine=201
-Caret=1,227
+TopLine=340
+Caret=39,377
+[..\middl\examples\mpad\mpad.c]
+TopLine=41
+Caret=1,77
