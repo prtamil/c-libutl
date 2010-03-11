@@ -362,6 +362,7 @@ chs_t parseglobals(chs_t text)
   /* Now ensure there's a "|" at the beginning */
   checktrackstart(text);
   
+  /* split tracks */
   chsSubFun(text,0,"|&K(&D)&K(<*!|>)",gettrack);
 
   return text;
