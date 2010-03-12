@@ -42,15 +42,11 @@ int globalvelvar_w = -1;
 int globalvelvar_q = -1;
 int globalguiton   = -1;
 
-// chs_t text    = NULL;
-chs_t tmptext = NULL;
 tbl_t macros  = NULL;
-chs_t body    = NULL;
+chs_t tmptext = NULL;
 chs_t rpl     = NULL;
 vec_t args    = NULL;
-
-#define MAXTRACK  64
-chs_t tracks[MAXTRACK];
+vec_t tracks  = NULL;
 
 void usage()
 {
@@ -64,33 +60,6 @@ void merr(char *msg)
   exit(1);
 }
 
-char *getmacro(char *str, pmx_t capt)
-{
-  char *name;
-  char c;
-  
-  name = str + pmxStart(capt,2);
-  c=name[pmxLen(capt,2)];
-  name[pmxLen(capt,2)] = '\0';
-    
-  while (*name) { 
-    *name = tolower((int)*name);
-    name++;    
-  }    
-  name = str + pmxStart(capt,2); 
-  
-  chsCpyL(body,str+pmxStart(capt,1),pmxLen(capt,1));
-  chsAddChr(body,'$');
-  if (pmxLen(capt,3) > 0)
-    chsAddStrL(body,str+pmxStart(capt,3)+1,pmxLen(capt,3)-2);   
-
-  tblSetSS(macros,name,body);
-  
-  name[pmxLen(capt,2)] = c;
-  
-/*  return (pmxLen(capt,4)  ? utlEmptyString : " "); */
-  return utlEmptyString;
-}
 
 char *subargs(char *str, pmx_t capt)
 { 
@@ -124,7 +93,7 @@ char *submacro(char *str, pmx_t capt)
   }    
   name = str+pmxStart(capt,1);
   
-  bd = tblGetSS(macros,name,NULL);
+  bd = tblGetSP(macros,name,NULL);
    
   if (!bd) {
     fprintf(stderr,"Unknown macro: '%s'\n",name);
@@ -204,47 +173,35 @@ char *mulpar(char *str, pmx_t capt)
 
 void blankit(char *str, int len)
 {
-  while (len-->0) *str++ = ' ';
+  while (len-- > 0) *str++ = ' ';
 }
 
-void checktrackstart(chs_t text)
+int blankcomment(char *str, pmx_t ret)
 {
-  char *s = text+1;
-  while(isspace((int)(*s))) s++;
-  if (*s == '|') *text = ' ';
+  blankit(str+pmxStart(ret,0), pmxLen(ret,0));
+  return 0;
 }
 
-char *gettrack(char *str, pmx_t capt)
+int getmacro(char *str, pmx_t ret)
 {
-  static int cur_track = -1;
-  int len;
+  chs_t body = NULL;
+    
+  str[pmxEnd(ret,2) ]  = '\0';
+  str[pmxEnd(ret,3)-1] = '\0';  
   
-  len = pmxLen(capt,2);
-  
-  if (len >0) {
-    if (pmxLen(capt,1)>0) 
-      cur_track = atoi(str + pmxStart(capt,1));
-    else cur_track++;
-    
-    if (cur_track >= MAXTRACK) cur_track = MAXTRACK-1;
-    
-    chsAddChr(tracks[cur_track],' ');
-    chsAddStrL(tracks[cur_track], str+pmxStart(capt ,2), len);
-  }
-    
-  return "";
+  chsCpy(body,"$");
+  chsAddStrL(body, str+pmxStart(ret,3)+1, pmxLen(ret,3));
+     
+  tblSetSP(macros,str+pmxStart(ret,2),body);
+  blankit(str+pmxStart(ret,0), pmxLen(ret,0));
+
+  return 0;
 }
 
-chs_t parseglobals(chs_t text)
+chs_t expand(chs_t text)
 {
-  /* remove comments */  
-  chsSubStr(text,0,"&k#&l&n"," ");
-
-  /* Case insensitiveness */  
-  chsLower(text);
-  
-  /* replace macros */
-  chsSubFun(text, 0,"&Km(<*a>)$(<+a>)&K(&B())&K(&N)",getmacro);
+  /* get and expand macros */
+  pmxScanStr(text, ">&Km(<?$rnd>)$(<+a>)&K(&b())&K(&N)", getmacro);
   chsSubFun(text, 0,"&*$(<*a>)(&B())",submacro);
 
   /* Multiply */  
@@ -253,6 +210,12 @@ chs_t parseglobals(chs_t text)
   
   /* cleanup parenthesis*/
   chsSubStr(text,0,"<+=()>","");
+  
+  return text;
+}
+
+chs_t parseglobals(chs_t text)
+{
 
   #define T_TEMPO       x81
   #define T_RESOLUTION  x82
@@ -359,15 +322,40 @@ chs_t parseglobals(chs_t text)
   /* cleanup spaces */
   chsSubStr(text,0,"&s"," ");
   
-  /* Now ensure there's a "|" at the beginning */
-  checktrackstart(text);
-  
-  /* split tracks */
-  chsSubFun(text,0,"|&K(&D)&K(<*!|>)",gettrack);
-
   return text;
 }
 
+
+void checktrackstart(chs_t text)
+{
+  /* It assumes there's a "|" at the beginning.
+     See the {loadmp()} function */
+  char *s = text+1;
+  while(isspace((int)(*s))) s++;
+  if (*s == '|') *text = ' ';
+}
+
+int gettrack(char *str, pmx_t capt)
+{
+  static int cur_track = -1;
+  int len;
+  chs_t trk;
+  
+  len = pmxLen(capt,2);
+  
+  if (len >0) {
+    if (pmxLen(capt,1)>0) 
+      cur_track = atoi(str + pmxStart(capt,1));
+    else cur_track++;
+     
+    trk = vecGetP(tracks,cur_track,NULL);   
+    chsAddChr(trk,' ');
+    chsAddStrL(trk, str+pmxStart(capt ,2), len);
+    vecSetP(tracks, cur_track, trk);   
+  }
+    
+  return 0;
+}
 
 chs_t loadmp(char *fname)
 {
@@ -381,7 +369,10 @@ chs_t loadmp(char *fname)
   chsCpy(text,"| ");
   chsAddFile(text, f);
   chsAddChr(text,'\n');
-   
+  
+  /* Case insensitiveness */  
+  chsLower(text);
+
   if (f != stdin) fclose(f);
   
   return text;
@@ -393,33 +384,47 @@ int main(int argc, char *argv[])
   int docleanup = 0;
   chs_t text = NULL;
   int k;
+  char *trk;
   
   if (argc < 2) fname="mm.txt";
   else fname=argv[1]; 
-    
-  tblNew(macros);
-  chsNew(body);
+
+
   
   text = loadmp(fname);
+  
+  pmxScanStr(text, ">&k#&l&n", blankcomment);
+
   text = parseglobals(text);
+  text = expand(text);
+  
+  /* Ensure there's a "|" at the beginning */
+  checktrackstart(text);
+  
+  /* split tracks */
+  pmxScanStr(text,">|&K(&D)&K(<*!|>)",gettrack);
+
+
 
   fprintf(stdout,"%s\n\n",text);
 
-  for (k=0; k< MAXTRACK; k++) {
-    if (tracks[k] != NULL) {
-       fprintf(stdout,"|%d %s\n",k,tracks[k]);
-    }
+  for (k=0; k< vecCount(tracks); k++) {
+    trk = vecGetP(tracks, k, NULL);
+    if (trk != NULL) 
+       fprintf(stdout,"|%d %s\n",k,trk);
   }  
   
   
   if (docleanup) {
     chsFree(text);
     tblFree(macros);
-    chsFree(body);
     chsFree(tmptext);
     vecFree(args);
-    for (k=0; k< MAXTRACK; k++)
-      chsFree(tracks[k]);
+    for (k = 0; k < vecCount(tracks); k++) {
+      trk = vecGetP(tracks, k, NULL);
+      chsFree(trk);
+    }
+    vecFree(tracks);
   }
   
   exit(0);
