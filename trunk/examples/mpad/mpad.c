@@ -48,6 +48,8 @@ chs_t rpl     = NULL;
 vec_t args    = NULL;
 vec_t tracks  = NULL;
 
+#define DO_CLEANUP 0
+
 void usage()
 {
   fprintf(stderr,"Usage: mpad filename\n" );
@@ -93,7 +95,7 @@ char *submacro(char *str, pmx_t capt)
   }    
   name = str+pmxStart(capt,1);
   
-  bd = tblGetSP(macros,name,NULL);
+  bd = tblGetSS(macros,name,NULL);
    
   if (!bd) {
     fprintf(stderr,"Unknown macro: '%s'\n",name);
@@ -192,7 +194,7 @@ int getmacro(char *str, pmx_t ret)
   chsCpy(body,"$");
   chsAddStrL(body, str+pmxStart(ret,3)+1, pmxLen(ret,3));
      
-  tblSetSP(macros,str+pmxStart(ret,2),body);
+  tblSetSH(macros, str+pmxStart(ret,2), body);
   blankit(str+pmxStart(ret,0), pmxLen(ret,0));
 
   return 0;
@@ -210,6 +212,11 @@ chs_t expand(chs_t text)
   
   /* cleanup parenthesis*/
   chsSubStr(text,0,"<+=()>","");
+  
+  if (DO_CLEANUP) {
+    tblFree(macros);
+    vecFree(args);
+  }
   
   return text;
 }
@@ -348,10 +355,10 @@ int gettrack(char *str, pmx_t capt)
       cur_track = atoi(str + pmxStart(capt,1));
     else cur_track++;
      
-    trk = vecGetP(tracks,cur_track,NULL);   
+    trk = vecGetS(tracks,cur_track,NULL);   
     chsAddChr(trk,' ');
     chsAddStrL(trk, str+pmxStart(capt ,2), len);
-    vecSetP(tracks, cur_track, trk);   
+    vecSetH(tracks, cur_track, trk);   
   }
     
   return 0;
@@ -378,18 +385,10 @@ chs_t loadmp(char *fname)
   return text;
 }
 
-int main(int argc, char *argv[])
+
+vec_t mp_tracks(char *fname)
 {
-  char *fname;
-  int docleanup = 0;
   chs_t text = NULL;
-  int k;
-  char *trk;
-  
-  if (argc < 2) fname="mm.txt";
-  else fname=argv[1]; 
-
-
   
   text = loadmp(fname);
   
@@ -405,27 +404,45 @@ int main(int argc, char *argv[])
   pmxScanStr(text,">|&K(&D)&K(<*!|>)",gettrack);
 
 
-
   fprintf(stdout,"%s\n\n",text);
 
+  if (DO_CLEANUP) {
+    chsFree(text);
+    chsFree(tmptext);
+  }
+  return tracks;
+}
+
+vec_t mp_tracks_free(vec_t tracks)
+{
+  int k;
+  
+  if (DO_CLEANUP) {
+    vecFree(tracks);
+  }
+  return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+  char *fname;
+  int docleanup = 0;
+  int k;
+  char *trk;
+  vec_t tracks;
+  
+  if (argc < 2) fname="mm.txt";
+  else fname=argv[1]; 
+
+  tracks = mp_tracks(fname);
+  
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetP(tracks, k, NULL);
     if (trk != NULL) 
        fprintf(stdout,"|%d %s\n",k,trk);
   }  
   
-  
-  if (docleanup) {
-    chsFree(text);
-    tblFree(macros);
-    chsFree(tmptext);
-    vecFree(args);
-    for (k = 0; k < vecCount(tracks); k++) {
-      trk = vecGetP(tracks, k, NULL);
-      chsFree(trk);
-    }
-    vecFree(tracks);
-  }
+  tracks = mp_tracks_free(tracks);
   
   exit(0);
 }

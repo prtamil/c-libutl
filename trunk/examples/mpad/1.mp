@@ -6,5 +6,5 @@
   A b c $pause*2 ,x,x*2
  |9 ($pause()($bdroll x)*3)*2 
  |7 d e- f $bdroll # an example
- |9 iii
+ |9 iii*2
  |0 y y y
