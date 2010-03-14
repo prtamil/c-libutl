@@ -25,6 +25,10 @@ vec
 			doc\pmx.txt
 			doc\usersguide.txt
 		+examples
+			+mpad
+				examples\mpad\mpad.c
+				examples\mpad\mm.txt
+				examples\mpad\1.mp
 			+scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
@@ -102,39 +106,43 @@ vec
 0=src\chs.h
 1=examples\mpad\1.mp
 2=doc\usersguide.txt
-3=examples\mpad\mpad.c
-4=src\tbl.h
-5=src\chs.c
-6=src\tbl.c
-7=src\pmx.c
-8=src\pmx.h
+3=src\tbl.h
+4=src\chs.c
+5=src\tbl.c
+6=src\pmx.c
+7=src\pmx.h
+8=examples\mpad\mm.txt
+9=examples\mpad\mpad.c
 [Selected Project Files]
 Main=
-Selected=src\tbl.h
+Selected=examples\mpad\mpad.c
 [src\chs.h]
 TopLine=204
 Caret=19,237
 [examples\mpad\1.mp]
 TopLine=1
-Caret=10,9
+Caret=2,10
 [doc\usersguide.txt]
 TopLine=859
 Caret=44,883
-[examples\mpad\mpad.c]
-TopLine=173
-Caret=1,198
 [src\tbl.h]
-TopLine=106
-Caret=66,148
+TopLine=221
+Caret=1,249
 [src\chs.c]
 TopLine=6
 Caret=15,24
 [src\tbl.c]
-TopLine=640
+TopLine=634
 Caret=1,634
 [src\pmx.c]
-TopLine=628
-Caret=1,1
+TopLine=624
+Caret=19,654
 [src\pmx.h]
 TopLine=51
 Caret=49,69
+[examples\mpad\mm.txt]
+TopLine=539
+Caret=33,287
+[examples\mpad\mpad.c]
+TopLine=314
+Caret=32,330

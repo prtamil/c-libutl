@@ -651,6 +651,8 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   char *cur = text;
   int f_ret;
 
+  if (ptrn && *ptrn == '>') ptrn++;
+  
   if (!text || !ptrn || !*ptrn || f == NULL) 
     return 0;
 
