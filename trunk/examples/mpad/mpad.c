@@ -32,21 +32,21 @@
 #include "libutl.h"
 
 
-int tempo          = -1;
-int ppqn           = -1;
-int duty           = -1;
-int velocity       = -1;
-int globalloose_w  = -1;
-int globalloose_q  = -1;
-int globalvelvar_w = -1;
-int globalvelvar_q = -1;
-int globalguiton   = -1;
+static int tempo          = -1;
+static int ppqn           = -1;
+static int duty           = -1;
+static int velocity       = -1;
+static int globalloose_w  = -1;
+static int globalloose_q  = -1;
+static int globalvelvar_w = -1;
+static int globalvelvar_q = -1;
+static int globalguiton   = -1;
 
-tbl_t macros  = NULL;
-chs_t tmptext = NULL;
-chs_t rpl     = NULL;
-vec_t args    = NULL;
-vec_t tracks  = NULL;
+static tbl_t macros  = NULL;
+static chs_t tmptext = NULL;
+static chs_t rpl     = NULL;
+static vec_t args    = NULL;
+static vec_t tracks  = NULL;
 
 #define DO_CLEANUP 0
 
@@ -63,7 +63,7 @@ void merr(char *msg)
 }
 
 
-char *subargs(char *str, pmx_t capt)
+static char *subargs(char *str, pmx_t capt)
 { 
   int k;
   char *r;
@@ -77,7 +77,7 @@ char *subargs(char *str, pmx_t capt)
   return (r? r : utlEmptyString);
 }
 
-char *submacro(char *str, pmx_t capt)
+static char *submacro(char *str, pmx_t capt)
 {
   char *name;
   char *bd;
@@ -125,7 +125,7 @@ char *submacro(char *str, pmx_t capt)
   return rpl;
 }
 
-char *mulstr(char *str, pmx_t capt)
+static char *mulstr(char *str, pmx_t capt)
 {
    int k;
    int l;
@@ -149,7 +149,7 @@ char *mulstr(char *str, pmx_t capt)
    return tmptext;   
 }
 
-char *mulpar(char *str, pmx_t capt)
+static char *mulpar(char *str, pmx_t capt)
 {
    int k;
    int l;
@@ -173,18 +173,18 @@ char *mulpar(char *str, pmx_t capt)
    return tmptext;   
 }
 
-void blankit(char *str, int len)
+static void blankit(char *str, int len)
 {
   while (len-- > 0) *str++ = ' ';
 }
 
-int blankcomment(char *str, pmx_t ret)
+static int blankcomment(char *str, pmx_t ret)
 {
   blankit(str+pmxStart(ret,0), pmxLen(ret,0));
   return 0;
 }
 
-int getmacro(char *str, pmx_t ret)
+static int getmacro(char *str, pmx_t ret)
 {
   chs_t body = NULL;
     
@@ -200,10 +200,10 @@ int getmacro(char *str, pmx_t ret)
   return 0;
 }
 
-chs_t expand(chs_t text)
+static chs_t expand(chs_t text)
 {
   /* get and expand macros */
-  pmxScanStr(text, ">&Km(<?$rnd>)$(<+a>)&K(&b())&K(&N)", getmacro);
+  pmxScanStr(text, "&Km(<?$rnd>)$(<+a>)&K(&b())&K(&N)", getmacro);
   chsSubFun(text, 0,"&*$(<*a>)(&B())",submacro);
 
   /* Multiply */  
@@ -221,7 +221,7 @@ chs_t expand(chs_t text)
   return text;
 }
 
-chs_t parseglobals(chs_t text)
+static chs_t parseglobals(chs_t text)
 {
 
   #define T_TEMPO       x81
@@ -327,13 +327,21 @@ chs_t parseglobals(chs_t text)
   pmxScannerEnd;
 
   /* cleanup spaces */
-  chsSubStr(text,0,"&s"," ");
+  //chsSubStr(text,0,"&s"," ");
   
+  if (tempo          == -1 ) tempo          = 90;
+  if (ppqn           == -1 ) ppqn           = 192;
+  if (duty           == -1 ) duty           = 98;
+  if (velocity       == -1 ) velocity       = 100;
+  if (globalloose_w  == -1 ) globalloose_w  = 0;
+  if (globalvelvar_w == -1 ) globalvelvar_w = 0;
+  if (globalguiton   == -1 ) globalguiton   = 0;
+
   return text;
 }
 
 
-void checktrackstart(chs_t text)
+static void checktrackstart(chs_t text)
 {
   /* It assumes there's a "|" at the beginning.
      See the {loadmp()} function */
@@ -342,7 +350,7 @@ void checktrackstart(chs_t text)
   if (*s == '|') *text = ' ';
 }
 
-int gettrack(char *str, pmx_t capt)
+static int gettrack(char *str, pmx_t capt)
 {
   static int cur_track = -1;
   int len;
@@ -355,16 +363,17 @@ int gettrack(char *str, pmx_t capt)
       cur_track = atoi(str + pmxStart(capt,1));
     else cur_track++;
      
-    trk = vecGetS(tracks,cur_track,NULL);   
+    trk = vecGetS(tracks, cur_track, NULL);   
     chsAddChr(trk,' ');
     chsAddStrL(trk, str+pmxStart(capt ,2), len);
-    vecSetH(tracks, cur_track, trk);   
+    vecSetH(tracks, cur_track, trk); 
+    //fprintf(stderr, "**%s\n",trk);  
   }
     
   return 0;
 }
 
-chs_t loadmp(char *fname)
+static chs_t loadmp(char *fname)
 {
   FILE *f;
   chs_t text = NULL;
@@ -392,7 +401,7 @@ vec_t mp_tracks(char *fname)
   
   text = loadmp(fname);
   
-  pmxScanStr(text, ">&k#&l&n", blankcomment);
+  pmxScanStr(text, "&k#&l&n", blankcomment);
 
   text = parseglobals(text);
   text = expand(text);
@@ -401,10 +410,7 @@ vec_t mp_tracks(char *fname)
   checktrackstart(text);
   
   /* split tracks */
-  pmxScanStr(text,">|&K(&D)&K(<*!|>)",gettrack);
-
-
-  fprintf(stdout,"%s\n\n",text);
+  pmxScanStr(text,"|&K(&D)&K(<*!|>)",gettrack);
 
   if (DO_CLEANUP) {
     chsFree(text);
@@ -415,8 +421,6 @@ vec_t mp_tracks(char *fname)
 
 vec_t mp_tracks_free(vec_t tracks)
 {
-  int k;
-  
   if (DO_CLEANUP) {
     vecFree(tracks);
   }
@@ -429,7 +433,7 @@ int main(int argc, char *argv[])
   int docleanup = 0;
   int k;
   char *trk;
-  vec_t tracks;
+  vec_t tracks = NULL;
   
   if (argc < 2) fname="mm.txt";
   else fname=argv[1]; 
@@ -437,7 +441,7 @@ int main(int argc, char *argv[])
   tracks = mp_tracks(fname);
   
   for (k=0; k< vecCount(tracks); k++) {
-    trk = vecGetP(tracks, k, NULL);
+    trk = vecGetS(tracks, k, NULL);
     if (trk != NULL) 
        fprintf(stdout,"|%d %s\n",k,trk);
   }  
