@@ -211,7 +211,7 @@ static chs_t expand(chs_t text)
   chsSubFun(text,0,"&*(<+! \t*>)&K*&K(&d)&K",mulstr);
   
   /* cleanup parenthesis*/
-  chsSubStr(text,0,"<+=()>","");
+  //chsSubStr(text,0,"<+=()>","");
   
   if (DO_CLEANUP) {
     tblFree(macros);
@@ -246,6 +246,8 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("g<?$lobal>velar&K(&d)&K,&K(<+=0-9g>)",T_GVELVAR)
     pmxTokSet("g<?$lobal>velar&K(&d)",T_GVELVAR)
     pmxTokSet("g<?$lobal>guiton",T_GGUITON) 
+    pmxtokSet("key&K(&d)(<=#b+->)",T_KEY)
+    pmxtokSet("key&K(<=abcdefg>)(<=#b+->)(<?$min$maj>)<?$or>",T_KEY)
     pmxTokSet("<.>",T_ANY) 
                         
   pmxScannerSwitch
@@ -343,8 +345,7 @@ static chs_t parseglobals(chs_t text)
 
 static void checktrackstart(chs_t text)
 {
-  /* It assumes there's a "|" at the beginning.
-     See the {loadmp()} function */
+  /* It assumes there's a "|" at the beginning. See the {loadmp()} function */
   char *s = text+1;
   while(isspace((int)(*s))) s++;
   if (*s == '|') *text = ' ';
@@ -371,6 +372,12 @@ static int gettrack(char *str, pmx_t capt)
   }
     
   return 0;
+}
+
+vec_t tracks2MIDI(vec_t tracks)
+{
+
+
 }
 
 static chs_t loadmp(char *fname)
@@ -410,7 +417,7 @@ vec_t mp_tracks(char *fname)
   checktrackstart(text);
   
   /* split tracks */
-  pmxScanStr(text,"|&K(&D)&K(<*!|>)",gettrack);
+  pmxScanStr(text,"|(&D)&K(<*!|>)",gettrack);
 
   if (DO_CLEANUP) {
     chsFree(text);

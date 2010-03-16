@@ -167,7 +167,7 @@ void movex(char *arg, char *name, vec_t *list)
         to = atoi(pmx(Start,2))-1;
         if (to >= vecCount(*list)) to = vecCount(*list)-1; 
         if (from >= 0 && from < vecCount(*list)) { 
-          *list = vecMove(*list,from,to);
+          /**list = vecMove(*list,from,to);*/
           break;
         }
      default :
@@ -695,7 +695,7 @@ void cmd_help(/*char *arg*/)
   printf("  del s|p  all|n                      Delete a string or a pattern\n");
   printf(" ?export [> \"file\"]                   Print a .pmx switch\n");
   printf("  explain n|\"pattern\"]                Translate pattern to english\n");
-  printf("  move s|p from to                    Move a string or a pattern\n");
+  /*printf("  move s|p from to                    Move a string or a pattern\n");*/
   printf("  help                                This help\n");
   printf(" ?load  [s|p] < \"file\"                Load strings and/or patterns\n");
   printf("  list  [s|p] [> \"file\"]              List or save strings and/or patterns\n");
@@ -711,7 +711,7 @@ void init_cmd()
       cmdtbl(list);
       cmdtbl(help);
       cmdtbl(del);
-      cmdtbl(move);
+      /*cmdtbl(move);*/
       cmdtbl(export);
       cmdtbl(test);
       cmdtbl(trace);
