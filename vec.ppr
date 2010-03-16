@@ -114,6 +114,7 @@ vec
 8=examples\mpad\mpad.c
 9=examples\pmx2c\pmx2c.pmx
 10=examples\pmxshell\pmxshell.pmx
+11=..\middl\middl\src\mf_write.c
 [Selected Project Files]
 Main=
 Selected=examples\mpad\mpad.c
@@ -142,11 +143,14 @@ Caret=19,654
 TopLine=51
 Caret=49,69
 [examples\mpad\mpad.c]
-TopLine=224
-Caret=55,250
+TopLine=430
+Caret=22,326
 [examples\pmx2c\pmx2c.pmx]
 TopLine=3
 Caret=1,1
 [examples\pmxshell\pmxshell.pmx]
 TopLine=695
 Caret=57,702
+[..\middl\middl\src\mf_write.c]
+TopLine=1146
+Caret=2,1181

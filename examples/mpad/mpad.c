@@ -31,16 +31,20 @@
 
 #include "libutl.h"
 
+#define DEFAULT_VAL -99
 
-static int tempo          = -1;
-static int ppqn           = -1;
-static int duty           = -1;
-static int velocity       = -1;
-static int globalloose_w  = -1;
-static int globalloose_q  = -1;
-static int globalvelvar_w = -1;
-static int globalvelvar_q = -1;
-static int globalguiton   = -1;
+static int tempo          = DEFAULT_VAL;
+static int ppqn           = DEFAULT_VAL;
+static int duty           = DEFAULT_VAL;
+static int velocity       = DEFAULT_VAL;
+static int globalloose_w  = DEFAULT_VAL;
+static int globalloose_q  = DEFAULT_VAL;
+static int globalvelvar_w = DEFAULT_VAL;
+static int globalvelvar_q = DEFAULT_VAL;
+static int globalguiton   = DEFAULT_VAL;
+static int meter_num      = DEFAULT_VAL;
+static int meter_den      = DEFAULT_VAL;
+static int key_sig        = DEFAULT_VAL;
 
 static tbl_t macros  = NULL;
 static chs_t tmptext = NULL;
@@ -232,7 +236,9 @@ static chs_t parseglobals(chs_t text)
   #define T_GLOOSE      x86
   #define T_GVELVAR     x87
   #define T_GGUITON     x88 
-  #define T_ANY         x89 
+  #define T_KEY         x89 
+  #define T_METER       x8A 
+  #define T_ANY         x8B 
   
   pmxScannerBegin(text)
                        
@@ -246,22 +252,23 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("g<?$lobal>velar&K(&d)&K,&K(<+=0-9g>)",T_GVELVAR)
     pmxTokSet("g<?$lobal>velar&K(&d)",T_GVELVAR)
     pmxTokSet("g<?$lobal>guiton",T_GGUITON) 
-    pmxtokSet("key&K(&d)(<=#b+->)",T_KEY)
-    pmxtokSet("key&K(<=abcdefg>)(<=#b+->)(<?$min$maj>)<?$or>",T_KEY)
+    pmxTokSet("key&K(<=1-7a-g>)(<=#b+->)(<?$min$maj>)<?$or>",T_KEY)
+    pmxTokSet("meter&K(&d)/(&d)",T_METER)
+    pmxTokSet("&s",T_ANY) 
     pmxTokSet("<.>",T_ANY) 
                         
   pmxScannerSwitch
  
     pmxTokCase(T_TEMPO):
       if (pmxTokLen(1) == 0) merr("Invalid tempo");
-      if (tempo >= 0) merr("Tempo already specified");
+      if (tempo != DEFAULT_VAL) merr("Tempo already specified");
       tempo = atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_RESOLUTION):  
       if (pmxTokLen(1) == 0) merr("Invalid resolution");
-      if (ppqn >= 0) merr("Resolution already specified");
+      if (ppqn != DEFAULT_VAL) merr("Resolution already specified");
       switch (atoi(pmxTokStart(1))) {
         case 0: ppqn = 96;  break; 
         case 1: ppqn = 192;
@@ -274,27 +281,27 @@ static chs_t parseglobals(chs_t text)
 
     pmxTokCase(T_PPQN):        
       if (pmxTokLen(1) == 0) merr("Invalid ppqn");
-      if (ppqn >= 0) merr("ppqn already specified");
+      if (ppqn != DEFAULT_VAL) merr("ppqn already specified");
       ppqn =  atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_DUTY):        
       if (pmxTokLen(1) == 0) merr("Invalid duty");
-      if (duty >= 0) merr("duty already specified");
+      if (duty != DEFAULT_VAL) merr("duty already specified");
       duty =  atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_VELOCITY):    
       if (pmxTokLen(1) == 0) merr("Invalid velocity");
-      if (velocity >= 0) merr("velocity already specified");
+      if (velocity != DEFAULT_VAL) merr("velocity already specified");
       velocity =  atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_GLOOSE):   
-      if (globalloose_w >= 0) merr("globalloose already specified");
+      if (globalloose_w != DEFAULT_VAL) merr("globalloose already specified");
       globalloose_w = atoi(pmxTokStart(1));
       if (pmxTokLen(2) > 0 && *pmxTokStart(2) != 'g')
         globalloose_q = atoi(pmxTokStart(2));
@@ -304,7 +311,7 @@ static chs_t parseglobals(chs_t text)
       continue;
 
     pmxTokCase(T_GVELVAR):   
-      if (globalvelvar_w >= 0) merr("globalvelvar already specified");
+      if (globalvelvar_w != DEFAULT_VAL) merr("globalvelvar already specified");
       globalvelvar_w = atoi(pmxTokStart(1));
       if (pmxTokLen(2) > 0 && *pmxTokStart(2) != 'g')
         globalvelvar_q = atoi(pmxTokStart(2));
@@ -315,8 +322,15 @@ static chs_t parseglobals(chs_t text)
 
     pmxTokCase(T_GGUITON):
       if (pmxTokLen(1) == 0) merr("Invalid globalguiton");
-      if (globalguiton >= 0) merr("globalguiton already specified");
-      globalguiton =  1;
+      if (globalguiton != DEFAULT_VAL) merr("globalguiton already specified");
+      globalguiton = 1;
+      blankit(pmxTokStart(0),pmxTokLen(0));
+      continue;
+
+    pmxTokCase(T_METER):
+      if (meter_num != DEFAULT_VAL) merr("Meter already specified");
+      meter_num = atoi(pmxTokStart(1));
+      meter_den = atoi(pmxTokStart(2));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
@@ -331,13 +345,15 @@ static chs_t parseglobals(chs_t text)
   /* cleanup spaces */
   //chsSubStr(text,0,"&s"," ");
   
-  if (tempo          == -1 ) tempo          = 90;
-  if (ppqn           == -1 ) ppqn           = 192;
-  if (duty           == -1 ) duty           = 98;
-  if (velocity       == -1 ) velocity       = 100;
-  if (globalloose_w  == -1 ) globalloose_w  = 0;
-  if (globalvelvar_w == -1 ) globalvelvar_w = 0;
-  if (globalguiton   == -1 ) globalguiton   = 0;
+  if (tempo          == DEFAULT_VAL )  tempo          = 90;
+  if (ppqn           == DEFAULT_VAL )  ppqn           = 192;
+  if (duty           == DEFAULT_VAL )  duty           = 98;
+  if (velocity       == DEFAULT_VAL )  velocity       = 100;
+  if (globalloose_w  == DEFAULT_VAL )  globalloose_w  = 0;
+  if (globalvelvar_w == DEFAULT_VAL )  globalvelvar_w = 0;
+  if (globalguiton   == DEFAULT_VAL )  globalguiton   = 0;
+  if (meter_num      == DEFAULT_VAL ) {meter_num      = 4; meter_den = 4;}
+  if (key_sig        == DEFAULT_VAL )  key_sig        = 0;
 
   return text;
 }
@@ -374,12 +390,6 @@ static int gettrack(char *str, pmx_t capt)
   return 0;
 }
 
-vec_t tracks2MIDI(vec_t tracks)
-{
-
-
-}
-
 static chs_t loadmp(char *fname)
 {
   FILE *f;
@@ -400,7 +410,6 @@ static chs_t loadmp(char *fname)
   
   return text;
 }
-
 
 vec_t mp_tracks(char *fname)
 {
@@ -434,6 +443,7 @@ vec_t mp_tracks_free(vec_t tracks)
   return NULL;
 }
 
+
 int main(int argc, char *argv[])
 {
   char *fname;
@@ -446,7 +456,7 @@ int main(int argc, char *argv[])
   else fname=argv[1]; 
 
   tracks = mp_tracks(fname);
-  
+   
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetS(tracks, k, NULL);
     if (trk != NULL) 
