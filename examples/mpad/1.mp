@@ -5,6 +5,8 @@
   A b c $pause*2 ,x,x*2
  |9 ($pause()($bdroll x)*3)*2 
  |7 d e- f $bdroll
- |9 iii*2
- |0 y y y
+ |9 iii*2  (C)^D+
+ |0 y y y (C# D D)/4 
+ 
+ 
  
