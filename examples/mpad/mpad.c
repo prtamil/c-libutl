@@ -380,7 +380,7 @@ static int gettrack(char *str, pmx_t capt)
       cur_track = atoi(str + pmxStart(capt,1));
     else cur_track++;
      
-    trk = vecGetS(tracks, cur_track, NULL);   
+    trk = vecGetZS(tracks, cur_track, NULL); 
     chsAddChr(trk,' ');
     chsAddStrL(trk, str+pmxStart(capt ,2), len);
     vecSetH(tracks, cur_track, trk); 

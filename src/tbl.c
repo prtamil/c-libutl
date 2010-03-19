@@ -675,11 +675,28 @@ vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val)
     vt = vec_setsize( vt, (ndx+1) + lsqrt(ndx+1) );
   
   slot = slot_ptr(vt,ndx);
+  
+  if (slot_val_type(slot) != '\0')
+    val_del(slot_val_type(slot),slot_val(slot));
+  
   slot_val_type(slot) = v_type;
   slot_val(slot)      = val;
  
   if (ndx >= vt->count) vt->count = ndx+1;
   
+  return vt;
+}
+
+vec_t vec_setz(vec_t vt, long ndx)
+{
+  vec_slot_t *slot;
+  ndx = fixndx(vt,ndx);
+  
+  if ( ndx < vecSize(vt) ) {
+    slot = slot_ptr(vt,ndx);
+    slot_val_type(slot) = '\0';
+    slot_val(slot).n    = 0;
+  }
   return vt;
 }
 
@@ -780,6 +797,16 @@ val_u vec_get(vec_t vt, long ndx, char v_type, val_u def)
     }
   }
   return def;
+}
+
+
+val_u vec_getz(vec_t vt, long ndx, char v_type, val_u def)
+{
+  val_u val;
+  
+  val = vec_get(vt, ndx, v_type, def);
+  vec_setz(vt,ndx);
+  return val;
 }
 
 

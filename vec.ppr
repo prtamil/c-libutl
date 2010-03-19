@@ -117,7 +117,7 @@ vec
 11=..\middl\middl\src\mf_write.c
 [Selected Project Files]
 Main=
-Selected=examples\mpad\mpad.c
+Selected=src\tbl.c
 [src\chs.h]
 TopLine=204
 Caret=19,237
@@ -131,11 +131,11 @@ Caret=44,883
 TopLine=6
 Caret=15,24
 [src\tbl.h]
-TopLine=221
-Caret=1,249
+TopLine=344
+Caret=1,384
 [src\tbl.c]
-TopLine=634
-Caret=1,634
+TopLine=658
+Caret=2,684
 [src\pmx.c]
 TopLine=624
 Caret=19,654
@@ -143,8 +143,8 @@ Caret=19,654
 TopLine=51
 Caret=49,69
 [examples\mpad\mpad.c]
-TopLine=430
-Caret=22,326
+TopLine=390
+Caret=14,393
 [examples\pmx2c\pmx2c.pmx]
 TopLine=3
 Caret=1,1

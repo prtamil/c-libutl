@@ -325,6 +325,7 @@ vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val);
 #define vecSetN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v)))
 #define vecSetU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v)))
 #define vecSetF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v)))
+#define vecSetZ(vt,n)    vec_setz(vt,n)
 
 
 
@@ -363,6 +364,18 @@ val_u vec_get(vec_t vt, long ndx, char v_type, val_u def);
 #define vecGetN(vt,n,d) valGetN(vec_get(vt,n,'N',valN(d)))
 #define vecGetU(vt,n,d) valGetU(vec_get(vt,n,'U',valU(d)))
 #define vecGetF(vt,n,d) valGetF(vec_get(vt,n,'F',valF(d)))
+
+val_u vec_getz(vec_t vt, long ndx, char v_type, val_u def);
+
+#define vecGetZM(vt,n,d) valGetM(vec_getz(vt,n,'M',valM(d)))
+#define vecGetZT(vt,n,d) valGetT(vec_getz(vt,n,'T',valT(d)))
+#define vecGetZV(vt,n,d) valGetV(vec_getz(vt,n,'V',valV(d)))
+#define vecGetZR(vt,n,d) valGetR(vec_getz(vt,n,'R',valR(d)))
+#define vecGetZP(vt,n,d) valGetP(vec_getz(vt,n,'P',valP(d)))
+#define vecGetZS(vt,n,d) valGetS(vec_getz(vt,n,'S',valS(d)))
+#define vecGetZN(vt,n,d) valGetN(vec_getz(vt,n,'N',valN(d)))
+#define vecGetZU(vt,n,d) valGetU(vec_getz(vt,n,'U',valU(d)))
+#define vecGetZF(vt,n,d) valGetF(vec_getz(vt,n,'F',valF(d)))
 
 char vecType(vec_t vt, long ndx);
 
