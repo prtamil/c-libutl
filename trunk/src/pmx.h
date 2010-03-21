@@ -52,8 +52,9 @@ unsigned char pmxToken(pmx_t mtc);
 
 #define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
 
-#define pmxTokEOF  x7F
-#define pmxTokNONE x00
+#define pmxTokEOF     x7F
+#define pmxTokIGNORE  x80
+#define pmxTokNONE    x00
 
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
