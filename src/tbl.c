@@ -665,18 +665,18 @@ long vecCount(vec_t vt)
   return vt? vt->count : 0;
 }
 
-vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val)
+vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val, int del)
 {
   vec_slot_t *slot;
   
   ndx = fixndx(vt,ndx);
   
-  if ( ndx >= vecSize(vt) )
+  if (ndx >= vecSize(vt) )
     vt = vec_setsize( vt, (ndx+1) + lsqrt(ndx+1) );
   
   slot = slot_ptr(vt,ndx);
   
-  if (slot_val_type(slot) != '\0')
+  if (del && slot_val_type(slot) != '\0')
     val_del(slot_val_type(slot),slot_val(slot));
   
   slot_val_type(slot) = v_type;
@@ -755,7 +755,7 @@ vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val)
   ndx = fixndx(vt,ndx);
   
   if (!vt || ndx >= vt->count )
-    return vec_set(vt, ndx, v_type, val);
+    return vec_set(vt, ndx, v_type, val, 0);
     
   vt = vec_move(vt,ndx,ndx+1);
   
@@ -843,7 +843,7 @@ vec_t vec_split(char *s, char *sep, char *trim, int dup)
        while (pp > q  &&  strchr(trim,pp[-1])) --pp;
        
      if (dup) {
-       t = vec_set(t, k++, 'S', valS(chsDupL(q, pp-q)));
+       t = vec_set(t, k++, 'S', valS(chsDupL(q, pp-q)),0);
        /*fprintf(stderr,"[%s]\n",vecGetS(t,k-1,"??"));*/
      }
      else {

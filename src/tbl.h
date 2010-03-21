@@ -313,21 +313,29 @@ long vecSize(vec_t vt);
 long vecCount(vec_t vt);
 
 
-vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val);
+vec_t vec_set(vec_t vt, long ndx, char v_type, val_u val, int del);
 
-#define vecSetM(vt,n,v)  (vt = vec_set(vt, n, 'M', valM(v)))
-#define vecSetT(vt,n,v)  (vt = vec_set(vt, n, 'T', valT(v)))
-#define vecSetV(vt,n,v)  (vt = vec_set(vt, n, 'V', valV(v)))
-#define vecSetR(vt,n,v)  (vt = vec_set(vt, n, 'R', valR(v)))
-#define vecSetP(vt,n,v)  (vt = vec_set(vt, n, 'P', valP(v)))
-#define vecSetS(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(val_Sdup(v))))
-#define vecSetH(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(v)))
-#define vecSetN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v)))
-#define vecSetU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v)))
-#define vecSetF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v)))
-#define vecSetZ(vt,n)    vec_setz(vt,n)
+#define vecSetM(vt,n,v)  (vt = vec_set(vt, n, 'M', valM(v),1))
+#define vecSetT(vt,n,v)  (vt = vec_set(vt, n, 'T', valT(v),1))
+#define vecSetV(vt,n,v)  (vt = vec_set(vt, n, 'V', valV(v),1))
+#define vecSetR(vt,n,v)  (vt = vec_set(vt, n, 'R', valR(v),1))
+#define vecSetP(vt,n,v)  (vt = vec_set(vt, n, 'P', valP(v),1))
+#define vecSetS(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(val_Sdup(v)),1))
+#define vecSetH(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(v),1))
+#define vecSetN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v),1))
+#define vecSetU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v),1))
+#define vecSetF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v),1))
 
-
+#define vecSetZM(vt,n,v)  (vt = vec_set(vt, n, 'M', valM(v),0))
+#define vecSetZT(vt,n,v)  (vt = vec_set(vt, n, 'T', valT(v),0))
+#define vecSetZV(vt,n,v)  (vt = vec_set(vt, n, 'V', valV(v),0))
+#define vecSetZR(vt,n,v)  (vt = vec_set(vt, n, 'R', valR(v),0))
+#define vecSetZP(vt,n,v)  (vt = vec_set(vt, n, 'P', valP(v),0))
+#define vecSetZS(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(val_Sdup(v)),0))
+#define vecSetZH(vt,n,v)  (vt = vec_set(vt, n, 'S', valS(v),0))
+#define vecSetZN(vt,n,v)  (vt = vec_set(vt, n, 'N', valN(v),0))
+#define vecSetZU(vt,n,v)  (vt = vec_set(vt, n, 'U', valU(v),0))
+#define vecSetZF(vt,n,v)  (vt = vec_set(vt, n, 'F', valF(v),0))
 
 #define vecAddM(vt,v)   vecSetM(vt,vecCount(vt),v)
 #define vecAddT(vt,v)   vecSetT(vt,vecCount(vt),v)
