@@ -31,6 +31,8 @@
 
 #include "libutl.h"
 
+unsigned char instr_name(char *name);
+
 #define DEFAULT_VAL -99
 
 static int tempo          = DEFAULT_VAL;
@@ -421,9 +423,13 @@ chs_t parsetrack(chs_t trk)
   char  cur_acc           = ' ';
   short cur_notelen       = 4;
   
+  unsigned char cur_channel        = 0;
+  
   int  d;
   char n;
   char o;
+  
+  chsCpy(new_trk,"track\n");  
   
   #define T_NOTE        x91
   #define T_STRESS      x92
@@ -433,10 +439,14 @@ chs_t parsetrack(chs_t trk)
   #define T_DEFAULT     x96
   #define T_XNOTE       x97
   #define T_XPAUSE      x98
+  #define T_CHANNEL     x99
   #define T_ERROR       x9F
   
   pmxScannerBegin(trk)
                        
+    pmxTokSet("ch&K(&d)",T_CHANNEL)
+    pmxTokSet("i&K(&d)()",T_INSTR)
+    pmxTokSet("i&K()(<+q>)",T_INSTR)
     pmxTokSet("(<?=,'>)(<=a-gx><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)",T_NOTE)
     pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_XNOTE)
@@ -467,20 +477,24 @@ chs_t parsetrack(chs_t trk)
       }
       
       d = (1+pmxTokLen(5));
-      chsAddFmt(new_trk,"%08lx note %c%c %d %d/%d\n", 
-                       cur_tick, cur_note, cur_acc, cur_octave, d, cur_notelen);
-      cur_tick += (ppqn / cur_notelen) * d;
+      chsAddFmt(new_trk,"note %c%c %d %d/%d\n", cur_note, cur_acc, cur_octave, d, cur_notelen);
       continue;
 
     pmxTokCase(T_PAUSE):
       if (pmxTokLen(1) > 0)  cur_notelen = atoi(pmxTokStart(1));
         
       d = (1+pmxTokLen(2));
-      chsAddFmt(new_trk,"%08lx pause %d/%d\n", 
-                       cur_tick,  d, cur_notelen);
-      cur_tick += (ppqn / cur_notelen) * d;
+      chsAddFmt(new_trk,"pause %d/%d\n", d, cur_notelen);
       continue;
 
+    pmxTokCase(T_CHANNEL):
+      d = atoi(pmxTokStart(1)) -1;
+      if (0 <= d && d <= 15 ) {
+        cur_channel = d;
+        chsAddFmt(new_trk,"ch %d\n",cur_channel);
+      }
+      continue;
+      
     pmxTokCase(pmxTokIGNORE):
       continue;
       
@@ -493,7 +507,7 @@ chs_t parsetrack(chs_t trk)
      
   pmxScannerEnd;
   
-  chsAddFmt(new_trk,"%08lx end\n",cur_tick);
+  chsAddStr(new_trk,"end\n");
   
   chsFree(trk);
   return new_trk;

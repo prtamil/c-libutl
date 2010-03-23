@@ -11,12 +11,12 @@ NAME=mpad
 
 include $(TOP)config.mk
 
-$(NAME)$(_EXE): $(CHKLIB) $(NAME)$(_OBJ)
-	$(LN)$@ $(NAME)$(_OBJ) -lutl
+$(NAME)$(_EXE): $(CHKLIB) $(NAME)$(_OBJ) instr$(_OBJ)
+	$(LN)$@ $(NAME)$(_OBJ) instr$(_OBJ) -lutl
 
 clean:
 	$(RM) $(NAME)$(_EXE)
-	$(RM) $(NAME)$(_OBJ)
+	$(RM) $(NAME)$(_OBJ) instr$(_OBJ)
 	$(RM) gmon.out
 
 include $(TOP)targets.mk
