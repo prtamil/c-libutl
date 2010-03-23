@@ -31,7 +31,7 @@
 
 #include "libutl.h"
 
-unsigned char instr_name(char *name);
+unsigned char instr_name(char *name, int len);
 
 #define DEFAULT_VAL -99
 
@@ -422,13 +422,15 @@ chs_t parsetrack(chs_t trk)
   char  cur_note          = 'c';
   char  cur_acc           = ' ';
   short cur_notelen       = 4;
+  char  cur_instr         = 0;
   
   unsigned char cur_channel        = 0;
   
   int  d;
   char n;
   char o;
-  
+  char *t;
+     
   chsCpy(new_trk,"track\n");  
   
   #define T_NOTE        x91
@@ -440,6 +442,7 @@ chs_t parsetrack(chs_t trk)
   #define T_XNOTE       x97
   #define T_XPAUSE      x98
   #define T_CHANNEL     x99
+  #define T_INSTR       x9A
   #define T_ERROR       x9F
   
   pmxScannerBegin(trk)
@@ -447,7 +450,8 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("ch&K(&d)",T_CHANNEL)
     pmxTokSet("i&K(&d)()",T_INSTR)
     pmxTokSet("i&K()(<+q>)",T_INSTR)
-    pmxTokSet("(<?=,'>)(<=a-gx><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
+    pmxTokSet("(<?=,'>)(<=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
+    pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)",T_NOTE)
     pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_XNOTE)
     pmxTokSet("p<?=/>(<*=0-9>)&K(<*==&->)",T_PAUSE)
@@ -484,6 +488,7 @@ chs_t parsetrack(chs_t trk)
       if (pmxTokLen(1) > 0)  cur_notelen = atoi(pmxTokStart(1));
         
       d = (1+pmxTokLen(2));
+      fprintf(stderr,"*** %d\n",d);
       chsAddFmt(new_trk,"pause %d/%d\n", d, cur_notelen);
       continue;
 
@@ -492,6 +497,31 @@ chs_t parsetrack(chs_t trk)
       if (0 <= d && d <= 15 ) {
         cur_channel = d;
         chsAddFmt(new_trk,"ch %d\n",cur_channel);
+      }
+      continue;
+      
+    pmxTokCase(T_INSTR):
+      if (pmxTokLen(2)>0) {
+        d = instr_name(pmxTokStart(2), pmxTokLen(2));
+        if (d & 0x80) {
+          if (cur_channel != 9) {
+            chsAddStr(new_trk,"ch 9\n");
+            cur_channel = 9;
+          }
+          d &= 0x7F;
+          t = "c c#d d#e f f#g g#a a#b "+(d % 12);
+          cur_note = t[0]; cur_acc = t[1];
+          cur_octave = d / 12;
+          continue;
+        }
+      }
+      else {
+        d = atoi(pmxTokStart(1))-1;
+      }
+      if (d < 0 || d > 127 ) d = 0;
+      if (d != cur_instr) {
+        chsAddFmt(new_trk,"instr %d\n",d);
+        cur_instr = d;
       }
       continue;
       
