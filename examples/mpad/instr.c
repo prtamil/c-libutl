@@ -299,9 +299,9 @@ static unsigned long int phash(char *key, int   len)
   return rsl;
 }
 
-unsigned char instr_name(char *name)
+unsigned char instr_name(char *name, int len)
 {
-  unsigned long int n= phash(name,strlen(name));
-  if (strcmp(name,instr[n]+1) == 0) return instr[n][0];  
+  unsigned long int n= phash(name,len);
+  if (strncmp(name,instr[n]+1,len) == 0) return instr[n][0];  
   return 0;
 }

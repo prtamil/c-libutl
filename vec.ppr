@@ -20,7 +20,7 @@ vec
 		build\msys_mingw.sh
 		build\win_build.bat
 	+vec
-		+doc
+		-doc
 			doc\stk.gif
 			doc\pmx.txt
 			doc\usersguide.txt
@@ -28,8 +28,9 @@ vec
 			+mpad
 				examples\mpad\mpad.c
 				examples\mpad\mm.txt
-				examples\mpad\2.mp
-			+scanner
+				examples\mpad\3.mp
+				examples\mpad\instr.c
+			-scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
 			+uncomment
@@ -104,34 +105,34 @@ vec
 		mk.bat
 [Open project files]
 0=examples\mpad\2.mp
-1=examples\mpad\mpad.c
-2=..\middl\middl\src\mf_instruments.h
-3=..\middl\middl\src\mf_instruments.c
-4=..\cmph-0.9\configure
-5=..\bperf\phash.c
-6=..\bperf\phash.h
-7=..\bperf\k1.txt
-8=..\bperf\lookupa.c
-9=..\bperf\standard.h
-10=examples\mpad\instr.txt
-11=examples\mpad\instr.c
-12=examples\mpad\makefile
-13=doc\usersguide.txt
+1=examples\mpad\3.mp
+2=examples\mpad\mpad.c
+3=..\middl\middl\src\mf_instruments.h
+4=..\middl\middl\src\mf_instruments.c
+5=..\cmph-0.9\configure
+6=..\bperf\phash.c
+7=..\bperf\standard.h
+8=examples\mpad\makefile
+9=doc\usersguide.txt
+10=examples\mpad\instr.c
 [Selected Project Files]
 Main=
-Selected=..\bperf\k1.txt
+Selected=examples\mpad\mpad.c
 [examples\mpad\2.mp]
 TopLine=1
-Caret=1,4
+Caret=2,12
+[examples\mpad\3.mp]
+TopLine=1
+Caret=22,1
 [examples\mpad\mpad.c]
-TopLine=442
-Caret=27,449
-Mark1=1,498
+TopLine=574
+Caret=19,535
+Mark1=1,528
 [..\middl\middl\src\mf_instruments.h]
 TopLine=235
 Caret=1,1
 [..\middl\middl\src\mf_instruments.c]
-TopLine=141
+TopLine=211
 Caret=41,250
 [..\cmph-0.9\configure]
 TopLine=1
@@ -139,27 +140,15 @@ Caret=1,12
 [..\bperf\phash.c]
 TopLine=1
 Caret=1,12
-[..\bperf\phash.h]
-TopLine=1
-Caret=1,1
-[..\bperf\k1.txt]
-TopLine=157
-Caret=15,181
-[..\bperf\lookupa.c]
-TopLine=23
-Caret=1,43
 [..\bperf\standard.h]
 TopLine=2
 Caret=28,21
-[examples\mpad\instr.txt]
-TopLine=1
-Caret=29,1
-[examples\mpad\instr.c]
-TopLine=155
-Caret=25,136
 [examples\mpad\makefile]
 TopLine=1
 Caret=16,20
 [doc\usersguide.txt]
 TopLine=445
 Caret=5,482
+[examples\mpad\instr.c]
+TopLine=1
+Caret=12,13
