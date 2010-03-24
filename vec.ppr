@@ -115,9 +115,11 @@ vec
 8=examples\mpad\makefile
 9=doc\usersguide.txt
 10=examples\mpad\instr.c
+11=src\tbl.h
+12=src\tbl.c
 [Selected Project Files]
 Main=
-Selected=examples\mpad\mpad.c
+Selected=src\tbl.h
 [examples\mpad\2.mp]
 TopLine=1
 Caret=2,12
@@ -125,7 +127,7 @@ Caret=2,12
 TopLine=1
 Caret=22,1
 [examples\mpad\mpad.c]
-TopLine=574
+TopLine=535
 Caret=19,535
 Mark1=1,528
 [..\middl\middl\src\mf_instruments.h]
@@ -152,3 +154,9 @@ Caret=5,482
 [examples\mpad\instr.c]
 TopLine=1
 Caret=12,13
+[src\tbl.h]
+TopLine=321
+Caret=1,64
+[src\tbl.c]
+TopLine=165
+Caret=36,185
