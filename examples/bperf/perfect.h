@@ -87,6 +87,7 @@ struct key
   ub4         a_k;                            /* a, of the key maps to (a,b) */
   ub4         b_k;                            /* b, of the key maps to (a,b) */
   struct key *nextb_k;                               /* next key with this b */
+  ub4         value_k;
 };
 typedef  struct key  key;
 
