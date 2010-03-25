@@ -13,211 +13,211 @@
 #include "libutl.h"
 
 lutBeginSN(instr)
-   {   "abassdrum",                    (0x80 |  35) },
-   {   "accordion",                    21  },
-   {   "acousticbass",                 32  },
-   {   "acousticgrand",                 0  },
-   {   "agogo",                       113  },
-   {   "altosax",                      65  },
-   {   "applause",                    126  },
-   {   "asnare",                       (0x80 |  38) },
-   {   "b2",                           (0x80 |  35) },
-   {   "bagpipe",                     109  },
-   {   "banjo",                       105  },
-   {   "baritonesax",                  67  },
-   {   "bassdrum",                     (0x80 |  36) },
-   {   "bassoon",                      70  },
-   {   "bd",                           (0x80 |  36) },
-   {   "birdtweet",                   123  },
-   {   "blownbottle",                  76  },
-   {   "brasssection",                 61  },
-   {   "breathnoise",                 121  },
-   {   "brightacoustic",                1  },
-   {   "c2",                           (0x80 |  57) },
-   {   "cabasa",                       (0x80 |  69) },
-   {   "cb",                           (0x80 |  56) },
-   {   "cc",                           (0x80 |  49) },
-   {   "celesta",                       8  },
-   {   "cello",                        42  },
-   {   "ch",                           (0x80 |  42) },
-   {   "chihat",                       (0x80 |  42) },
-   {   "chinesecy",                    (0x80 |  52) },
-   {   "choiraahs",                    52  },
-   {   "churchorgan",                  19  },
-   {   "clarinet",                     71  },
-   {   "claves",                       (0x80 |  75) },
-   {   "clavinet",                      7  },
-   {   "contrabass",                   43  },
-   {   "cowbell",                      (0x80 |  56) },
-   {   "crashcy",                      (0x80 |  49) },
-   {   "crashcy2",                     (0x80 |  57) },
-   {   "distortionguitar",             30  },
-   {   "drawbarorgan",                 16  },
-   {   "dulcimer",                     15  },
-   {   "ebassfinger",                  33  },
-   {   "ebasspick",                    34  },
-   {   "ecleanguitar",                 27  },
-   {   "ejazzguitar",                  26  },
-   {   "electricgrand",                 2  },
-   {   "emutedguitar",                 28  },
-   {   "englishhorn",                  69  },
-   {   "epiano1",                       4  },
-   {   "epiano2",                       5  },
-   {   "esnare",                       (0x80 |  40) },
-   {   "fiddle",                      110  },
-   {   "flute",                        73  },
-   {   "frenchhorn",                   60  },
-   {   "fretlessbass",                 35  },
-   {   "fxatmosphere",                 99  },
-   {   "fxbrightness",                100  },
-   {   "fxcrystal",                    98  },
-   {   "fxechoes",                    102  },
-   {   "fxgoblins",                   101  },
-   {   "fxrain",                       96  },
-   {   "fxscifi",                     103  },
-   {   "fxsoundtrack",                 97  },
-   {   "glockenspiel",                  9  },
-   {   "guitarfretnoise",             120  },
-   {   "guitarharmonics",              31  },
-   {   "gunshot",                     127  },
-   {   "hagogo",                       (0x80 |  67) },
-   {   "handclap",                     (0x80 |  39) },
-   {   "harmonica",                    22  },
-   {   "harpsichord",                   6  },
-   {   "hbongo",                       (0x80 |  60) },
-   {   "hc",                           (0x80 |  39) },
-   {   "helicopter",                  125  },
-   {   "hfloortom",                    (0x80 |  43) },
-   {   "hh",                           (0x80 |  44) },
-   {   "hmidtom",                      (0x80 |  48) },
-   {   "honkytonk",                     3  },
-   {   "htimbale",                     (0x80 |  65) },
-   {   "htom",                         (0x80 |  50) },
-   {   "hwoodblock",                   (0x80 |  76) },
-   {   "kalimba",                     108  },
-   {   "koto",                        107  },
-   {   "lagogo",                       (0x80 |  68) },
-   {   "lbongo",                       (0x80 |  61) },
-   {   "lconga",                       (0x80 |  64) },
-   {   "leadbasslead",                 87  },
-   {   "leadcalliope",                 82  },
-   {   "leadcharang",                  84  },
-   {   "leadchiff",                    83  },
-   {   "leadfifths",                   86  },
-   {   "leadsawtooth",                 81  },
-   {   "leadsquare",                   80  },
-   {   "leadvoice",                    85  },
-   {   "lfloortom",                    (0x80 |  41) },
-   {   "lguiro",                       (0x80 |  74) },
-   {   "lmidtom",                      (0x80 |  47) },
-   {   "ltimbale",                     (0x80 |  66) },
-   {   "ltom",                         (0x80 |  45) },
-   {   "lwhistle",                     (0x80 |  72) },
-   {   "lwoodblock",                   (0x80 |  77) },
-   {   "maracas",                      (0x80 |  70) },
-   {   "marimba",                      12  },
-   {   "mcuica",                       (0x80 |  78) },
-   {   "melodictom",                  117  },
-   {   "mhconga",                      (0x80 |  62) },
-   {   "mtriangle",                    (0x80 |  80) },
-   {   "musicbox",                     10  },
-   {   "mutedtrumpet",                 59  },
-   {   "nylonstringguitar",            24  },
-   {   "oboe",                         68  },
-   {   "ocarina",                      79  },
-   {   "ocuica",                       (0x80 |  79) },
-   {   "oh",                           (0x80 |  46) },
-   {   "ohconga",                      (0x80 |  63) },
-   {   "ohihat",                       (0x80 |  46) },
-   {   "orchestrahit",                 55  },
-   {   "orchestralstrings",            46  },
-   {   "otriangle",                    (0x80 |  81) },
-   {   "overdrivenguitar",             29  },
-   {   "padbowed",                     92  },
-   {   "padchoir",                     91  },
-   {   "padhalo",                      94  },
-   {   "padmetallic",                  93  },
-   {   "padnewage",                    88  },
-   {   "padpolysynth",                 90  },
-   {   "padsweep",                     95  },
-   {   "padwarm",                      89  },
-   {   "panflute",                     75  },
-   {   "pedhihat",                     (0x80 |  44) },
-   {   "percussiveorgan",              17  },
-   {   "piccolo",                      72  },
-   {   "pizzicatostrings",             45  },
-   {   "r2",                           (0x80 |  59) },
-   {   "rb",                           (0x80 |  53) },
-   {   "rc",                           (0x80 |  51) },
-   {   "recorder",                     74  },
-   {   "reedorgan",                    20  },
-   {   "reversecymbal",               119  },
-   {   "ridebell",                     (0x80 |  53) },
-   {   "ridecy",                       (0x80 |  51) },
-   {   "ridecy2",                      (0x80 |  59) },
-   {   "rockorgan",                    18  },
-   {   "rs",                           (0x80 |  37) },
-   {   "s2",                           (0x80 |  40) },
-   {   "sc",                           (0x80 |  55) },
-   {   "sd",                           (0x80 |  38) },
-   {   "seashore",                    122  },
-   {   "sguiro",                       (0x80 |  73) },
-   {   "shamisen",                    106  },
-   {   "shanai",                      111  },
-   {   "sidestick",                    (0x80 |  37) },
-   {   "sitar",                       104  },
-   {   "skakuhachi",                   77  },
-   {   "slapbass1",                    36  },
-   {   "slapbass2",                    37  },
-   {   "sopranosax",                   64  },
-   {   "splashcy",                     (0x80 |  55) },
-   {   "steeldrums",                  114  },
-   {   "steelstringguitar",            25  },
-   {   "stringensemble1",              48  },
-   {   "stringensemble2",              49  },
-   {   "swhistle",                     (0x80 |  71) },
-   {   "synthbass1",                   38  },
-   {   "synthbass2",                   39  },
-   {   "synthbrass1",                  62  },
-   {   "synthbrass2",                  63  },
-   {   "synthdrum",                   118  },
-   {   "synthstrings1",                50  },
-   {   "synthstrings2",                51  },
-   {   "synthvoice",                   54  },
-   {   "t1",                           (0x80 |  41) },
-   {   "t2",                           (0x80 |  43) },
-   {   "t3",                           (0x80 |  45) },
-   {   "t4",                           (0x80 |  47) },
-   {   "t5",                           (0x80 |  48) },
-   {   "t6",                           (0x80 |  50) },
-   {   "ta",                           (0x80 |  54) },
-   {   "taikodrum",                   116  },
-   {   "tambourine",                   (0x80 |  54) },
-   {   "tangoaccordion",               23  },
-   {   "tc",                           (0x80 |  52) },
-   {   "telephonering",               124  },
-   {   "tenorsax",                     66  },
-   {   "timpani",                      47  },
-   {   "tinklebell",                  112  },
-   {   "tom1",                         (0x80 |  41) },
-   {   "tom2",                         (0x80 |  43) },
-   {   "tom3",                         (0x80 |  45) },
-   {   "tom4",                         (0x80 |  47) },
-   {   "tom5",                         (0x80 |  48) },
-   {   "tom6",                         (0x80 |  50) },
-   {   "tremolostrings",               44  },
-   {   "trombone",                     57  },
-   {   "trumpet",                      56  },
-   {   "tuba",                         58  },
-   {   "tubularbells",                 14  },
-   {   "vibraphone",                   11  },
-   {   "vibraslap",                    (0x80 |  58) },
-   {   "viola",                        41  },
-   {   "violin",                       40  },
-   {   "voiceoohs",                    53  },
-   {   "whistle",                      78  },
-   {   "woodblock",                   115  },
-   {   "xylophone",                    13  },
+    lutItem("abassdrum",            (0x80 |  35))
+    lutItem("accordion",                      21)
+    lutItem("acousticbass",                   32)
+    lutItem("acousticgrand",                   0)
+    lutItem("agogo",                         113)
+    lutItem("altosax",                        65)
+    lutItem("applause",                      126)
+    lutItem("asnare",               (0x80 |  38))
+    lutItem("b2",                   (0x80 |  35))
+    lutItem("bagpipe",                       109)
+    lutItem("banjo",                         105)
+    lutItem("baritonesax",                    67)
+    lutItem("bassdrum",             (0x80 |  36))
+    lutItem("bassoon",                        70)
+    lutItem("bd",                   (0x80 |  36))
+    lutItem("birdtweet",                     123)
+    lutItem("blownbottle",                    76)
+    lutItem("brasssection",                   61)
+    lutItem("breathnoise",                   121)
+    lutItem("brightacoustic",                  1)
+    lutItem("c2",                   (0x80 |  57))
+    lutItem("cabasa",               (0x80 |  69))
+    lutItem("cb",                   (0x80 |  56))
+    lutItem("cc",                   (0x80 |  49))
+    lutItem("celesta",                         8)
+    lutItem("cello",                          42)
+    lutItem("ch",                   (0x80 |  42))
+    lutItem("chihat",               (0x80 |  42))
+    lutItem("chinesecy",            (0x80 |  52))
+    lutItem("choiraahs",                      52)
+    lutItem("churchorgan",                    19)
+    lutItem("clarinet",                       71)
+    lutItem("claves",               (0x80 |  75))
+    lutItem("clavinet",                        7)
+    lutItem("contrabass",                     43)
+    lutItem("cowbell",              (0x80 |  56))
+    lutItem("crashcy",              (0x80 |  49))
+    lutItem("crashcy2",             (0x80 |  57))
+    lutItem("distortionguitar",               30)
+    lutItem("drawbarorgan",                   16)
+    lutItem("dulcimer",                       15)
+    lutItem("ebassfinger",                    33)
+    lutItem("ebasspick",                      34)
+    lutItem("ecleanguitar",                   27)
+    lutItem("ejazzguitar",                    26)
+    lutItem("electricgrand",                   2)
+    lutItem("emutedguitar",                   28)
+    lutItem("englishhorn",                    69)
+    lutItem("epiano1",                         4)
+    lutItem("epiano2",                         5)
+    lutItem("esnare",               (0x80 |  40))
+    lutItem("fiddle",                        110)
+    lutItem("flute",                          73)
+    lutItem("frenchhorn",                     60)
+    lutItem("fretlessbass",                   35)
+    lutItem("fxatmosphere",                   99)
+    lutItem("fxbrightness",                  100)
+    lutItem("fxcrystal",                      98)
+    lutItem("fxechoes",                      102)
+    lutItem("fxgoblins",                     101)
+    lutItem("fxrain",                         96)
+    lutItem("fxscifi",                       103)
+    lutItem("fxsoundtrack",                   97)
+    lutItem("glockenspiel",                    9)
+    lutItem("guitarfretnoise",               120)
+    lutItem("guitarharmonics",                31)
+    lutItem("gunshot",                       127)
+    lutItem("hagogo",               (0x80 |  67))
+    lutItem("handclap",             (0x80 |  39))
+    lutItem("harmonica",                      22)
+    lutItem("harpsichord",                     6)
+    lutItem("hbongo",               (0x80 |  60))
+    lutItem("hc",                   (0x80 |  39))
+    lutItem("helicopter",                    125)
+    lutItem("hfloortom",            (0x80 |  43))
+    lutItem("hh",                   (0x80 |  44))
+    lutItem("hmidtom",              (0x80 |  48))
+    lutItem("honkytonk",                       3)
+    lutItem("htimbale",             (0x80 |  65))
+    lutItem("htom",                 (0x80 |  50))
+    lutItem("hwoodblock",           (0x80 |  76))
+    lutItem("kalimba",                       108)
+    lutItem("koto",                          107)
+    lutItem("lagogo",               (0x80 |  68))
+    lutItem("lbongo",               (0x80 |  61))
+    lutItem("lconga",               (0x80 |  64))
+    lutItem("leadbasslead",                   87)
+    lutItem("leadcalliope",                   82)
+    lutItem("leadcharang",                    84)
+    lutItem("leadchiff",                      83)
+    lutItem("leadfifths",                     86)
+    lutItem("leadsawtooth",                   81)
+    lutItem("leadsquare",                     80)
+    lutItem("leadvoice",                      85)
+    lutItem("lfloortom",            (0x80 |  41))
+    lutItem("lguiro",               (0x80 |  74))
+    lutItem("lmidtom",              (0x80 |  47))
+    lutItem("ltimbale",             (0x80 |  66))
+    lutItem("ltom",                 (0x80 |  45))
+    lutItem("lwhistle",             (0x80 |  72))
+    lutItem("lwoodblock",           (0x80 |  77))
+    lutItem("maracas",              (0x80 |  70))
+    lutItem("marimba",                        12)
+    lutItem("mcuica",               (0x80 |  78))
+    lutItem("melodictom",                    117)
+    lutItem("mhconga",              (0x80 |  62))
+    lutItem("mtriangle",            (0x80 |  80))
+    lutItem("musicbox",                       10)
+    lutItem("mutedtrumpet",                   59)
+    lutItem("nylonstringguitar",              24)
+    lutItem("oboe",                           68)
+    lutItem("ocarina",                        79)
+    lutItem("ocuica",               (0x80 |  79))
+    lutItem("oh",                   (0x80 |  46))
+    lutItem("ohconga",              (0x80 |  63))
+    lutItem("ohihat",               (0x80 |  46))
+    lutItem("orchestrahit",                   55)
+    lutItem("orchestralstrings",              46)
+    lutItem("otriangle",            (0x80 |  81))
+    lutItem("overdrivenguitar",               29)
+    lutItem("padbowed",                       92)
+    lutItem("padchoir",                       91)
+    lutItem("padhalo",                        94)
+    lutItem("padmetallic",                    93)
+    lutItem("padnewage",                      88)
+    lutItem("padpolysynth",                   90)
+    lutItem("padsweep",                       95)
+    lutItem("padwarm",                        89)
+    lutItem("panflute",                       75)
+    lutItem("pedhihat",             (0x80 |  44))
+    lutItem("percussiveorgan",                17)
+    lutItem("piccolo",                        72)
+    lutItem("pizzicatostrings",               45)
+    lutItem("r2",                   (0x80 |  59))
+    lutItem("rb",                   (0x80 |  53))
+    lutItem("rc",                   (0x80 |  51))
+    lutItem("recorder",                       74)
+    lutItem("reedorgan",                      20)
+    lutItem("reversecymbal",                 119)
+    lutItem("ridebell",             (0x80 |  53))
+    lutItem("ridecy",               (0x80 |  51))
+    lutItem("ridecy2",              (0x80 |  59))
+    lutItem("rockorgan",                      18)
+    lutItem("rs",                   (0x80 |  37))
+    lutItem("s2",                   (0x80 |  40))
+    lutItem("sc",                   (0x80 |  55))
+    lutItem("sd",                   (0x80 |  38))
+    lutItem("seashore",                      122)
+    lutItem("sguiro",               (0x80 |  73))
+    lutItem("shamisen",                      106)
+    lutItem("shanai",                        111)
+    lutItem("sidestick",            (0x80 |  37))
+    lutItem("sitar",                         104)
+    lutItem("skakuhachi",                     77)
+    lutItem("slapbass1",                      36)
+    lutItem("slapbass2",                      37)
+    lutItem("sopranosax",                     64)
+    lutItem("splashcy",             (0x80 |  55))
+    lutItem("steeldrums",                    114)
+    lutItem("steelstringguitar",              25)
+    lutItem("stringensemble1",                48)
+    lutItem("stringensemble2",                49)
+    lutItem("swhistle",             (0x80 |  71))
+    lutItem("synthbass1",                     38)
+    lutItem("synthbass2",                     39)
+    lutItem("synthbrass1",                    62)
+    lutItem("synthbrass2",                    63)
+    lutItem("synthdrum",                     118)
+    lutItem("synthstrings1",                  50)
+    lutItem("synthstrings2",                  51)
+    lutItem("synthvoice",                     54)
+    lutItem("t1",                   (0x80 |  41))
+    lutItem("t2",                   (0x80 |  43))
+    lutItem("t3",                   (0x80 |  45))
+    lutItem("t4",                   (0x80 |  47))
+    lutItem("t5",                   (0x80 |  48))
+    lutItem("t6",                   (0x80 |  50))
+    lutItem("ta",                   (0x80 |  54))
+    lutItem("taikodrum",                     116)
+    lutItem("tambourine",           (0x80 |  54))
+    lutItem("tangoaccordion",                 23)
+    lutItem("tc",                   (0x80 |  52))
+    lutItem("telephonering",                 124)
+    lutItem("tenorsax",                       66)
+    lutItem("timpani",                        47)
+    lutItem("tinklebell",                    112)
+    lutItem("tom1",                 (0x80 |  41))
+    lutItem("tom2",                 (0x80 |  43))
+    lutItem("tom3",                 (0x80 |  45))
+    lutItem("tom4",                 (0x80 |  47))
+    lutItem("tom5",                 (0x80 |  48))
+    lutItem("tom6",                 (0x80 |  50))
+    lutItem("tremolostrings",                 44)
+    lutItem("trombone",                       57)
+    lutItem("trumpet",                        56)
+    lutItem("tuba",                           58)
+    lutItem("tubularbells",                   14)
+    lutItem("vibraphone",                     11)
+    lutItem("vibraslap",            (0x80 |  58))
+    lutItem("viola",                          41)
+    lutItem("violin",                         40)
+    lutItem("voiceoohs",                      53)
+    lutItem("whistle",                        78)
+    lutItem("woodblock",                     115)
+    lutItem("xylophone",                      13)
 lutEndSN(instr)
 
 
