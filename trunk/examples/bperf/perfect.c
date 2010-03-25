@@ -1,7 +1,7 @@
 /******  WARNING ************
  This code has been modified in 2010 by Remo Dentato (rdentato@gmailcom).
  It is *NOT* the original code from Bob Jenkins, any bug you may find here
- is most probably my fault, please refer Bob Jenkin's site (address below)
+ is most probably my fault, please refer to Bob Jenkin's site (address below)
  for the original code.
  
 */
@@ -833,7 +833,7 @@ hashform *form;                                           /* user directives */
 ** Return 0 if no perfect hash could be found.
 */
 void findhash(tabb, alen, blen, salt, final, 
-	      scramble, smax, keys, nkeys, form)
+	      scramble, smax, keys, nkeys, form, tabh_ret)
 bstuff  **tabb;           /* output, tab[] of the perfect hash, length *blen */
 ub4      *alen;                 /* output, 0..alen-1 is range for a of (a,b) */
 ub4      *blen;                 /* output, 0..blen-1 is range for b of (a,b) */
@@ -844,6 +844,7 @@ ub4      *smax;                           /* input, scramble[i] in 0..smax-1 */
 key      *keys;                                       /* input, keys to hash */
 ub4       nkeys;                       /* input, number of keys being hashed */
 hashform *form;                                           /* user directives */
+hstuff  **tabh_ret;
 {
   ub4 bad_initkey;                       /* how many times did initkey fail? */
   ub4 bad_perfect;                       /* how many times did perfect fail? */
@@ -851,6 +852,8 @@ hashform *form;                                           /* user directives */
   ub4 maxalen;
   hstuff *tabh;                       /* table of keys indexed by hash value */
   qstuff *tabq;    /* table of stuff indexed by queue value, used by augment */
+
+  *tabh_ret = NULL;
 
   /* The case of (A,B) supplied by the user is a special case */
   if (form->hashtype == AB_HT)
@@ -956,9 +959,10 @@ hashform *form;                                           /* user directives */
   }
 
   printf("built perfect hash table of size %ld\n", *blen);
-
+  
+  *tabh_ret = tabh;
   /* free working memory */
-  free((void *)tabh);
+  /* free((void *)tabh); */
   free((void *)tabq);
 }
 
@@ -1017,7 +1021,7 @@ hashform  *form;                                          /* user directives */
 }
 
 /* make the .c file */
-static void make_c(tab, smax, blen, scramble, final, form, nkeys, salt, keys)
+static void make_c(tab, smax, blen, scramble, final, form, nkeys, salt, keys,tabh)
 bstuff   *tab;                                         /* table indexed by b */
 ub4       smax;                                       /* range of scramble[] */
 ub4       blen;                                /* b in 0..blen-1, power of 2 */
@@ -1027,6 +1031,7 @@ hashform *form;                                           /* user directives */
 ub4  nkeys;
 ub4  salt;
 key      *keys;
+hstuff  *tabh;
 {
   ub4   i;
   FILE *f;
@@ -1049,20 +1054,29 @@ key      *keys;
           smax);
   fprintf(f, "#define PHASHSALT 0x%.8lx /* internal, initialize normal hash */\n",
           salt*0x9e3779b9);
+
+  if (form->mode == NORMAL_HM) {
+    fprintf(f,"\n");
+    fprintf(f,"static char *keys[] = {\n");
+    for (i=0; i<nkeys; i++) {
+      fprintf(f, "  /* %8ld */ \"%s\",\n", i,tabh[i].key_h->name_k);
+    }
+    fprintf(f,"};\n\n");
+  }  
   
   if (blen >= USE_SCRAMBLE)
   {
     fprintf(f, "/* A way to make the 1-byte values in tab bigger */\n");
     if (smax > UB2MAXVAL+1)
     {
-      fprintf(f, "unsigned long  scramble[] = {\n");
+      fprintf(f, "static unsigned long  scramble[] = {\n");
       for (i=0; i<=UB1MAXVAL; i+=4)
         fprintf(f, "0x%.8lx, 0x%.8lx, 0x%.8lx, 0x%.8lx,\n",
                 scramble[i+0], scramble[i+1], scramble[i+2], scramble[i+3]);
     }
     else
     {
-      fprintf(f, "unsigned short scramble[] = {\n");
+      fprintf(f, "static unsigned short scramble[] = {\n");
       for (i=0; i<=UB1MAXVAL; i+=8)
         fprintf(f, 
 "0x%.4lx, 0x%.4lx, 0x%.4lx, 0x%.4lx, 0x%.4lx, 0x%.4lx, 0x%.4lx, 0x%.4lx,\n",
@@ -1077,9 +1091,9 @@ key      *keys;
     fprintf(f, "/* small adjustments to _a_ to make values distinct */\n");
 
     if (smax <= UB1MAXVAL+1 || blen >= USE_SCRAMBLE)
-      fprintf(f, "unsigned char tab[] = {\n");
+      fprintf(f, "static unsigned char tab[] = {\n");
     else
-      fprintf(f, "unsigned short tab[] = {\n");
+      fprintf(f, "static unsigned short tab[] = {\n");
 
     if (blen < 16)
     {
@@ -1127,16 +1141,16 @@ key      *keys;
   switch(form->mode)
   {
   case NORMAL_HM:
-    fprintf(f, "unsigned long  phash(char *key, int len)\n");
+    fprintf(f, "static unsigned long  phash(char *key, int len)\n");
     break;
   case INLINE_HM:
   case HEX_HM:
   case DECIMAL_HM:
-    fprintf(f, "unsigned long  phash(unsigned long val)\n");
+    fprintf(f, "static unsigned long  phash(unsigned long val)\n");
     break;
   case AB_HM:
   case ABDEC_HM:
-    fprintf(f, "unsigned long  phash(unsigned long  a, unsigned long  b)\n");
+    fprintf(f, "static unsigned long  phash(unsigned long  a, unsigned long  b)\n");
     break;
   }
   fprintf(f, "{\n");
@@ -1170,7 +1184,8 @@ hashform *form;                                           /* user directives */
   ub4       scramble[SCRAMBLE_LEN];           /* used in final hash function */
   char      buf[10][80];                        /* buffer for generated code */
   char     *buf2[10];                             /* also for generated code */
-
+  hstuff   *tabh;
+  
   /* set up memory sources */
   textroot = remkroot((size_t)MAXKEYLEN);
   keyroot  = remkroot(sizeof(key));
@@ -1187,16 +1202,17 @@ hashform *form;                                           /* user directives */
 
   /* find the hash */
   findhash(&tab, &alen, &blen, &salt, &final, 
-	   scramble, &smax, keys, nkeys, form);
+	   scramble, &smax, keys, nkeys, form,&tabh);
 
    /* generate the phash.c file */
-  make_c(tab, smax, blen, scramble, &final, form, nkeys, salt,keys);
+  make_c(tab, smax, blen, scramble, &final, form, nkeys, salt, keys, tabh);
   printf("Wrote phash.c\n");
 
   /* clean up memory sources */
   refree(textroot);
   refree(keyroot);
   free((void *)tab);
+  free((void *)tabh);
   printf("Cleaned up\n");
 }
 

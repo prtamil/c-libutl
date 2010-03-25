@@ -911,3 +911,22 @@ int rec_cmp(rec_t a, rec_t b)
    return (a->rec_f->cmp(a,b));
 }
 
+/*******************************************/
+
+static int lut_cmpS(const void *a,const void *b)
+{
+  fprintf(stderr,"**%p %p %s %s\n\n\n",a,b,((lutSN_slot_t *)a)->key,((lutSN_slot_t *)b)->key);
+  return strcmp(((lutSN_slot_t *)a)->key,((lutSN_slot_t *)b)->key);
+}
+
+int lut_getSN(lutSN_t lt, int lt_size, char *key, int def)
+{
+  lutSN_slot_t slot;
+  lutSN_slot_t *ret;
+
+  slot.key = key;
+  fprintf(stderr,"%d\n",lt_size);
+  ret = bsearch(&slot,lt,lt_size,sizeof(lutSN_slot_t),lut_cmpS);
+  if (ret) return ret->val;
+  return def;
+}

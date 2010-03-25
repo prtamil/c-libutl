@@ -7,31 +7,219 @@
 */
 
 
-/*
-** This example is mainly to illustrate how to use the |chsSubFun()|
-** function. It is derived from the <musicpad|http://l01c.ouvaton.org/musicpad-help.html>
-** language (for which I hope to write a full interpreter one day or another).
-**
-** The general idea is that we can define a macro everywhere in a text
-** with the syntax: |m$xxx(...)| and then having it replaced by using |$xxx|.
-** A macro can contain other macros so that the text:
-**   "m$a([$b])m$b(turpis)Curabitur $a sed massa $b."
-** is expanded as:
-**   "Curabitur [turpis] sed massa turpis."
-**
-** Macros can have "arguments": The strings $1,...,$9 
-**
-** In general macros can have a type (e.g. |mrnd$x($a $b)| expands as |$a| or
-** as |$b| at random). Macros in this form ar recognized but not handled in
-** this example.
-*/
-
 #include <stdio.h>
 #include <ctype.h>
 
 #include "libutl.h"
 
-unsigned char instr_name(char *name, int len);
+lutBeginSN(instr)
+   {   "abassdrum",                    (0x80 |  35) },
+   {   "accordion",                    21  },
+   {   "acousticbass",                 32  },
+   {   "acousticgrand",                 0  },
+   {   "agogo",                       113  },
+   {   "altosax",                      65  },
+   {   "applause",                    126  },
+   {   "asnare",                       (0x80 |  38) },
+   {   "b2",                           (0x80 |  35) },
+   {   "bagpipe",                     109  },
+   {   "banjo",                       105  },
+   {   "baritonesax",                  67  },
+   {   "bassdrum",                     (0x80 |  36) },
+   {   "bassoon",                      70  },
+   {   "bd",                           (0x80 |  36) },
+   {   "birdtweet",                   123  },
+   {   "blownbottle",                  76  },
+   {   "brasssection",                 61  },
+   {   "breathnoise",                 121  },
+   {   "brightacoustic",                1  },
+   {   "c2",                           (0x80 |  57) },
+   {   "cabasa",                       (0x80 |  69) },
+   {   "cb",                           (0x80 |  56) },
+   {   "cc",                           (0x80 |  49) },
+   {   "celesta",                       8  },
+   {   "cello",                        42  },
+   {   "ch",                           (0x80 |  42) },
+   {   "chihat",                       (0x80 |  42) },
+   {   "chinesecy",                    (0x80 |  52) },
+   {   "choiraahs",                    52  },
+   {   "churchorgan",                  19  },
+   {   "clarinet",                     71  },
+   {   "claves",                       (0x80 |  75) },
+   {   "clavinet",                      7  },
+   {   "contrabass",                   43  },
+   {   "cowbell",                      (0x80 |  56) },
+   {   "crashcy",                      (0x80 |  49) },
+   {   "crashcy2",                     (0x80 |  57) },
+   {   "distortionguitar",             30  },
+   {   "drawbarorgan",                 16  },
+   {   "dulcimer",                     15  },
+   {   "ebassfinger",                  33  },
+   {   "ebasspick",                    34  },
+   {   "ecleanguitar",                 27  },
+   {   "ejazzguitar",                  26  },
+   {   "electricgrand",                 2  },
+   {   "emutedguitar",                 28  },
+   {   "englishhorn",                  69  },
+   {   "epiano1",                       4  },
+   {   "epiano2",                       5  },
+   {   "esnare",                       (0x80 |  40) },
+   {   "fiddle",                      110  },
+   {   "flute",                        73  },
+   {   "frenchhorn",                   60  },
+   {   "fretlessbass",                 35  },
+   {   "fxatmosphere",                 99  },
+   {   "fxbrightness",                100  },
+   {   "fxcrystal",                    98  },
+   {   "fxechoes",                    102  },
+   {   "fxgoblins",                   101  },
+   {   "fxrain",                       96  },
+   {   "fxscifi",                     103  },
+   {   "fxsoundtrack",                 97  },
+   {   "glockenspiel",                  9  },
+   {   "guitarfretnoise",             120  },
+   {   "guitarharmonics",              31  },
+   {   "gunshot",                     127  },
+   {   "hagogo",                       (0x80 |  67) },
+   {   "handclap",                     (0x80 |  39) },
+   {   "harmonica",                    22  },
+   {   "harpsichord",                   6  },
+   {   "hbongo",                       (0x80 |  60) },
+   {   "hc",                           (0x80 |  39) },
+   {   "helicopter",                  125  },
+   {   "hfloortom",                    (0x80 |  43) },
+   {   "hh",                           (0x80 |  44) },
+   {   "hmidtom",                      (0x80 |  48) },
+   {   "honkytonk",                     3  },
+   {   "htimbale",                     (0x80 |  65) },
+   {   "htom",                         (0x80 |  50) },
+   {   "hwoodblock",                   (0x80 |  76) },
+   {   "kalimba",                     108  },
+   {   "koto",                        107  },
+   {   "lagogo",                       (0x80 |  68) },
+   {   "lbongo",                       (0x80 |  61) },
+   {   "lconga",                       (0x80 |  64) },
+   {   "leadbasslead",                 87  },
+   {   "leadcalliope",                 82  },
+   {   "leadcharang",                  84  },
+   {   "leadchiff",                    83  },
+   {   "leadfifths",                   86  },
+   {   "leadsawtooth",                 81  },
+   {   "leadsquare",                   80  },
+   {   "leadvoice",                    85  },
+   {   "lfloortom",                    (0x80 |  41) },
+   {   "lguiro",                       (0x80 |  74) },
+   {   "lmidtom",                      (0x80 |  47) },
+   {   "ltimbale",                     (0x80 |  66) },
+   {   "ltom",                         (0x80 |  45) },
+   {   "lwhistle",                     (0x80 |  72) },
+   {   "lwoodblock",                   (0x80 |  77) },
+   {   "maracas",                      (0x80 |  70) },
+   {   "marimba",                      12  },
+   {   "mcuica",                       (0x80 |  78) },
+   {   "melodictom",                  117  },
+   {   "mhconga",                      (0x80 |  62) },
+   {   "mtriangle",                    (0x80 |  80) },
+   {   "musicbox",                     10  },
+   {   "mutedtrumpet",                 59  },
+   {   "nylonstringguitar",            24  },
+   {   "oboe",                         68  },
+   {   "ocarina",                      79  },
+   {   "ocuica",                       (0x80 |  79) },
+   {   "oh",                           (0x80 |  46) },
+   {   "ohconga",                      (0x80 |  63) },
+   {   "ohihat",                       (0x80 |  46) },
+   {   "orchestrahit",                 55  },
+   {   "orchestralstrings",            46  },
+   {   "otriangle",                    (0x80 |  81) },
+   {   "overdrivenguitar",             29  },
+   {   "padbowed",                     92  },
+   {   "padchoir",                     91  },
+   {   "padhalo",                      94  },
+   {   "padmetallic",                  93  },
+   {   "padnewage",                    88  },
+   {   "padpolysynth",                 90  },
+   {   "padsweep",                     95  },
+   {   "padwarm",                      89  },
+   {   "panflute",                     75  },
+   {   "pedhihat",                     (0x80 |  44) },
+   {   "percussiveorgan",              17  },
+   {   "piccolo",                      72  },
+   {   "pizzicatostrings",             45  },
+   {   "r2",                           (0x80 |  59) },
+   {   "rb",                           (0x80 |  53) },
+   {   "rc",                           (0x80 |  51) },
+   {   "recorder",                     74  },
+   {   "reedorgan",                    20  },
+   {   "reversecymbal",               119  },
+   {   "ridebell",                     (0x80 |  53) },
+   {   "ridecy",                       (0x80 |  51) },
+   {   "ridecy2",                      (0x80 |  59) },
+   {   "rockorgan",                    18  },
+   {   "rs",                           (0x80 |  37) },
+   {   "s2",                           (0x80 |  40) },
+   {   "sc",                           (0x80 |  55) },
+   {   "sd",                           (0x80 |  38) },
+   {   "seashore",                    122  },
+   {   "sguiro",                       (0x80 |  73) },
+   {   "shamisen",                    106  },
+   {   "shanai",                      111  },
+   {   "sidestick",                    (0x80 |  37) },
+   {   "sitar",                       104  },
+   {   "skakuhachi",                   77  },
+   {   "slapbass1",                    36  },
+   {   "slapbass2",                    37  },
+   {   "sopranosax",                   64  },
+   {   "splashcy",                     (0x80 |  55) },
+   {   "steeldrums",                  114  },
+   {   "steelstringguitar",            25  },
+   {   "stringensemble1",              48  },
+   {   "stringensemble2",              49  },
+   {   "swhistle",                     (0x80 |  71) },
+   {   "synthbass1",                   38  },
+   {   "synthbass2",                   39  },
+   {   "synthbrass1",                  62  },
+   {   "synthbrass2",                  63  },
+   {   "synthdrum",                   118  },
+   {   "synthstrings1",                50  },
+   {   "synthstrings2",                51  },
+   {   "synthvoice",                   54  },
+   {   "t1",                           (0x80 |  41) },
+   {   "t2",                           (0x80 |  43) },
+   {   "t3",                           (0x80 |  45) },
+   {   "t4",                           (0x80 |  47) },
+   {   "t5",                           (0x80 |  48) },
+   {   "t6",                           (0x80 |  50) },
+   {   "ta",                           (0x80 |  54) },
+   {   "taikodrum",                   116  },
+   {   "tambourine",                   (0x80 |  54) },
+   {   "tangoaccordion",               23  },
+   {   "tc",                           (0x80 |  52) },
+   {   "telephonering",               124  },
+   {   "tenorsax",                     66  },
+   {   "timpani",                      47  },
+   {   "tinklebell",                  112  },
+   {   "tom1",                         (0x80 |  41) },
+   {   "tom2",                         (0x80 |  43) },
+   {   "tom3",                         (0x80 |  45) },
+   {   "tom4",                         (0x80 |  47) },
+   {   "tom5",                         (0x80 |  48) },
+   {   "tom6",                         (0x80 |  50) },
+   {   "tremolostrings",               44  },
+   {   "trombone",                     57  },
+   {   "trumpet",                      56  },
+   {   "tuba",                         58  },
+   {   "tubularbells",                 14  },
+   {   "vibraphone",                   11  },
+   {   "vibraslap",                    (0x80 |  58) },
+   {   "viola",                        41  },
+   {   "violin",                       40  },
+   {   "voiceoohs",                    53  },
+   {   "whistle",                      78  },
+   {   "woodblock",                   115  },
+   {   "xylophone",                    13  },
+lutEndSN(instr)
+
 
 #define DEFAULT_VAL -99
 
@@ -406,6 +594,15 @@ static int gettrack(char *str, pmx_t capt)
 
 */
 
+int instrbyname(char *name, int len)
+{
+  char buf[32];
+  if (len>30) len=30;
+  strncpy(buf,name,len);
+  buf[len] = '\0';
+  return lutGetSN(instr,buf,0);
+}
+
 chs_t parsetrack(chs_t trk)
 {
   chs_t new_trk = NULL;
@@ -488,7 +685,6 @@ chs_t parsetrack(chs_t trk)
       if (pmxTokLen(1) > 0)  cur_notelen = atoi(pmxTokStart(1));
         
       d = (1+pmxTokLen(2));
-      fprintf(stderr,"*** %d\n",d);
       chsAddFmt(new_trk,"pause %d/%d\n", d, cur_notelen);
       continue;
 
@@ -502,7 +698,7 @@ chs_t parsetrack(chs_t trk)
       
     pmxTokCase(T_INSTR):
       if (pmxTokLen(2)>0) {
-        d = instr_name(pmxTokStart(2), pmxTokLen(2));
+        d = instrbyname(pmxTokStart(2), pmxTokLen(2));
         if (d & 0x80) {
           if (cur_channel != 9) {
             chsAddStr(new_trk,"ch 9\n");
