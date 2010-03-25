@@ -27,5 +27,5 @@ lookupa$(_OBJ)  : lookupa.c standard.h lookupa.h
 recycle$(_OBJ)  : recycle.c standard.h recycle.h
 perfhex$(_OBJ)  : perfhex.c standard.h lookupa.h recycle.h perfect.h
 perfect$(_OBJ)  : perfect.c standard.h lookupa.h recycle.h perfect.h
-phash$(_OBJ)    : phash.c standard.h phash.h lookupa.h
-testperf$(_OBJ) : testperf.c standard.h recycle.h phash.h
+phash$(_OBJ)    : phash.c standard.h lookupa.h
+testperf$(_OBJ) : testperf.c standard.h recycle.h

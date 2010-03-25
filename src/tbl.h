@@ -558,6 +558,8 @@ int   rec_cmp(rec_t a, rec_t b);
 
 /******************************/
 
+#define lutItem(x,y) {x,y},
+
 typedef struct { char *key;  int   val; } lutSN_slot_t;
 typedef struct { int   key;  int   val; } lutNN_slot_t;
 

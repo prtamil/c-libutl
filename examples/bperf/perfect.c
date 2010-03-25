@@ -1020,6 +1020,14 @@ hashform  *form;                                          /* user directives */
   redel(textroot, mytext);
 }
 
+
+/* */
+static unsigned long hash_N(char *name_k, bstuff *tab)
+{
+
+
+}
+
 /* make the .c file */
 static void make_c(tab, smax, blen, scramble, final, form, nkeys, salt, keys,tabh)
 bstuff   *tab;                                         /* table indexed by b */

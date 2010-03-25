@@ -55,7 +55,11 @@ reroot  *keyroot;     /* get space for keys */
     mykey = (key *)renew(keyroot);
     mykey->kname = (ub1 *)mytext;
     mytext = (char *)renew(textroot);
-    mykey->klen  = (ub4)(strlen((char *)mykey->kname)-1);
+    mykey->klen  = (ub4)(strlen((char *)mykey->kname));
+    while (mykey->klen > 0 && isspace(mykey->kname[mykey->klen_k]))
+      mykey->klen -= 1;
+    mykey->kname[mykey->klen] = '\0';
+
     mykey->knext = *keys;
     *keys = mykey;
     ++*nkeys;
