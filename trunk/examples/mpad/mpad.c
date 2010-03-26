@@ -371,12 +371,13 @@ static char *mulpar(char *str, pmx_t capt)
 
 static void blankit(char *str, int len)
 {
+fprintf(stderr,"{{%.*s}}\n",len,str);
   while (len-- > 0) *str++ = ' ';
 }
 
 static int blankcomment(char *str, pmx_t ret)
 {
-  blankit(str+pmxStart(ret,0), pmxLen(ret,0));
+  blankit(str+pmxStart(ret,0),  pmxLen(ret,0));
   return 0;
 }
 
@@ -603,6 +604,38 @@ int instrbyname(char *name, int len)
   return lutGetSN(instr,buf,0);
 }
 
+char *notename(int note)
+{
+  return "c c#d d#e f f#g g#a a#b "+(note % 12) * 2;
+}
+
+int noteoctave(int note)
+{
+  int octave = note / 12;
+  if (octave < 0) octave = 0;
+  else if (octave > 10) octave = 10;
+  return octave;
+}
+
+int notenorm(int num)
+{
+  int n = (num %12);
+  if (n<0) n+=12; 
+  num = n + 12*noteoctave(num);
+  if (num > 128) num -= 12;
+  return num;
+}
+
+int notenum(char note, char acc, char octave)
+{                
+  int num = "\011\013\000\002\004\005\007"[note-'a'] + 12 * octave;
+  
+  if (acc == '#' || acc == '+') num++;
+  else if (acc == 'b' || acc == '-') num--;
+    
+  return notenorm(num);
+}
+
 chs_t parsetrack(chs_t trk)
 {
   chs_t new_trk = NULL;
@@ -621,11 +654,11 @@ chs_t parsetrack(chs_t trk)
   short cur_notelen       = 4;
   char  cur_instr         = 0;
   
-  unsigned char cur_channel        = 0;
+  unsigned char cur_channel = 0;
   
   int  d;
-  char n;
-  char o;
+  int n;
+  int o;
   char *t;
      
   chsCpy(new_trk,"track\n");  
@@ -640,6 +673,7 @@ chs_t parsetrack(chs_t trk)
   #define T_XPAUSE      x98
   #define T_CHANNEL     x99
   #define T_INSTR       x9A
+  #define T_NUMNOTE     x9B
   #define T_ERROR       x9F
   
   pmxScannerBegin(trk)
@@ -647,6 +681,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("ch&K(&d)",T_CHANNEL)
     pmxTokSet("i&K(&d)()",T_INSTR)
     pmxTokSet("i&K()(<+q>)",T_INSTR)
+    pmxTokSet("(<?=,'>)n(<?=t>)(<?=+&->)(&d)<?=/>(<*=0-9>)&K(<*==>)",T_NUMNOTE)
     pmxTokSet("(<?=,'>)(<=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)",T_NOTE)
@@ -657,15 +692,36 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("<.>",T_ERROR) 
                         
   pmxScannerSwitch
+
+    pmxTokCase(T_NUMNOTE):
+    
+      n=atoi(pmxTokStart(4)); 
+      if (pmxTokLen(3) > 0) {
+        if (*pmxTokStart(3) == '-') n = -n;
+        n += notenum(cur_note, cur_acc, cur_octave);
+      }
+      n = notenorm(n);
+      o = noteoctave(n);
+      t = notename(n);
+      chsAddFmt(new_trk,"note %c%c %d ", t[0], t[1], o);
+      d = cur_notelen;
+      if (pmxTokLen(5)>0) d = atoi(pmxTokStart(5));
+      
+      chsAddFmt(new_trk,"%d/%d\n",(1+pmxTokLen(6)), d);
+      if (pmxTokLen(2) == 0) {
+        cur_note = t[0]; cur_acc = t[1];
+        cur_octave = o; cur_notelen = d;
+      }       
+      continue;
  
     pmxTokCase(T_NOTE):
       if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
         cur_note = pmxTokStart(2)[0];
+        cur_acc = ' ';
         if ((pmxTokLen(2) > 1)) {
           switch(pmxTokStart(2)[1] ) {
             case '#' : case '+' : cur_acc = '#'; break;
             case 'b' : case '-' : cur_acc = 'b'; break;
-             default :            cur_acc = ' ';
           }
         }  
       }
@@ -705,7 +761,7 @@ chs_t parsetrack(chs_t trk)
             cur_channel = 9;
           }
           d &= 0x7F;
-          t = "c c#d d#e f f#g g#a a#b "+(d % 12);
+          t = notename(d);
           cur_note = t[0]; cur_acc = t[1];
           cur_octave = d / 12;
           continue;
@@ -725,6 +781,7 @@ chs_t parsetrack(chs_t trk)
       continue;
       
     pmxTokCase(T_ERROR):
+      fprintf(stderr,"<<...%.*s...>>\n",30,pmxTokStart(0));
       merr("Syntax error");
       break;
 
@@ -752,8 +809,7 @@ vec_t mp_tracks(FILE *f)
   /* Case insensitiveness */  
   chsLower(text);
   
-  pmxScanStr(text, "&k#&l&n", blankcomment);
-
+  pmxScanStr(text, "&s#&L", blankcomment);
   text = parseglobals(text);
   text = expand(text);
   
