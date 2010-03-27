@@ -232,11 +232,13 @@ static int globalloose_q  = DEFAULT_VAL;
 static int globalvelvar_w = DEFAULT_VAL;
 static int globalvelvar_q = DEFAULT_VAL;
 static int globalguiton   = DEFAULT_VAL;
+static int globaltomson   = DEFAULT_VAL;
 static int globalmeter_n  = DEFAULT_VAL;
 static int globalmeter_d  = DEFAULT_VAL;
 static int globalmeter_c  = DEFAULT_VAL;
 static int globalmeter_b  = DEFAULT_VAL;
 static int key_sig        = DEFAULT_VAL;
+static int globaltranspose= DEFAULT_VAL;
 
 static tbl_t macros  = NULL;
 static chs_t tmptext = NULL;
@@ -371,7 +373,6 @@ static char *mulpar(char *str, pmx_t capt)
 
 static void blankit(char *str, int len)
 {
-fprintf(stderr,"{{%.*s}}\n",len,str);
   while (len-- > 0) *str++ = ' ';
 }
 
@@ -433,6 +434,8 @@ static chs_t parseglobals(chs_t text)
   #define T_KEY         x89 
   #define T_METER       x8A 
   #define T_SMPTE       x8B 
+  #define T_GTOMSON     x8C 
+  #define T_GTRANSPOSE  x8D 
   #define T_IGNORE      x8F 
   
   pmxScannerBegin(text)
@@ -446,8 +449,10 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("g<?$lobal>loose&K(&d)<?=,>(<*=0-9g>)",T_GLOOSE)
     pmxTokSet("g<?$lobal>velar&K(&d)<?=,>(<*=0-9g>)",T_GVELVAR)
     pmxTokSet("g<?$lobal>guit<?$ar>on",T_GGUITON) 
+    pmxTokSet("g<?$lobal>toms<?$ar>on",T_GTOMSON) 
     pmxTokSet("g<?$lobal>meter&K(&d)/(&d)<?=,>(&D)<?=,>(&D)",T_METER)
     pmxTokSet("g<?$lobal>key&K(<=1-7a-g>)(<=#b+->)(<?$min$maj>)<?$or>",T_KEY)
+    pmxTokSet("g<?$lobal>t<?$ranspose>&K(&d)",T_GTRANSPOSE)
     pmxTokSet("&s",pmxTokIGNORE) 
     pmxTokSet("<.>",pmxTokIGNORE) 
                         
@@ -511,8 +516,20 @@ static chs_t parseglobals(chs_t text)
       continue;
 
     pmxTokCase(T_GGUITON):
-      if (globalguiton != DEFAULT_VAL) merr("globalguiton already specified");
+      if (globalguiton != DEFAULT_VAL) merr("globalguitaron already specified");
       globalguiton = 1;
+      blankit(pmxTokStart(0),pmxTokLen(0));
+      continue;
+
+    pmxTokCase(T_GTOMSON):
+      if (globaltomson != DEFAULT_VAL) merr("globaltomson already specified");
+      globaltomson = 1;
+      blankit(pmxTokStart(0),pmxTokLen(0));
+      continue;
+
+    pmxTokCase(T_GTRANSPOSE):
+      if (globaltranspose != DEFAULT_VAL) merr("Global transpose already specified");
+      globaltranspose = atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
@@ -552,6 +569,8 @@ static chs_t parseglobals(chs_t text)
   if (globalloose_w  == DEFAULT_VAL )  globalloose_w  = 0;
   if (globalvelvar_w == DEFAULT_VAL )  globalvelvar_w = 0;
   if (globalguiton   == DEFAULT_VAL )  globalguiton   = 0;
+  if (globaltomson   == DEFAULT_VAL )  globaltomson   = 0;
+  if (globaltranspose== DEFAULT_VAL )  globaltranspose= 0;
   if (key_sig        == DEFAULT_VAL )  key_sig        = 0;
 
   return text;
@@ -639,6 +658,7 @@ int notenum(char note, char acc, char octave)
 chs_t parsetrack(chs_t trk)
 {
   chs_t new_trk = NULL;
+  
   int cur_duty     = duty;
   int cur_velocity = velocity;
   int cur_loose_w  = globalloose_w;
@@ -646,19 +666,19 @@ chs_t parsetrack(chs_t trk)
   int cur_velvar_w = globalvelvar_w;
   int cur_velvar_q = globalvelvar_q;
   int cur_guiton   = globalguiton;
+  int cur_tomson   = globaltomson;
+  int cur_transpose= globaltranspose;
 
   unsigned long cur_tick = 0;
-  char  cur_octave        = 5;
-  char  cur_note          = 'c';
-  char  cur_acc           = ' ';
+  int   cur_note          = 60;
   short cur_notelen       = 4;
   char  cur_instr         = 0;
   
   unsigned char cur_channel = 0;
   
-  int  d;
-  int n;
-  int o;
+  int   d;
+  int   n;
+  int   o;
   char *t;
      
   chsCpy(new_trk,"track\n");  
@@ -674,13 +694,21 @@ chs_t parsetrack(chs_t trk)
   #define T_CHANNEL     x99
   #define T_INSTR       x9A
   #define T_NUMNOTE     x9B
-  #define T_ERROR       x9F
+  #define T_UPOCTAVE    x9C
+  #define T_DOWNOCTAVE  x9D 
+  #define T_NUMBER      x9E 
+  #define T_TRANSPOSE   x9F 
+  #define T_ERROR       xAF
   
   pmxScannerBegin(trk)
                        
     pmxTokSet("ch&K(&d)",T_CHANNEL)
     pmxTokSet("i&K(&d)()",T_INSTR)
     pmxTokSet("i&K()(<+q>)",T_INSTR)
+    pmxTokSet("t&K(&d)",T_TRANSPOSE)
+    pmxTokSet("/",T_UPOCTAVE)    
+    pmxTokSet("\\",T_DOWNOCTAVE)    
+    pmxTokSet("(&d)&K(<*==>)",T_NUMBER)    
     pmxTokSet("(<?=,'>)n(<?=t>)(<?=+&->)(&d)<?=/>(<*=0-9>)&K(<*==>)",T_NUMNOTE)
     pmxTokSet("(<?=,'>)(<=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
@@ -693,48 +721,87 @@ chs_t parsetrack(chs_t trk)
                         
   pmxScannerSwitch
 
-    pmxTokCase(T_NUMNOTE):
-    
+    pmxTokCase(T_TRANSPOSE):
+      cur_transpose = atoi(pmxTokStart(1));
+      continue;
+
+    pmxTokCase(T_UPOCTAVE):
+      cur_note  = notenorm(cur_note + 12);
+      continue;
+
+    pmxTokCase(T_DOWNOCTAVE):    
+      cur_note  = notenorm(cur_note - 12);
+      continue;
+      
+    pmxTokCase(T_NUMBER):
+      d = atoi(pmxTokStart(1));
+      n = 0;
+      if (cur_guiton) {
+        n = d;
+      } 
+      else if (cur_tomson) {
+        if (d<1) d=1; else if (d>6) d = 6;
+        cur_note = "\001\062\060\057\055\053\051"[d];
+      }
+      else {
+        cur_notelen = d;
+      }
+      n = notenorm(cur_note + cur_transpose + n);
+      t = notename(n);
+      o = noteoctave(n);
+      d = (1+pmxTokLen(2));
+      chsAddFmt(new_trk,"note %c%c %d %d/%d\n", t[0], t[1], o, d, cur_notelen);
+      continue;    
+
+    pmxTokCase(T_NUMNOTE):    
       n=atoi(pmxTokStart(4)); 
       if (pmxTokLen(3) > 0) {
         if (*pmxTokStart(3) == '-') n = -n;
-        n += notenum(cur_note, cur_acc, cur_octave);
+        n += cur_note;
       }
       n = notenorm(n);
-      o = noteoctave(n);
-      t = notename(n);
-      chsAddFmt(new_trk,"note %c%c %d ", t[0], t[1], o);
+      t = notename(n+cur_transpose);
+      chsAddFmt(new_trk,"note %c%c %d ", t[0], t[1], noteoctave(n+cur_transpose));
       d = cur_notelen;
       if (pmxTokLen(5)>0) d = atoi(pmxTokStart(5));
       
       chsAddFmt(new_trk,"%d/%d\n",(1+pmxTokLen(6)), d);
       if (pmxTokLen(2) == 0) {
-        cur_note = t[0]; cur_acc = t[1];
-        cur_octave = o; cur_notelen = d;
+        cur_note = n;  cur_notelen = d;
       }       
       continue;
  
     pmxTokCase(T_NOTE):
-      if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
-        cur_note = pmxTokStart(2)[0];
-        cur_acc = ' ';
-        if ((pmxTokLen(2) > 1)) {
-          switch(pmxTokStart(2)[1] ) {
-            case '#' : case '+' : cur_acc = '#'; break;
-            case 'b' : case '-' : cur_acc = 'b'; break;
-          }
-        }  
+      n = cur_note % 12;
+      o = noteoctave(cur_note);
+      if (pmxTokLen(3) > 0)  {
+        o = atoi(pmxTokStart(3));
+        if (o > 10) o = 10; else if (o < 0) o = 0;
+        cur_note = notenorm((cur_note % 12) + o * 12);  
       }
-      if (pmxTokLen(3) > 0)  cur_octave  = atoi(pmxTokStart(3));
       if (pmxTokLen(4) > 0)  cur_notelen = atoi(pmxTokStart(4));
-        
+      
+      if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
+        if ((pmxTokLen(2) > 1)) d = pmxTokStart(2)[1] ;
+        else d = ' ';
+        n = pmxTokStart(2)[0] - 'a';
+        n = "\011\013\000\002\004\005\007"[n];
+        if (d == '#' || d == '+') n++;
+        else if (d == 'b' || d == '-') n--;
+      }
+      
+      cur_note = notenorm(n + 12 * o);
+               
       if (pmxTokLen(1) > 0) {
         if (*pmxTokStart(1) == 'o') continue; 
         /* Handle stress and soft!! */
       }
       
       d = (1+pmxTokLen(5));
-      chsAddFmt(new_trk,"note %c%c %d %d/%d\n", cur_note, cur_acc, cur_octave, d, cur_notelen);
+      n = notenorm(cur_note + cur_transpose);
+      t = notename(n);
+      o = noteoctave(n);
+      chsAddFmt(new_trk,"note %c%c %d %d/%d\n", t[0], t[1], o, d, cur_notelen);
       continue;
 
     pmxTokCase(T_PAUSE):
@@ -759,11 +826,8 @@ chs_t parsetrack(chs_t trk)
           if (cur_channel != 9) {
             chsAddStr(new_trk,"ch 9\n");
             cur_channel = 9;
-          }
-          d &= 0x7F;
-          t = notename(d);
-          cur_note = t[0]; cur_acc = t[1];
-          cur_octave = d / 12;
+          }          
+          cur_note = d &= 0x7F;
           continue;
         }
       }
@@ -865,7 +929,7 @@ int main(int argc, char *argv[])
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetS(tracks, k, NULL);
     if (trk != NULL) 
-       fprintf(stdout,"|%d %s\n",k,trk);
+       fprintf(stdout,"%s\n",trk);
   }  
   
   tracks = mp_tracks_free(tracks);

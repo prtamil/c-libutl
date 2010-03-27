@@ -104,23 +104,24 @@ vec
 		config.mk
 		mk.bat
 [Open project files]
-0=examples\mpad\2.mp
+0=examples\mpad\3.mp
 1=examples\mpad\mpad.c
 2=examples\mpad\makefile
 3=doc\usersguide.txt
 4=examples\mpad\instr.c
 5=src\tbl.h
 6=src\tbl.c
+7=examples\mpad\2.mp
 [Selected Project Files]
 Main=
-Selected=examples\mpad\mpad.c
-[examples\mpad\2.mp]
+Selected=examples\mpad\3.mp
+[examples\mpad\3.mp]
 TopLine=1
-Caret=2,12
+Caret=5,1
 [examples\mpad\mpad.c]
-TopLine=1
-Caret=45,550
-Mark1=1,724
+TopLine=711
+Caret=27,725
+Mark1=1,791
 [examples\mpad\makefile]
 TopLine=1
 Caret=1,21
@@ -136,3 +137,6 @@ Caret=1,556
 [src\tbl.c]
 TopLine=883
 Caret=1,933
+[examples\mpad\2.mp]
+TopLine=1
+Caret=5,3
