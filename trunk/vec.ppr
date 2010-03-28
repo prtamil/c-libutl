@@ -114,13 +114,13 @@ vec
 7=examples\mpad\2.mp
 [Selected Project Files]
 Main=
-Selected=examples\mpad\3.mp
+Selected=examples\mpad\2.mp
 [examples\mpad\3.mp]
 TopLine=1
-Caret=5,1
+Caret=1,3
 [examples\mpad\mpad.c]
-TopLine=711
-Caret=27,725
+TopLine=701
+Caret=7,735
 Mark1=1,791
 [examples\mpad\makefile]
 TopLine=1
@@ -139,4 +139,4 @@ TopLine=883
 Caret=1,933
 [examples\mpad\2.mp]
 TopLine=1
-Caret=5,3
+Caret=30,7
