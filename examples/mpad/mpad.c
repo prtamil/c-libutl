@@ -261,68 +261,6 @@ void merr(char *msg)
 }
 
 
-static char *subargs(char *str, pmx_t capt)
-{ 
-  int k;
-  char *r;
-
-  k  = str[pmxStart(capt,0)+1];
-  if (k == '$') return ("$");
-  
-  k -= '1';
-  r  = vecGetS(args, k, NULL);
-  
-  return (r? r : utlEmptyString);
-}
-
-static char *submacro(char *str, pmx_t capt)
-{
-  char *name;
-  char *bd;
-  char c;
-  
-  if (pmxLen(capt,1) == 0) return "";
-  
-  name = str+pmxStart(capt,1);
-  c = name[pmxLen(capt,1)]; 
-  name[pmxLen(capt,1)] = '\0';
-  
-  while (*name) { 
-    *name = tolower((int)*name);
-    name++;    
-  }    
-  name = str+pmxStart(capt,1);
-  
-  bd = tblGetSS(macros,name,NULL);
-   
-  if (!bd) {
-    fprintf(stderr,"Unknown macro: '%s'\n",name);
-    return "";
-  }
-  
-  while (*bd && *bd++ != '$');
-  chsCpy(rpl,"(");
-  chsAddStr(rpl,bd);
-  chsAddChr(rpl,')');
-  
-  name[pmxLen(capt,1)] = c;
-
-  vecFree(args);
-  if (pmxLen(capt,2)>2) {  
-    name = str+pmxStart(capt,2);
-    c = name[pmxLen(capt,2)]; 
-    name[pmxLen(capt,2)] = '\0';
-    
-    args = vecSplit(name,","," \t()");
-    name[pmxLen(capt,2)] = c;
-  }
-  
-  /* replace args */
-  chsSubFun(rpl,0,">$<=$1-9>",subargs);
-  
-  return rpl;
-}
-
 static char *mulstr(char *str, pmx_t capt)
 {
    int k;
@@ -356,7 +294,7 @@ static char *mulpar(char *str, pmx_t capt)
    k = atoi(str+pmxStart(capt,2));
    if (k <= 0) return " ";
    
-   l=pmxLen(capt,1)-2;
+   l = pmxLen(capt,1)-2;
    if (l <= 0) return " ";
    
    s = str+pmxStart(capt,1)+1;   
@@ -382,19 +320,141 @@ static int blankcomment(char *str, pmx_t ret)
   return 0;
 }
 
+static char *subargs(char *str, pmx_t capt)
+{ 
+  int k;
+  char *r;
+
+  k  = str[pmxStart(capt,0)+1];
+  if (k == '$') return ("$");
+  
+  k -= '1';
+  r  = vecGetS(args, k, NULL);
+  
+  return (r? r : utlEmptyString);
+}
+
+static char *submacro(char *str, pmx_t capt)
+{
+  char *name;
+  char *bd;
+  char c;
+  
+  if (pmxLen(capt,1) == 0) return "";
+  
+  name = str+pmxStart(capt,1);
+  c = name[pmxLen(capt,1)]; 
+  name[pmxLen(capt,1)] = '\0';
+  
+  while (*name) { 
+    *name = tolower((int)*name);
+    name++;    
+  }    
+  name = str + pmxStart(capt,1);
+  
+  bd = tblGetSS(macros,name,NULL);
+   
+  if (!bd) {
+    fprintf(stderr,"Unknown macro: '%s'\n",name);
+    return "";
+  }
+  
+  while (*bd && *bd++ != '$');
+  chsCpy(rpl,"(");
+  chsAddStr(rpl,bd);
+  chsAddChr(rpl,')');
+  
+  name[pmxLen(capt,1)] = c;
+
+  vecFree(args);
+  if (pmxLen(capt,2)>2) {  
+    name = str+pmxStart(capt,2);
+    c = name[pmxLen(capt,2)]; 
+    name[pmxLen(capt,2)] = '\0';
+    
+    args = vecSplit(name,","," \t()");
+    name[pmxLen(capt,2)] = c;
+  }
+  
+  /* replace args */
+  chsSubFun(rpl,0,">$<=$1-9>",subargs);
+  fprintf(stderr,"*** %s\n",rpl);
+  return rpl;
+}
+
+chs_t getrndmacro(char *mtext)
+{
+  chs_t body = NULL;
+  int n = 0;
+  int l = 0;
+  char *s=NULL;  
+  
+fprintf(stderr,"xx %s\n",mtext);
+  
+  chsCpy(body,"$@");
+  
+  #define T_MREPLACE     x81
+  #define T_MSTRING      x82
+  
+  pmxScannerBegin(mtext)
+                       
+    pmxTokSet("&s",pmxTokIGNORE) 
+    pmxTokSet("&q",T_MSTRING)
+    pmxTokSet("<+S>",T_MREPLACE) 
+                        
+  pmxScannerSwitch
+ 
+    pmxTokCase(T_MSTRING):
+      l = pmxTokLen(0)-2;
+      s = pmxTokStart(0)+1;
+      goto replace_it;
+      
+    pmxTokCase(T_MREPLACE):
+      l = pmxTokLen(0);
+      s = pmxTokStart(0);
+     
+    replace_it:  
+      chsAddChr(body,'@'+l+1);
+      if (l>0) chsAddStrL(body,s,l);
+      chsAddChr(body,'@');
+      n++;
+      continue;
+      
+    pmxTokCase(pmxTokIGNORE):
+      continue;
+
+    default: merr("Internal error");
+      break; 
+     
+  pmxScannerEnd;
+
+  body[1] = '@'+n;
+  
+  fprintf(stderr,"++ %s\n",body);
+  return body;
+}
+
 static int getmacro(char *str, pmx_t ret)
 {
   chs_t body = NULL;
-    
+  int l = pmxLen(ret,0);
+  char *s = str+pmxStart(ret,0);
+  char *n = str+pmxStart(ret,2);
+      
   str[pmxEnd(ret,2) ]  = '\0';
   str[pmxEnd(ret,3)-1] = '\0';  
   
-  chsCpy(body,"$");
-  chsAddStrL(body, str+pmxStart(ret,3)+1, pmxLen(ret,3));
-     
-  tblSetSH(macros, str+pmxStart(ret,2), body);
-  blankit(str+pmxStart(ret,0), pmxLen(ret,0));
+  if (pmxLen(ret,1) > 0) {
+    body = getrndmacro(str + pmxStart(ret,3)+1);
+  }
+  else {
+    chsCpy(body,"$");
+    chsAddStrL(body, str+pmxStart(ret,3)+1, pmxLen(ret,3));
+  }
 
+  tblSetSH(macros, n, body);
+  blankit(s,l);
+  
   return 0;
 }
 
@@ -669,7 +729,7 @@ chs_t parsetrack(chs_t trk)
   int cur_tomson   = globaltomson;
   int cur_transpose= globaltranspose;
 
-  unsigned long cur_tick = 0;
+  //unsigned long cur_tick  = 0;
   int   cur_note          = 60;
   short cur_notelen       = 4;
   char  cur_instr         = 0;
@@ -698,10 +758,14 @@ chs_t parsetrack(chs_t trk)
   #define T_DOWNOCTAVE  x9D 
   #define T_NUMBER      x9E 
   #define T_TRANSPOSE   x9F 
+  #define T_TOMSMODE    xA0 
+  #define T_GUITMODE    xA1 
   #define T_ERROR       xAF
   
   pmxScannerBegin(trk)
                        
+    pmxTokSet("guit<?$ar>o(<$n$ff>)",T_GUITMODE)
+    pmxTokSet("tomso(<$n$ff>)",T_TOMSMODE)
     pmxTokSet("ch&K(&d)",T_CHANNEL)
     pmxTokSet("i&K(&d)()",T_INSTR)
     pmxTokSet("i&K()(<+q>)",T_INSTR)
@@ -713,9 +777,9 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("(<?=,'>)(<=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)<?=/>(<*=0-9>)",T_NOTE)
-    pmxTokSet("(<?=,'>)(x)()<?=/>(<*=0-9>)&K(<*==>)",T_XNOTE)
     pmxTokSet("p<?=/>(<*=0-9>)&K(<*==&->)",T_PAUSE)
     pmxTokSet("-()(<*==&->)",T_PAUSE)
+    pmxTokSet("<=()>",pmxTokIGNORE) 
     pmxTokSet("&s",pmxTokIGNORE) 
     pmxTokSet("<.>",T_ERROR) 
                         
@@ -731,6 +795,15 @@ chs_t parsetrack(chs_t trk)
 
     pmxTokCase(T_DOWNOCTAVE):    
       cur_note  = notenorm(cur_note - 12);
+      continue;
+      
+    pmxTokCase(T_TOMSMODE):
+      cur_tomson = (*pmxTokStart(1) == 'n') ;
+      cur_transpose = 0;
+      continue;
+      
+    pmxTokCase(T_GUITMODE):
+      cur_guiton = (*pmxTokStart(1) == 'n') ;
       continue;
       
     pmxTokCase(T_NUMBER):
