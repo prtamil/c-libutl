@@ -1,5 +1,3 @@
-t+2  s(A s(B D C))
+| o/16 i ltom   x---x-
 
-
-
-  
+ 
