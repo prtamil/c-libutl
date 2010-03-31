@@ -312,7 +312,10 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
   while ( pos < chsLen(s)) {
     if ((ret = chsMatch(s, pos, pat))) { 
       pos =  pmxStart(ret,0);
+      pmxMatchesPush();
       rpl = f(s,ret);
+      pmxMatchesPop();
+  
       if (rpl) {
         chsDel(s, pos, pmxEnd(ret,0)-1);
         l = strlen(rpl);
