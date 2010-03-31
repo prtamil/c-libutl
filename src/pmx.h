@@ -79,26 +79,27 @@ extern pmx_t pmx_tmpmtc;
     for (pmx_tmpstr = s, pmx_tmpptrn =  
     
 #define pmxScannerSwitch  , \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
+         pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn), \
+         pmxMatchesPush(); \
+         \
          *pmx_tmpstr && pmx_tmpmtc; \
+         \
          pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
-    { switch (pmxToken(pmx_tmpmtc)) { 
+         pmxMatchesPop(), \
+         pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn),\
+         pmxMatchesPush()) \
+      { switch (pmxToken(pmx_tmpmtc)) { 
     
-#define pmxScannerEnd } ; break; } \
-    pmx_tmpstr = ""; \
+#define pmxScannerEnd  \
+    } ; break; } \
+    pmx_tmpstr = ""; pmxMatchesPop();\
   } while (pmx_tmpstr == NULL)
 
 
-#define pmxScanner(s,p,c) do {\
-    for (pmx_tmpstr = s, pmx_tmpptrn =  p, \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn); \
-         *pmx_tmpstr && pmx_tmpmtc; \
-         pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
-                       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn)) \
-    { switch (pmxToken(pmx_tmpmtc)) { c } ; break; } \
-    pmx_tmpstr = ""; \
-  } while (pmx_tmpstr == NULL)
-
+#define pmxScanner(s,p,c) pmxScannerBegin(s)\
+                            p \
+                          pmxScannerSwitch \
+                            c \
+                          pmxScannerEnd;
 
 #endif

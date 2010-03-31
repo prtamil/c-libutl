@@ -628,7 +628,6 @@ pmx_t pmx_matchstr(char *txt, char *ptrn,size_t offset)
     }    
     if (ret) {
       (*ret)[pmxCaptMax][0] = ptnum;
-      pmxMatchesPush();
       break;
     }
     if (ptlen) ptrn += ptlen;
@@ -659,7 +658,10 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   while (*cur) {
     ret = pmx_matchstr(text, ptrn, cur-text);
     if (ret) {
-      if ((f_ret = f(text,ret))) return f_ret; 
+      pmxMatchesPush();
+      f_ret = f(text,ret);
+      pmxMatchesPop();
+      if (f_ret) return f_ret; 
       cur =  text+pmxEnd(ret,0);
     }
     else cur++;
