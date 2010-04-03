@@ -562,15 +562,20 @@ int   rec_cmp(rec_t a, rec_t b);
 
 typedef struct { char *key;  int   val; } lutSN_slot_t;
 typedef struct { int   key;  int   val; } lutNN_slot_t;
+typedef struct { char *key;  char *val; } lutSS_slot_t;
 
 typedef lutSN_slot_t lutSN_t[];
 typedef lutNN_slot_t lutNN_t[];
+typedef lutSS_slot_t lutSS_t[];
 
-#define lutBeginSN(lt) lutSN_t lt = {
-#define lutEndSN(lt)   } ; int lut_##lt##_size = sizeof(lt)/sizeof(lt[0]);
+#define lutBegin(tt,lt) lut##tt##_t lt = {
+#define lutEnd(lt)   } ; int lut_##lt##_size = sizeof(lt)/sizeof(lt[0]);
 
 int lut_getSN(lutSN_t lt, int lt_size, char *key, int def);
 #define lutGetSN(lt,k,d) lut_getSN(lt,lut_##lt##_size,k,d)
+
+int lut_getSS(lutSS_t lt, int lt_size, char *key, char *def);
+#define lutGetSS(lt,k,d) lut_getSS(lt,lut_##lt##_size,k,d)
 
 
 #endif
