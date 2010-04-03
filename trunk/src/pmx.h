@@ -52,9 +52,10 @@ unsigned char pmxToken(pmx_t mtc);
 
 #define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
 
+#define pmxTokNONE    x00
 #define pmxTokEOF     x7F
 #define pmxTokIGNORE  x80
-#define pmxTokNONE    x00
+#define pmxTokERROR   xFF
 
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
@@ -71,11 +72,14 @@ typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
-extern char *pmx_tmpstr;
-extern char *pmx_tmpptrn;
-extern pmx_t pmx_tmpmtc;
+//extern char *pmx_tmpstr;
+//extern char *pmx_tmpptrn;
+//extern pmx_t pmx_tmpmtc;
 
 #define pmxScannerBegin(s) do {\
+    char *pmx_tmpstr;\
+    char *pmx_tmpptrn;\
+    pmx_t pmx_tmpmtc;\
     for (pmx_tmpstr = s, pmx_tmpptrn =  
     
 #define pmxScannerSwitch  , \
@@ -93,7 +97,7 @@ extern pmx_t pmx_tmpmtc;
 #define pmxScannerEnd  \
     } ; break; } \
     pmx_tmpstr = ""; pmxMatchesPop();\
-  } while (pmx_tmpstr == NULL)
+  } while (0)
 
 
 #define pmxScanner(s,p,c) pmxScannerBegin(s)\

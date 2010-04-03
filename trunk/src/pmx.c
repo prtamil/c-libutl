@@ -669,9 +669,9 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   return 0;
 }
 
-char *pmx_tmpstr;
-char *pmx_tmpptrn;
-pmx_t pmx_tmpmtc;
+//char *pmx_tmpstr;
+//char *pmx_tmpptrn;
+//pmx_t pmx_tmpmtc;
 
 /*******************/
 
