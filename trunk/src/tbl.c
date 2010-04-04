@@ -930,3 +930,15 @@ int lut_getSN(lutSN_t lt, int lt_size, char *key, int def)
   if (ret) return ret->val;
   return def;
 }
+
+char *lut_getSS(lutSS_t lt, int lt_size, char *key, char *def)
+{
+  lutSS_slot_t slot;
+  lutSS_slot_t *ret;
+
+  slot.key = key;
+  /*fprintf(stderr,"%d\n",lt_size);*/
+  ret = bsearch(&slot,lt,lt_size,sizeof(lutSN_slot_t),lut_cmpS);
+  if (ret) return ret->val;
+  return def;
+}
