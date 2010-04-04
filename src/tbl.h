@@ -574,7 +574,7 @@ typedef lutSS_slot_t lutSS_t[];
 int lut_getSN(lutSN_t lt, int lt_size, char *key, int def);
 #define lutGetSN(lt,k,d) lut_getSN(lt,lut_##lt##_size,k,d)
 
-int lut_getSS(lutSS_t lt, int lt_size, char *key, char *def);
+char *lut_getSS(lutSS_t lt, int lt_size, char *key, char *def);
 #define lutGetSS(lt,k,d) lut_getSS(lt,lut_##lt##_size,k,d)
 
 
