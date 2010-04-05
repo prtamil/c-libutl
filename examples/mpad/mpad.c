@@ -1758,7 +1758,7 @@ static chs_t parseglobals(chs_t text)
   #define T_GVELVAR     x87
   #define T_GGUITON     x88 
   #define T_GKEY        x89 
-  #define T_METER       x8A 
+  #define T_GMETER      x8A 
   #define T_SMPTE       x8B 
   #define T_GTRANSPOSE  x8D 
   #define T_GSTRESS     x8E
@@ -1775,7 +1775,7 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("g<?$lobal>loose&K(<+d>)<?=,>(<*=0-9g>)",T_GLOOSE)
     pmxTokSet("g<?$lobal>velar&K(<+d>)<?=,>(<*=0-9g>)",T_GVELVAR)
     pmxTokSet("g<?$lobal>guit<?$ar>on",T_GGUITON) 
-    pmxTokSet("g<?$lobal>meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_METER)
+    pmxTokSet("g<?$lobal>meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_GMETER)
     pmxTokSet("g<?$lobal>key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_GKEY)                   
     pmxTokSet("g<?$lobal>key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_GKEY)                   
     pmxTokSet("g<?$lobal>t<?$ranspose>&K(&d)",T_GTRANSPOSE)
@@ -1894,7 +1894,7 @@ static chs_t parseglobals(chs_t text)
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
-    pmxTokCase(T_METER):
+    pmxTokCase(T_GMETER):
       if (globalmeter_n != DEFAULT_VAL) 
         merr("Meter already specified", pmxTokStart(0));
       globalmeter_n = atoi(pmxTokStart(1));
@@ -2001,6 +2001,11 @@ chs_t parsetrack(chs_t trk)
   int cur_stress    = globalstress;
   int cur_soft      = globalsoft;
   int cur_key       = globalkey;
+  int   cur_meter_n       = globalmeter_n;
+  int   cur_meter_d       = globalmeter_n;
+  int   cur_meter_c       = globalmeter_c;
+  int   cur_meter_b       = globalmeter_b;
+  
 
   int   cur_tomson        = 0;
   int   cur_note          = 60;
@@ -2009,13 +2014,9 @@ chs_t parsetrack(chs_t trk)
   char  cur_ratio_n       = 1;
   char  cur_ratio_d       = 1;
   int   cur_pitch         = 0;
-  int   cur_meter_n       = 4;
-  int   cur_meter_d       = 4;
- 
   unsigned long cur_tick  = 0;
     
   unsigned char cur_channel = 0;
-  int   last_len = 0;
   
   char tuning[MAX_TUNING] = {52,57,62,67,71,76,0};
   
@@ -2062,11 +2063,13 @@ chs_t parsetrack(chs_t trk)
   #define T_CHORD1      xAC
   #define T_CHORD2      xAD
   #define T_CHORD3      xAE
+  #define T_METER       xAF
 
   pmxScannerBegin(trk)
     
     pmxTokSet("stress&K(<+d>)",T_STRESS)
     pmxTokSet("soft&K(<+d>)",T_SOFT)
+    pmxTokSet("meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_METER)
     pmxTokSet("key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("pitch&K(<?=+&->)(<+d>)",T_PITCH)
@@ -2344,6 +2347,20 @@ chs_t parsetrack(chs_t trk)
   
       continue;
 
+    pmxTokCase(T_METER):
+      cur_meter_n = atoi(pmxTokStart(1));
+      cur_meter_d = atoi(pmxTokStart(2));
+      
+      if (pmxTokLen(3) > 0)
+        cur_meter_c = atoi(pmxTokStart(3));
+        
+      if (pmxTokLen(4) > 0)
+        cur_meter_b = atoi(pmxTokStart(4));
+        
+      chsAddFmt(new_trk,"%08lx ",cur_tick);
+      chsAddFmt(new_trk,"meter %d %d %d %d\n",cur_meter_n, cur_meter_d, cur_meter_c, cur_meter_b);
+      continue;
+
     pmxTokCase(T_KEY):
       if (pmxTokLen(1)>0) { 
         d = atoi(pmxTokStart(1));
@@ -2355,6 +2372,7 @@ chs_t parsetrack(chs_t trk)
         n = (pmxTokLen(3) > 0) ? pmxTokStart(3)[2] : 'j';
         d = keybyname(pmxTokStart(2), pmxTokLen(2), n);
       }
+      cur_key = d;
       chsAddFmt(new_trk,"%08lx ",cur_tick);
       chsAddFmt(new_trk,"key %d\n",d);
       continue;
