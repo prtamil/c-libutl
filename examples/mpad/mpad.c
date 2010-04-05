@@ -1438,7 +1438,7 @@ char *gchordbyname(char *note, int acclen, char *type, int typelen)
   s[typelen] = '\0';
   
   s = lutGetSS(gchords,buf,NULL);
-  //fprintf(stderr,"## %s -> [%s]\n",buf,s);
+  fprintf(stderr,"## %s -> [%s]\n",buf,s);
   return s;  
 }
 
@@ -2086,7 +2086,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
     
     pmxTokSet("<?=',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
-    pmxTokSet("<?=',>[g:&K()(<=a-g>)(<?=#b+->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
+    pmxTokSet("<?=',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
 
     pmxTokSet("<?=',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
     pmxTokSet("<?=',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
