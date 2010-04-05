@@ -2687,7 +2687,10 @@ int main(int argc, char *argv[])
   char *trk;
   vec_t tracks = NULL;
 
-  if (argc < 2) f = stdin;
+  if (argc < 2) {
+    f = stdin;
+    fprintf(stdout,"Content-Type: text/plain\n\n");
+  }
   else { 
     fname=argv[1];
     f = fopen(fname,"r");
@@ -2699,10 +2702,6 @@ int main(int argc, char *argv[])
    
   if (f != stdin) fclose(f);
 
-  if (f == stdin) {
-    fprintf(stdout,"Content-Type: text/plain\n\n");
-  }
-  
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetS(tracks, k, NULL);
     if (trk != NULL) 
