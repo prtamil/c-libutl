@@ -14,6 +14,8 @@
 
 #include "libutl.h"
 
+int cgi = 0;
+
 lutBegin(SN,instr)
     lutItem("abassdrum",            (0x80 |  35) )
     lutItem("accordion",                      21 )
@@ -1375,10 +1377,14 @@ void usage()
 
 void merr(char *msg, char *context)
 {
+  FILE *f = stderr;
+  
+  if (cgi) f = stdout;
   if (context && *context)
-    fprintf(stderr,"<<...%.*s...>>\n",40,context);
-  fprintf(stderr,"ERR: %s\n",msg);
-  exit(1);
+    fprintf(f,"((...%.*s...))\n",40,context);
+  fprintf(f,"ERR: %s\n",msg);
+  
+  exit(cgi?0:1);
 }
 
 int keybyname(char *name, int len, int majmin)
@@ -2632,14 +2638,13 @@ chs_t parsetrack(chs_t trk)
   return new_trk;
 }
 
-vec_t mp_tracks(FILE *f)
+vec_t mp_tracks(chs_t text)
 {
-  chs_t text = NULL;
   int k;
-  chs_t trk;
+  char *trk;
   
-  chsCpy(text,"| ");
-  chsAddFile(text, f);
+  if (*text != '|')
+    chsInsStr(text,0,"| ");
   chsAddChr(text,'\n');
   
   /* Case insensitiveness */  
@@ -2671,6 +2676,71 @@ vec_t mp_tracks(FILE *f)
   return tracks;
 }
 
+vec_t mp_tracks_file(FILE *f)
+{
+  chs_t text = NULL;
+  
+  chsCpy(text,"| ");
+  chsAddFile(text, f);
+  
+  return mp_tracks(text);
+}
+
+int hex2dec(char *h)
+{
+  int n=0;
+  
+  if (*h <= '9') n += (*h)-'0';
+  else if (*h <= 'F') n += (*h)-'A'+ 10;
+  else if (*h <= 'f') n += (*h)-'a'+ 10;
+  h++;
+  n <<= 4;
+  if (*h <= '9') n += (*h)-'0';
+  else if (*h <= 'F') n += (*h)-'A'+ 10;
+  else if (*h <= 'f') n += (*h)-'a'+ 10;
+  
+  return n;
+}
+vec_t mp_tracks_cgi()
+{
+  chs_t text = NULL;
+  chs_t text2 = NULL;
+  int k;
+  
+  chsCpyFile(text2, stdin);
+ 
+  k=0; 
+  while (k<10 && text2[k] != '=') k++;
+  if (text2[k] == '=') 
+    while (k >= 0) text2[k--] = ' ';
+      
+  #define T_CGIHEXCHAR   x82
+  #define T_CGISPACE     x83
+    
+  pmxScannerBegin(text2)
+  
+    pmxTokSet("+", T_CGISPACE)
+    pmxTokSet("%<x><x>",T_CGIHEXCHAR)
+    pmxTokSet("%", pmxTokIGNORE)
+    pmxTokSet("<+!+%>",pmxTokIGNORE) 
+    pmxTokSet("<.>",pmxTokIGNORE) 
+
+  pmxScannerSwitch
+    pmxTokCase(T_CGISPACE):     chsAddChr(text,' ');
+                                continue;
+                                
+    pmxTokCase(T_CGIHEXCHAR):   chsAddChr(text,hex2dec(pmxTokStart(0)+1));
+                                continue;
+                                
+    pmxTokCase(pmxTokIGNORE):   chsAddStrL(text,pmxTokStart(0),pmxTokLen(0));
+                                continue;
+    
+  pmxScannerEnd;
+  
+  chsFree(text2);  
+  return mp_tracks(text);
+}
+
 vec_t mp_tracks_free(vec_t tracks)
 {
   if (DO_CLEANUP) {
@@ -2688,23 +2758,21 @@ int main(int argc, char *argv[])
   vec_t tracks = NULL;
 
   if (argc < 2) {
-    f = stdin;
+    cgi = 1;
     fprintf(stdout,"Content-Type: text/plain\n\n");
+    tracks = mp_tracks_cgi();
   }
   else { 
     fname=argv[1];
     f = fopen(fname,"r");
+    if (!f) merr("Unable to open file",NULL);
+    tracks = mp_tracks_file(f);
+    fclose(f);
   }
-  
-  if (!f) merr("Unable to open file",NULL);
-  
-  tracks = mp_tracks(f);
-   
-  if (f != stdin) fclose(f);
 
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetS(tracks, k, NULL);
-    if (trk != NULL) 
+    if (trk && *trk) 
        fprintf(stdout,"%s\n",trk);
   }  
   
