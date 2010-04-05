@@ -1435,10 +1435,40 @@ char *gchordbyname(char *note, int acclen, char *type, int typelen)
   //fprintf(stderr,"## %s -> [%s]\n",buf,s);
   return s;  
 }
+
+char *chordbyname(char *type, int typelen)
+{
+  char buf[32];
+  char *s = buf;
+  
+  if (typelen>20) typelen = 20;
+  if (typelen == 0 || *type == ':') {
+    strcpy(s,"maj");
+    s+=3;
+  }
+  if (typelen > 0) 
+    strncpy(s,type,typelen);
+
+  s[typelen] = '\0';
+  
+  s = lutGetSS(chords,buf,NULL);
+  //fprintf(stderr,"## %s -> [%s]\n",buf,s);
+  return s;  
+}
       
 char *notename(int note)
 {
   return "c c#d d#e f f#g g#a a#b "+(note % 12) * 2;
+}
+
+char noteacc(int note)
+{
+  return " # #  # # # "[note % 12];
+}
+
+char notebase(int note)
+{
+  return "ccddeffggaab"[note % 12];
 }
 
 int noteoctave(int note)
@@ -1950,48 +1980,6 @@ static int gettrack(char *str, pmx_t capt)
   return 0;
 }
 
-void settuning(char *tun, char *str)
-{
-  int n=0;
-  
-  #define T_TUNNOTE     x81
-  #define T_TUNCOMMA    x82
-  #define T_TUNEND      x83
-  #define T_TUNNOTENUM  x84
-   
-  pmxScannerBegin(str)
-  
-    pmxTokSet("(<=a-g>)(<?=#b+&->)(<+d>)",T_TUNNOTE)
-    pmxTokSet("n(<+d>)",T_TUNNOTENUM)
-    pmxTokSet(",", T_TUNCOMMA)
-    pmxTokSet("]",T_TUNEND)
-    pmxTokSet("&s",pmxTokIGNORE) 
-    pmxTokSet("<.>",pmxTokERROR) 
-
-  pmxScannerSwitch
-
-    pmxTokCase(T_TUNNOTE) :
-      if (n >= MAX_TUNING) merr("Syntax error",str);
-      tun[n++] = notenum(*pmxTokStart(1),
-                         pmxTokLen(2) > 0 ? *pmxTokStart(2) : ' ',
-                         atoi(pmxTokStart(3)));
-      continue;
-
-    pmxTokCase(T_TUNNOTENUM) :
-      if (n >= MAX_TUNING) merr("Syntax error",str);
-      tun[n++] = atoi(pmxTokStart(1)) & 0x7F;
-      continue;
-
-    pmxTokCase(T_TUNCOMMA):    continue;
-    pmxTokCase(pmxTokIGNORE):  continue;
-    pmxTokCase(T_TUNEND):      break;
-    pmxTokCase(pmxTokERROR):   merr("Syntax error X",pmxTokStart(0)); break;
-    
-  pmxScannerEnd;
-  //fprintf(stderr,"*** %d\n",k);
-  tun[n] = 0;
-}
-
 chs_t parsetrack(chs_t trk)
 {
   chs_t new_trk = NULL;
@@ -2063,13 +2051,16 @@ chs_t parsetrack(chs_t trk)
   #define T_PITCH       xA7
   #define T_CTRL        xA8
   #define T_KEY         xA9 
-  #define T_GCHORD      xAA
-  #define T_CHORD1      xAB
-  #define T_CHORD2      xAC
-  #define T_TUNING      xAD
+  #define T_TUNING      xAA
+  #define T_GCHORD      xAB
+  #define T_CHORD1      xAC
+  #define T_CHORD2      xAD
+  #define T_CHORD3      xAE
 
   pmxScannerBegin(trk)
-  
+    
+    pmxTokSet("stress&K(<+d>)",T_STRESS)
+    pmxTokSet("soft&K(<+d>)",T_SOFT)
     pmxTokSet("key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("pitch&K(<?=+&->)(<+d>)",T_PITCH)
@@ -2088,11 +2079,12 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
     pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
     
-    pmxTokSet("[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
-    pmxTokSet("[g:&K()(<=a-g>)(<?=#b+->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
+    pmxTokSet("<?=',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
+    pmxTokSet("<?=',>[g:&K()(<=a-g>)(<?=#b+->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
 
-    pmxTokSet("[(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)](<?=/><*d>)&K(<*==>)",T_CHORD1)
-    pmxTokSet("[(<?=a-g><?=#b+->&K<*! ]>&K)](<?=/><*d>)&K(<*==>)",T_CHORD2)
+    pmxTokSet("<?=',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
+    pmxTokSet("<?=',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
+    pmxTokSet("<?=',>[&K(<?=a-g>)(<?=#b+&->)()&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD3)
 
     pmxTokSet("/",T_UPOCTAVE)    
     pmxTokSet("\\",T_DOWNOCTAVE)    
@@ -2109,6 +2101,14 @@ chs_t parsetrack(chs_t trk)
                         
   pmxScannerSwitch
 
+    pmxTokCase(T_STRESS):
+      cur_stress = atoi(pmxTokStart(1)) & 0x7F;
+      continue;
+    
+    pmxTokCase(T_SOFT):
+      cur_soft = atoi(pmxTokStart(1)) & 0x7F;
+      continue;
+    
     pmxTokCase(T_GCHORD):
       k = 0;
       if (pmxTokLen(5) > 0) {
@@ -2123,6 +2123,13 @@ chs_t parsetrack(chs_t trk)
         s = pmxTokStart(1);
       
       if (s == NULL) merr("Unknown chord", pmxTokStart(0));
+      
+      switch(*pmxTokStart(0)) {
+        case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
+                    break;
+        case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
+                    break;
+      }      
       
       chsAddFmt(new_trk,"%08lx gchord start\n",cur_tick);
       
@@ -2176,16 +2183,43 @@ chs_t parsetrack(chs_t trk)
       continue;
 
     pmxTokCase(T_CHORD1):
-   /* "[(<+=0-9a-gn&->&K,<+=0-9a-gn&-,>)](<?=/><*d>)&K(<*==>)" */
-
-      k = 0;
-      if (pmxTokLen(2) > 0) {
-        if (*pmxTokStart(2) != '/') merr("Syntax Error",pmxTokStart(2)-1);
-        cur_notelen = atoi(pmxTokStart(2)+1);
-      }
-      d = 1+pmxTokLen(3);
+/*  "[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)" */
       s = pmxTokStart(1);
+      goto chord;
+
+    pmxTokCase(T_CHORD3):
+/*  "[&K(<?=a-g>)(<?=#b+&->)(<*d>)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)" */
+      if ((pmxTokLen(3) + pmxTokLen(2) + pmxTokLen(1)) > 0) {
+        if (pmxTokLen(3) > 0) o = atoi(pmxTokStart(3));
+        else o = noteoctave(cur_note);
+        if (pmxTokLen(2) > 0) k = *pmxTokStart(2);
+        else k = noteacc(cur_note);
+        if (pmxTokLen(1) > 0) n = *pmxTokStart(1);
+        else n = notebase(cur_note);
+        cur_note = notenum(n,k,o);
+      }
+
+    pmxTokCase(T_CHORD2):
+/*  "[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)" */
+      s = chordbyname(pmxTokStart(4),pmxTokLen(4));
+
+    chord:
+      if (s == NULL) merr("Unknown chord", pmxTokStart(0));
       
+      k = 0;
+      if (pmxTokLen(5) > 0) {
+        if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
+        cur_notelen = atoi(pmxTokStart(5)+1);
+      }
+      d = 1+pmxTokLen(6);
+      
+      switch(*pmxTokStart(0)) {
+        case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
+                    break;
+        case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
+                    break;
+      }
+            
       chsAddFmt(new_trk,"%08lx chord start\n",cur_tick);
       
       pmxScannerBegin(s)
@@ -2234,7 +2268,7 @@ chs_t parsetrack(chs_t trk)
           if (pmxTokLen(3) > 0) o = atoi(pmxTokStart(3));
           else o = noteoctave(cur_note);
           if (pmxTokLen(2) > 0) k = *pmxTokStart(2);
-          else k = ' ';
+          else k = " # #  # # # "[cur_note % 12];
           cur_note = notenum(*pmxTokStart(1),k,o);
           n = notenorm(cur_note+cur_transpose);
           t = notename(n);
@@ -2439,7 +2473,17 @@ chs_t parsetrack(chs_t trk)
       cur_tick += n; 
       continue;    
 
-    pmxTokCase(T_NUMNOTE):    
+    pmxTokCase(T_NUMNOTE):
+    
+      if (pmxTokLen(1) > 0) {
+        switch(*pmxTokStart(1)) {
+          case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
+                      break;
+          case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
+                      break;
+        }
+      }
+    
       n=atoi(pmxTokStart(4)); 
       if (pmxTokLen(3) > 0) {
         if (*pmxTokStart(3) == '-') n = -n;
@@ -2447,6 +2491,7 @@ chs_t parsetrack(chs_t trk)
       }
       n = notenorm(n);
       t = notename(n+cur_transpose);
+      
       chsAddFmt(new_trk,"%08lx ",cur_tick);
       chsAddFmt(new_trk,"note %c%c %d ", t[0], t[1], noteoctave(n+cur_transpose));
       
@@ -2492,8 +2537,13 @@ chs_t parsetrack(chs_t trk)
       cur_note = notenorm(n + 12 * o);
                
       if (pmxTokLen(1) > 0) {
-        if (*pmxTokStart(1) == 'o') continue; 
-        /* Handle stress and soft!! */
+        switch(*pmxTokStart(1)) {
+          case 'o'  : continue;
+          case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
+                      break;
+          case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
+                      break;
+        }
       }
       
       d = (1+pmxTokLen(5));
@@ -2637,10 +2687,11 @@ int main(int argc, char *argv[])
   char *trk;
   vec_t tracks = NULL;
 
-  if (argc < 2) fname="mm.txt";
-  else fname=argv[1];
-   
-  f = fopen(fname,"r");
+  if (argc < 2) f = stdin;
+  else { 
+    fname=argv[1];
+    f = fopen(fname,"r");
+  }
   
   if (!f) merr("Unable to open file",NULL);
   
@@ -2648,6 +2699,10 @@ int main(int argc, char *argv[])
    
   if (f != stdin) fclose(f);
 
+  if (f == stdin) {
+    fprintf(stdout,"Content-Type: text/plain\n\n");
+  }
+  
   for (k=0; k< vecCount(tracks); k++) {
     trk = vecGetS(tracks, k, NULL);
     if (trk != NULL) 
