@@ -6,6 +6,9 @@
 **   http://opensource.org/licenses/bsd-license.php 
 */
 
+/*  This is an implementation of the "musicpad" notation by loic:
+**  see http://musicpadx.ning.com for further details
+*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1365,6 +1368,33 @@ static chs_t rpl     = NULL;
 static vec_t args    = NULL;
 static vec_t tracks  = NULL;
 
+#define MAX_BTIME 8
+int btime_cur = 0;
+unsigned long btime_tick[MAX_BTIME];
+unsigned long btime_max[MAX_BTIME];
+
+#define cur_btime_tick btime_tick[btime_cur]
+#define cur_btime_max  btime_max[btime_cur]
+
+#define btime_push() \
+        if (btime_cur < MAX_BTIME) { \
+          cur_btime_tick = cur_tick; \
+          cur_btime_max = cur_tick; \
+          btime_cur++;  \
+        }
+
+#define btime_pop() \
+        if (btime_cur > 0) { \
+          cur_tick = cur_btime_max; \
+          btime_cur--; \
+        }
+
+#define btime_reset() \
+        if (btime_cur > 0) { \
+          if (cur_btime_max < cur_tick) cur_btime_max = cur_tick;\
+          cur_tick = cur_btime_tick; \
+        }
+
 #define MAX_TUNING 16
 
 #define DO_CLEANUP 0
@@ -1403,7 +1433,7 @@ int ctrlbyname(char *name, int len)
   if (len>30) len=30;
   strncpy(buf,name,len);
   buf[len] = '\0';
-  return lutGetSN(instr,buf,0);
+  return lutGetSN(ctrl,buf,-1);
 }
 
 int instrbyname(char *name, int len)
@@ -1412,7 +1442,7 @@ int instrbyname(char *name, int len)
   if (len>30) len=30;
   strncpy(buf,name,len);
   buf[len] = '\0';
-  return lutGetSN(instr,buf,0);
+  return lutGetSN(instr,buf,-1);
 }
 
 char *gchordbyname(char *note, int acclen, char *type, int typelen)
@@ -1554,6 +1584,24 @@ static char *mulpar(char *str, pmx_t capt)
      chsAddChr(tmptext,' ');
    }
    chsAddStr(tmptext,") ");
+   
+   return tmptext;   
+}
+
+static char *backtime(char *str, pmx_t capt)
+{
+   int k;
+   int l;
+   char *s;
+      
+   l = pmxLen(capt,1)-2;
+   if (l <= 0) return " ";
+   
+   s = str+pmxStart(capt,1)+1;   
+   
+   chsCpy(tmptext,"(&[ ");
+   chsAddStrL(tmptext, s, l);
+   chsAddStr(tmptext," &])");
    
    return tmptext;   
 }
@@ -1728,6 +1776,8 @@ static chs_t expand(chs_t text)
   /* get and expand macros */
   pmxScanStr(text, "&Km(<?$rnd>)$(<+a>)&K(&b())&K(&N)", getmacro);
   chsSubFun(text, 0,"&*$(<*a>)(&B())",submacro);
+
+  chsSubFun(text,0,"&*&&(&b())",backtime);
 
   /* Multiply */  
   chsSubFun(text,0,"&*(&b())&K*&K(<+d>)&K",mulpar);
@@ -2027,7 +2077,8 @@ chs_t parsetrack(chs_t trk)
   char *t;
   char *s;
      
-  chsCpy(new_trk,"00000000 track\n");  
+  //chsCpy(new_trk,"00000000 track\n");
+    
   if (cur_guiton) {
     cur_instr = 24;
     chsAddFmt(new_trk,"00000000 instr %d\n",cur_instr);
@@ -2064,9 +2115,15 @@ chs_t parsetrack(chs_t trk)
   #define T_CHORD2      xAD
   #define T_CHORD3      xAE
   #define T_METER       xAF
+  #define T_BTIMEPUSH   xB0
+  #define T_BTIMEPOP    xB1
+  #define T_BTIMERESET  xB2
 
   pmxScannerBegin(trk)
     
+    pmxTokSet("&&[",T_BTIMEPUSH)
+    pmxTokSet("&&]",T_BTIMEPOP)
+    pmxTokSet("&&",T_BTIMERESET)
     pmxTokSet("stress&K(<+d>)",T_STRESS)
     pmxTokSet("soft&K(<+d>)",T_SOFT)
     pmxTokSet("meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_METER)
@@ -2110,6 +2167,30 @@ chs_t parsetrack(chs_t trk)
                         
   pmxScannerSwitch
 
+    pmxTokCase(T_BTIMEPUSH) :
+      btime_push();
+      continue;
+
+    pmxTokCase(T_BTIMEPOP) :
+      btime_pop();
+      continue;
+
+    pmxTokCase(T_BTIMERESET) :
+      btime_reset();
+      continue;
+
+    pmxTokCase(T_CTRL) :
+      if (pmxTokLen(1) > 0)
+        d = atoi(pmxTokStart(1));
+      else
+        d = ctrlbyname(pmxTokStart(2),pmxTokLen(2));
+      if (d<0) merr("Unknown CC",pmxTokStart(0));
+      
+      n = atoi(pmxTokStart(3));
+      chsAddFmt(new_trk,"%08lx ",cur_tick);
+      chsAddFmt(new_trk,"ctrl %d %d\n",d,n);
+      continue;
+    
     pmxTokCase(T_STRESS):
       cur_stress = atoi(pmxTokStart(1)) & 0x7F;
       continue;
@@ -2616,6 +2697,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokCase(T_INSTR):
       if (pmxTokLen(2) > 0) {
         d = instrbyname(pmxTokStart(2), pmxTokLen(2));
+        if (d<0) merr("Unknown instrument",pmxTokStart(0));
         if (d & 0x80) {
           if (cur_channel != 9) {
             chsAddFmt(new_trk,"%08lx ",cur_tick);
@@ -2649,13 +2731,30 @@ chs_t parsetrack(chs_t trk)
      
   pmxScannerEnd;
   
-  chsAddFmt(new_trk,"%08lx ",cur_tick);
-  chsAddStr(new_trk,"end\n");
+  //chsAddFmt(new_trk,"%08lx end\n",cur_tick);
   
   chsFree(trk);
   return new_trk;
 }
-
+#if 0
+chs_t sorttrack(chs_t trk)
+{
+  vec_t lines=NULL;
+  chs_t new_trk = NULL;
+  char *s;
+  int k;
+  
+  lines = vecSplitP(trk,"\n",NULL);
+  
+  for (k=1; k<vecCount(lines); k++) {
+    s = veGetS
+  }
+  qsort(lines,vecCount(lines),sizeof())
+  void qsort(void *base, size_t nel, size_t width,
+       int (*compar)(const void *, const void *));
+  return new_trk;
+}
+#endif
 vec_t mp_tracks(chs_t text)
 {
   int k;
@@ -2682,6 +2781,7 @@ vec_t mp_tracks(chs_t text)
     trk = vecGetZS(tracks, k, NULL); 
     if (trk != NULL) { 
       trk = parsetrack(trk);
+      //trk = sorttrack(trk);
       vecSetZH(tracks, k, trk);
     }
   }
