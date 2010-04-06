@@ -393,7 +393,6 @@ vec_t vec_del(vec_t vt, long from, long to);
 int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
 
-
 vec_t vec_split(char *s, char *sep,char *trim, int dup);
 
 #define vecSplit(s, sep, trim) vec_split(s,sep,trim,1)
