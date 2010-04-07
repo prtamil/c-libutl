@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
-
+#include <stdarg.h>
 #include <time.h>
 
 #include "libutl.h"
@@ -1373,31 +1373,51 @@ int btime_cur = 0;
 unsigned long btime_tick[MAX_BTIME];
 unsigned long btime_max[MAX_BTIME];
 
-#define cur_btime_tick btime_tick[btime_cur]
-#define cur_btime_max  btime_max[btime_cur]
-
-#define btime_push() \
+#define btime_push(tk) \
         if (btime_cur < MAX_BTIME) { \
-          cur_btime_tick = cur_tick; \
-          cur_btime_max = cur_tick; \
+          btime_tick[btime_cur] = tk; \
+          btime_max[btime_cur] = tk; \
           btime_cur++;  \
         }
 
-#define btime_pop() \
+#define btime_pop(tk) \
         if (btime_cur > 0) { \
-          cur_tick = cur_btime_max; \
           btime_cur--; \
+          tk = btime_max[btime_cur]; \
         }
 
-#define btime_reset() \
+#define btime_reset(tk) \
         if (btime_cur > 0) { \
-          if (cur_btime_max < cur_tick) cur_btime_max = cur_tick;\
-          cur_tick = cur_btime_tick; \
+          if (btime_max[btime_cur-1] < tk) btime_max[btime_cur-1] = tk;\
+          tk = btime_tick[btime_cur-1]; \
         }
 
 #define MAX_TUNING 16
 
+
 #define DO_CLEANUP 0
+
+#define EOD 9999999
+
+static chs_t addevent(chs_t track, unsigned long tick, int channel, char *evt, int data, ...)
+{
+  va_list ap;
+  int i=data;
+  
+  chsAddFmt(track, "%08lx ",tick);
+  if (channel >= 0)
+    chsAddFmt(track,"%x ",channel);
+  else
+    chsAddStr(track,"- ");
+  chsAddStr(track, evt);
+  va_start(ap, data);
+  for (i = data; i != EOD; i = va_arg(ap,int)) {
+    chsAddFmt(track," %d", i);
+  }
+  va_end(ap);
+  chsAddChr(track,'\n');
+  return track;
+}
 
 void usage()
 {
@@ -1590,7 +1610,6 @@ static char *mulpar(char *str, pmx_t capt)
 
 static char *backtime(char *str, pmx_t capt)
 {
-   int k;
    int l;
    char *s;
       
@@ -1986,19 +2005,19 @@ static chs_t parseglobals(chs_t text)
   if (globalstress   == DEFAULT_VAL )  globalstress   = 120;
   if (globalsoft     == DEFAULT_VAL )  globalsoft     = 85;
 
-  chsCpy(header,"00000000 header\n");
-  chsAddFmt(header,"00000000 ppqn %d\n",ppqn);
-  chsAddFmt(header,"00000000 duty %d\n",duty);
-  chsAddFmt(header,"00000000 velocity %d\n", velocity);
-  chsAddFmt(header,"00000000 loose %d,%d\n",globalloose_w ,globalloose_q);
-  chsAddFmt(header,"00000000 velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
-  chsAddFmt(header,"00000000 guiton %d\n",globalguiton);
-  chsAddFmt(header,"00000000 transpose %d\n",globaltranspose);
-  chsAddFmt(header,"00000000 stress %d\n",globalstress);
-  chsAddFmt(header,"00000000 soft %d\n",globalsoft);
-  chsAddFmt(header,"00000000 key %d\n",globalkey);
-  chsAddFmt(header,"00000000 tempo %d\n", tempo);
-  chsAddStr(header,"00000000 end\n");
+     chsCpy(header,"00000000 HEADER\n");
+  chsAddFmt(header,"00000000 - ppqn %d\n",ppqn);
+  chsAddFmt(header,"00000000 - duty %d\n",duty);
+  chsAddFmt(header,"00000000 - velocity %d\n", velocity);
+  chsAddFmt(header,"00000000 - loose %d,%d\n",globalloose_w ,globalloose_q);
+  chsAddFmt(header,"00000000 - velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
+  chsAddFmt(header,"00000000 - guiton %d\n",globalguiton);
+  chsAddFmt(header,"00000000 - transpose %d\n",globaltranspose);
+  chsAddFmt(header,"00000000 - stress %d\n",globalstress);
+  chsAddFmt(header,"00000000 - soft %d\n",globalsoft);
+  chsAddFmt(header,"00000000 - key %d\n",globalkey);
+  chsAddFmt(header,"00000000 - tempo %d\n", tempo);
+  chsAddStr(header,"00000000 END\n");
   
   vecSetH(tracks, 0, header);
   return text;
@@ -2036,6 +2055,9 @@ static int gettrack(char *str, pmx_t capt)
   return 0;
 }
 
+
+#define event(...) (new_trk = addevent(new_trk, cur_tick, cur_channel,  __VA_ARGS__ , EOD))
+
 chs_t parsetrack(chs_t trk)
 {
   chs_t new_trk = NULL;
@@ -2051,39 +2073,37 @@ chs_t parsetrack(chs_t trk)
   int cur_stress    = globalstress;
   int cur_soft      = globalsoft;
   int cur_key       = globalkey;
-  int   cur_meter_n       = globalmeter_n;
-  int   cur_meter_d       = globalmeter_n;
-  int   cur_meter_c       = globalmeter_c;
-  int   cur_meter_b       = globalmeter_b;
+  int cur_meter_n   = globalmeter_n;
+  int cur_meter_d   = globalmeter_n;
+  int cur_meter_c   = globalmeter_c;
+  int cur_meter_b   = globalmeter_b;
   
 
-  int   cur_tomson        = 0;
-  int   cur_note          = 60;
-  short cur_notelen       = 4;
-  char  cur_instr         = 0;
-  char  cur_ratio_n       = 1;
-  char  cur_ratio_d       = 1;
-  int   cur_pitch         = 0;
+  int cur_tomson  = 0;
+  int cur_note    = 60;
+  int cur_notelen = 4;
+  int cur_instr   = 0;
+  int cur_ratio_n = 1;
+  int cur_ratio_d = 1;
+  int cur_pitch   = 0;
+  int cur_channel = 0;
+  
   unsigned long cur_tick  = 0;
     
-  unsigned char cur_channel = 0;
-  
   char tuning[MAX_TUNING] = {52,57,62,67,71,76,0};
   
   int   d;
   int   n;
   int   o;
   int   k;
+  int   i;
   char *t;
   char *s;
+   
+  char buf[32]; 
      
-  //chsCpy(new_trk,"00000000 track\n");
+  chsCpy(new_trk,"00000000 TRACK\n");
     
-  if (cur_guiton) {
-    cur_instr = 24;
-    chsAddFmt(new_trk,"00000000 instr %d\n",cur_instr);
-  }
-  
   #define T_NOTE        x91
   #define T_STRESS      x92
   #define T_SOFT        x93
@@ -2122,7 +2142,7 @@ chs_t parsetrack(chs_t trk)
   pmxScannerBegin(trk)
     
     pmxTokSet("&&[",T_BTIMEPUSH)
-    pmxTokSet("&&]",T_BTIMEPOP)
+    pmxTokSet("&&<?=&&>]",T_BTIMEPOP)
     pmxTokSet("&&",T_BTIMERESET)
     pmxTokSet("stress&K(<+d>)",T_STRESS)
     pmxTokSet("soft&K(<+d>)",T_SOFT)
@@ -2168,15 +2188,15 @@ chs_t parsetrack(chs_t trk)
   pmxScannerSwitch
 
     pmxTokCase(T_BTIMEPUSH) :
-      btime_push();
+      btime_push(cur_tick);
       continue;
 
     pmxTokCase(T_BTIMEPOP) :
-      btime_pop();
+      btime_pop(cur_tick);
       continue;
 
     pmxTokCase(T_BTIMERESET) :
-      btime_reset();
+      btime_reset(cur_tick);
       continue;
 
     pmxTokCase(T_CTRL) :
@@ -2187,8 +2207,7 @@ chs_t parsetrack(chs_t trk)
       if (d<0) merr("Unknown CC",pmxTokStart(0));
       
       n = atoi(pmxTokStart(3));
-      chsAddFmt(new_trk,"%08lx ",cur_tick);
-      chsAddFmt(new_trk,"ctrl %d %d\n",d,n);
+      new_trk = addevent(new_trk, cur_tick, cur_channel, "ctrl", d, n, EOD);
       continue;
     
     pmxTokCase(T_STRESS):
@@ -2200,7 +2219,9 @@ chs_t parsetrack(chs_t trk)
       continue;
     
     pmxTokCase(T_GCHORD):
-      k = 0;
+      k = 0; i = 0;
+      strcpy(buf,"g0crd");
+       
       if (pmxTokLen(5) > 0) {
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         cur_notelen = atoi(pmxTokStart(5)+1);
@@ -2221,8 +2242,6 @@ chs_t parsetrack(chs_t trk)
                     break;
       }      
       
-      chsAddFmt(new_trk,"%08lx gchord start\n",cur_tick);
-      
       pmxScannerBegin(s)
         #define T_GCHNUM   x81
         #define T_GCHMINUS x82
@@ -2241,14 +2260,9 @@ chs_t parsetrack(chs_t trk)
           if (tuning[k] > 0) {
             n = tuning[k++] + atoi(pmxTokStart(0));
             n = notenorm(n+cur_transpose);
-            t = notename(n);
-            o = noteoctave(n);
-            chsAddFmt(new_trk,"%08lx ",cur_tick);
-            chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
-            if (cur_ratio_n != cur_ratio_d) {
-              chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
-            }
-            chsAddChr(new_trk,'\n');
+            buf[1] = i+'0'; i++;
+            event(buf, n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+            //new_trk = addevent(new_trk,cur_tick, cur_channel ,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
           }          
           continue;
           
@@ -2268,7 +2282,6 @@ chs_t parsetrack(chs_t trk)
         n = (n * cur_ratio_n) / cur_ratio_d;
         
       cur_tick += n; 
-      chsAddFmt(new_trk,"%08lx gchord end\n",cur_tick);
       
       continue;
 
@@ -2296,7 +2309,8 @@ chs_t parsetrack(chs_t trk)
     chord:
       if (s == NULL) merr("Unknown chord", pmxTokStart(0));
       
-      k = 0;
+      k = 0; i = 0;
+      strcpy(buf,"k0crd");
       if (pmxTokLen(5) > 0) {
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         cur_notelen = atoi(pmxTokStart(5)+1);
@@ -2310,8 +2324,6 @@ chs_t parsetrack(chs_t trk)
                     break;
       }
             
-      chsAddFmt(new_trk,"%08lx chord start\n",cur_tick);
-      
       pmxScannerBegin(s)
         #define T_CHNUM      x81
         #define T_CHNOTENUM  x82
@@ -2331,27 +2343,17 @@ chs_t parsetrack(chs_t trk)
         pmxTokCase(T_CHNUM) :
           n = atoi(pmxTokStart(0));
           n = notenorm(cur_note+n+cur_transpose);
-          t = notename(n);
-          o = noteoctave(n);
-          chsAddFmt(new_trk,"%08lx ",cur_tick);
-          chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
-          if (cur_ratio_n != cur_ratio_d) {
-            chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
-          }
-          chsAddChr(new_trk,'\n');
+          buf[1] = i+'0'; i++;
+          event(buf, n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+          //addevent(new_trk,cur_tick, cur_channel,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
           continue;
           
         pmxTokCase(T_CHNOTENUM) :
           cur_note = atoi(pmxTokStart(1));
           n = notenorm(cur_note+cur_transpose);
-          t = notename(n);
-          o = noteoctave(n);
-          chsAddFmt(new_trk,"%08lx ",cur_tick);
-          chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
-          if (cur_ratio_n != cur_ratio_d) {
-            chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
-          }
-          chsAddChr(new_trk,'\n');
+          buf[1] = i+'0'; i++;
+          event(buf, n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+          // new_trk = addevent(new_trk,cur_tick, cur_channel,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
           continue;
           
         pmxTokCase(T_CHNOTE) :
@@ -2361,13 +2363,9 @@ chs_t parsetrack(chs_t trk)
           else k = " # #  # # # "[cur_note % 12];
           cur_note = notenum(*pmxTokStart(1),k,o);
           n = notenorm(cur_note+cur_transpose);
-          t = notename(n);
-          chsAddFmt(new_trk,"%08lx ",cur_tick);
-          chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
-          if (cur_ratio_n != cur_ratio_d) {
-            chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
-          }
-          chsAddChr(new_trk,'\n');
+          buf[1] = i+'0'; i++;
+          event(buf, n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+          //new_trk = addevent(new_trk,cur_tick, cur_channel,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
           continue;
           
         pmxTokCase(pmxTokIGNORE):  continue;
@@ -2382,7 +2380,6 @@ chs_t parsetrack(chs_t trk)
         n = (n * cur_ratio_n) / cur_ratio_d;
         
       cur_tick += n; 
-      chsAddFmt(new_trk,"%08lx chord end\n",cur_tick);
       
       continue;
 
@@ -2521,14 +2518,10 @@ chs_t parsetrack(chs_t trk)
         cur_transpose = 0;
         cur_guiton = 0;
         if (cur_channel != 9) {
-           chsAddFmt(new_trk,"%08lx ",cur_tick);
-           chsAddStr(new_trk,"ch 9\n");
            cur_channel = 9;
         }
       }
       else if (cur_channel == 9) {
-        chsAddFmt(new_trk,"%08lx ",cur_tick);
-        chsAddStr(new_trk,"ch 0\n");
         cur_channel = 0;
       }
       continue;
@@ -2537,15 +2530,12 @@ chs_t parsetrack(chs_t trk)
       cur_guiton = (*pmxTokStart(1) == 'n') ;
       if (cur_guiton) {
         if (cur_channel == 9) {
-          chsAddFmt(new_trk,"%08lx ",cur_tick);
-          chsAddStr(new_trk,"ch 0\n");
           cur_channel = 0;
         }
       }
       if (24 != cur_instr) {
         cur_instr = 24;
-        chsAddFmt(new_trk,"%08lx ",cur_tick);
-        chsAddFmt(new_trk,"instr %d\n",cur_instr);
+        event("#prog",cur_instr);
       }
 
       continue;
@@ -2564,17 +2554,14 @@ chs_t parsetrack(chs_t trk)
         cur_notelen = d;
       }
       n = notenorm(cur_note + cur_transpose + n);
-      t = notename(n);
-      o = noteoctave(n);
       d = (1+pmxTokLen(2));
-      chsAddFmt(new_trk,"%08lx ",cur_tick);
-      chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
+      event("note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+      // new_trk = addevent(new_trk, cur_tick, cur_channel ,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
+
       n = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
         n = (n * cur_ratio_n) / cur_ratio_d;
       }
-      chsAddChr(new_trk,'\n');
       cur_tick += n; 
       continue;    
 
@@ -2595,23 +2582,17 @@ chs_t parsetrack(chs_t trk)
         n += cur_note;
       }
       n = notenorm(n);
-      t = notename(n+cur_transpose);
-      
-      chsAddFmt(new_trk,"%08lx ",cur_tick);
-      chsAddFmt(new_trk,"note %c%c %d ", t[0], t[1], noteoctave(n+cur_transpose));
-      
       d = cur_notelen;
       if (pmxTokLen(5) > 0) d = atoi(pmxTokStart(5));
       if (pmxTokLen(2) == 0) {cur_note = n;  cur_notelen = d;}
              
-      chsAddFmt(new_trk,"%d/%d",(1+pmxTokLen(6)), d);
+      event("note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+      //new_trk = addevent(new_trk,cur_tick, cur_channel, "note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
 
       n = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
         n = (n * cur_ratio_n) / cur_ratio_d;
       }
-      chsAddChr(new_trk,'\n');
       cur_tick += n; 
       continue;
  
@@ -2653,17 +2634,13 @@ chs_t parsetrack(chs_t trk)
       
       d = (1+pmxTokLen(5));
       n = notenorm(cur_note + cur_transpose);
-      t = notename(n);
-      o = noteoctave(n);
+      event("note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n);
+      //new_trk = addevent(new_trk,cur_tick, cur_channel,"note", n, cur_velocity, d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
       
-      chsAddFmt(new_trk,"%08lx ",cur_tick);
-      chsAddFmt(new_trk,"note %c%c %d %d/%d", t[0], t[1], o, d, cur_notelen);
       n = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
         n = (n * cur_ratio_n) / cur_ratio_d;
       }
-      chsAddChr(new_trk,'\n');
       cur_tick += n; 
       continue;
 
@@ -2674,14 +2651,12 @@ chs_t parsetrack(chs_t trk)
       }
         
       d = (1+pmxTokLen(2));
-      chsAddFmt(new_trk,"%08lx ",cur_tick);
-      chsAddFmt(new_trk,"pause %d/%d", d, cur_notelen);
+      event("pause", d, cur_notelen,cur_ratio_d,cur_ratio_n);
+      //new_trk = addevent(new_trk,cur_tick, cur_channel,"pause", d, cur_notelen,cur_ratio_d,cur_ratio_n,EOD);
       n = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        chsAddFmt(new_trk," %d/%d", cur_ratio_n , cur_ratio_d);
         n = (n * cur_ratio_n) / cur_ratio_d;
       }
-      chsAddChr(new_trk,'\n');
       cur_tick += n; 
       continue;
 
@@ -2689,8 +2664,6 @@ chs_t parsetrack(chs_t trk)
       d = atoi(pmxTokStart(1)) -1;
       if (0 <= d && d <= 15 ) {
         cur_channel = d;
-        chsAddFmt(new_trk,"%08lx ",cur_tick);
-        chsAddFmt(new_trk,"ch %d\n",cur_channel);
       }
       continue;
       
@@ -2700,8 +2673,6 @@ chs_t parsetrack(chs_t trk)
         if (d<0) merr("Unknown instrument",pmxTokStart(0));
         if (d & 0x80) {
           if (cur_channel != 9) {
-            chsAddFmt(new_trk,"%08lx ",cur_tick);
-            chsAddStr(new_trk,"ch 9\n");
             cur_channel = 9;
           }          
           cur_note = d &= 0x7F;
@@ -2714,8 +2685,7 @@ chs_t parsetrack(chs_t trk)
       if (d < 0 || d > 127 ) d = 0;
       if (d != cur_instr) {
         cur_instr = d;
-        chsAddFmt(new_trk,"%08lx ",cur_tick);
-        chsAddFmt(new_trk,"instr %d\n",cur_instr);
+        event("#prog",cur_instr);
       }
       continue;
       
@@ -2731,34 +2701,49 @@ chs_t parsetrack(chs_t trk)
      
   pmxScannerEnd;
   
-  //chsAddFmt(new_trk,"%08lx end\n",cur_tick);
+  chsAddFmt(new_trk,"%08lx END\n",cur_tick);
   
   chsFree(trk);
   return new_trk;
 }
-#if 0
+
+static int linecmp(const void *a, const void *b)
+{
+
+  char *s = vecSlotGetP((vec_slot_t *)a,"");
+  char *t = vecSlotGetP((vec_slot_t *)b,"");
+  
+  return strncmp(s,t,13);
+}
+
 chs_t sorttrack(chs_t trk)
 {
   vec_t lines=NULL;
   chs_t new_trk = NULL;
-  char *s;
+  char *s, *t;
   int k;
   
   lines = vecSplitP(trk,"\n",NULL);
   
-  for (k=1; k<vecCount(lines); k++) {
-    s = veGetS
+  qsort(vecSlots(lines)+2,(vecCount(lines))/2 - 2, sizeof(vec_slot_t)*2, linecmp);
+  
+  for (k=0; k<vecCount(lines); k+=2) {
+    s = vecGetP(lines,k,NULL); t = vecGetP(lines,k+1,NULL);
+    if (s && t) {
+      chsAddStrL(new_trk,s,t-s);
+      chsAddChr(new_trk,'\n');
+    }
   }
-  qsort(lines,vecCount(lines),sizeof())
-  void qsort(void *base, size_t nel, size_t width,
-       int (*compar)(const void *, const void *));
+  chsFree(trk);
   return new_trk;
 }
-#endif
+
 vec_t mp_tracks(chs_t text)
 {
   int k;
   char *trk;
+  
+  if (!text) return NULL;
   
   if (*text != '|')
     chsInsStr(text,0,"| ");
@@ -2781,7 +2766,7 @@ vec_t mp_tracks(chs_t text)
     trk = vecGetZS(tracks, k, NULL); 
     if (trk != NULL) { 
       trk = parsetrack(trk);
-      //trk = sorttrack(trk);
+      trk = sorttrack(trk);
       vecSetZH(tracks, k, trk);
     }
   }
