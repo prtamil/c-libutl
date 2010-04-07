@@ -617,6 +617,7 @@ vec_t vec_setsize(vec_t vt, long nslots)
     vt->size  = nslots;
     vt->count = 0;
     vt->cur   = 0 ;
+    vt->stride = 1;
     return vt;
   }
 
@@ -784,6 +785,16 @@ vec_t vec_del(vec_t vt, long from, long to)
   return vt;  
 }
 
+
+val_u vec_slot_get(vec_slot_t *slot, char v_type, val_u def)
+{
+  if (slot) {
+    if (slot_val_type(slot) == v_type)
+       return slot_val(slot);
+  }
+  return def;
+}
+
 val_u vec_get(vec_t vt, long ndx, char v_type, val_u def)
 {
   vec_slot_t *slot;
@@ -815,6 +826,10 @@ char vecType(vec_t vt, long ndx)
   if (!vt || vt->count == 0) return '\0';
   ndx = fixndx(vt,ndx);
   return (ndx < vt->count) ? slot_val_type(slot_ptr(vt,ndx)) : '\0';
+}
+
+char vecValType(vec_slot_t *slot) {
+  return slot? slot_val_type(slot) : '\0';
 }
 
 int vec_cmp (const void *a, const void *b)

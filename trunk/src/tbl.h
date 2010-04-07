@@ -297,6 +297,7 @@ typedef struct {
   long count;
   long size;
   long cur;
+  long stride;
   vec_slot_t slot[1];
 } vec_vector_t;
 
@@ -305,6 +306,8 @@ typedef vec_vector_t *vec_t;
 vec_t vec_setsize(vec_t vt, long nslots);
 
 #define vecNew(v)  (v = vec_setsize(NULL, 2))
+
+#define vecStrided(v,n)  (v? (v)->stride = n: n)
 
 vec_t vec_free(vec_t vt) ;
 #define vecFree(v) (v = vec_free(v));
@@ -385,13 +388,32 @@ val_u vec_getz(vec_t vt, long ndx, char v_type, val_u def);
 #define vecGetZU(vt,n,d) valGetU(vec_getz(vt,n,'U',valU(d)))
 #define vecGetZF(vt,n,d) valGetF(vec_getz(vt,n,'F',valF(d)))
 
+val_u vec_slot_get(vec_slot_t *slot, char v_type, val_u def);
+
+#define vecSlotGetM(n,d) valGetM(vec_slot_get(n,'M',valM(d)))
+#define vecSlotGetT(n,d) valGetT(vec_slot_get(n,'T',valT(d)))
+#define vecSlotGetV(n,d) valGetV(vec_slot_get(n,'V',valV(d)))
+#define vecSlotGetR(n,d) valGetR(vec_slot_get(n,'R',valR(d)))
+#define vecSlotGetP(n,d) valGetP(vec_slot_get(n,'P',valP(d)))
+#define vecSlotGetS(n,d) valGetS(vec_slot_get(n,'S',valS(d)))
+#define vecSlotGetN(n,d) valGetN(vec_slot_get(n,'N',valN(d)))
+#define vecSlotGetU(n,d) valGetU(vec_slot_get(n,'U',valU(d)))
+#define vecSlotGetF(n,d) valGetF(vec_slot_get(n,'F',valF(d)))
+
+#define vecSlots(v) ((v)->slot)
+
+
 char vecType(vec_t vt, long ndx);
+char vecValType(vec_slot_t *slot);
 
 vec_t vec_del(vec_t vt, long from, long to);
 #define vecDel(vt,f,t)  (vt = vec_del(vt, f,t))
 
 int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
+
+#define vecSortP(v,f)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), f)
+
 
 vec_t vec_split(char *s, char *sep,char *trim, int dup);
 
