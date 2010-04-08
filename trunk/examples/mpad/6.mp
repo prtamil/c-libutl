@@ -1,8 +1,7 @@
 
 GlobalKey Eb maj
- 
-| r 2/3 A B C r1 -
-| key Eb,minor D key Eb E -
+tempo 110 
+| r 2/3 A B C r1 - key Eb,minor D key Eb E -
 | o/4 a b c -
 | E &(o/4 ch1 a c   g &
     o/4 ch2 g e/8 c d/4 &
@@ -12,3 +11,5 @@ GlobalKey Eb maj
     o0/4 ch2 D &
     o0/4 ch3 E )
 
+| 
+| A G & C tempo 120 A G & C
