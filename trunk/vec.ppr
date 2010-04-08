@@ -126,10 +126,10 @@ Selected=examples\mpad\8.mp
 TopLine=1
 Caret=35,4
 [examples\mpad\mpad.c]
-TopLine=2001
-Caret=30,2038
-BookMark8=6,1567
-Mark1=1,2702
+TopLine=2529
+Caret=21,2559
+BookMark8=6,1579
+Mark1=1,2732
 [examples\mpad\makefile]
 TopLine=1
 Caret=1,21
@@ -165,7 +165,7 @@ TopLine=1
 Caret=1,4
 [examples\mpad\8.mp]
 TopLine=1
-Caret=10,14
+Caret=19,14
 [src\chs.c]
 TopLine=303
 Caret=1,1

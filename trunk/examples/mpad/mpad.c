@@ -1395,6 +1395,18 @@ unsigned long btime_max[MAX_BTIME];
         
 #define MAX_TUNING 16
 
+typedef struct {
+  unsigned long tick;
+  short value;
+  unsigned char  type;
+  unsigned char  stepslen;
+} swdata;
+
+swdata sweepdata[150];
+
+#define sweep_velocity 128
+#define sweep_pitch    129
+#define sweep_ndx(x)   (x)
 
 #define DO_CLEANUP 0
 
@@ -2109,6 +2121,7 @@ chs_t parsetrack(chs_t trk)
   
   unsigned long cur_tick  = 0;
   unsigned long last_tick  = 0;
+  unsigned long tk = 0;
     
   char tuning[MAX_TUNING] = {52,57,62,67,71,76,0};
   
@@ -2178,7 +2191,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("loose&K(&d),(<+=g0-9>)",T_LOOSE)
     pmxTokSet("velvar&K(&d),(<+=g0-9>)",T_VELVAR)
     pmxTokSet("r&K(<+d>)<?=/>(<*d>)",T_RATIO)
-    pmxTokSet("v&K(<+d>)",T_VELOCITY)
+    pmxTokSet("v&K(<+d>)&K(&B>>)",T_VELOCITY)
     pmxTokSet("u&K(<+d>)",T_DUTY)
     pmxTokSet("tomso(<$n$ff>)",T_TOMSMODE)
     pmxTokSet("ch&K(<+d>)",T_CHANNEL)
@@ -2256,7 +2269,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) event("!length", cur_notelen);        
+        if (n != cur_notelen) param("length", cur_notelen);        
       }
       d = 1+pmxTokLen(6);
       
@@ -2349,7 +2362,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) event("!length", cur_notelen);        
+        if (n != cur_notelen) param("length", cur_notelen);        
      }
       d = 1+pmxTokLen(6);
       
@@ -2530,8 +2543,25 @@ chs_t parsetrack(chs_t trk)
       continue;
 
     pmxTokCase(T_VELOCITY):
-      cur_velocity = atoi(pmxTokStart(1));
-      param("vol", cur_velocity);
+      cur_velocity = atoi(pmxTokStart(1)) & 0x0F;
+      param("vel", cur_velocity);
+      if (sweepdata[sweep_velocity].type != 0) {
+        tk = cur_tick;
+        cur_tick = sweepdata[sweep_velocity].tick;
+        k  = 0;
+        while (cur_tick <= tk) {
+          n = sweepval(sweepdata[sweep_velocity].type, ++k,
+                       cur_tick, tk,
+                       sweepdata[sweep_velocity].value, cur_velocity);
+          param("vel", n);     
+          cur_ticktk += sweepdata[sweep_velocity].stepslen;
+        }
+        cur_tick = tk;
+      }
+      sweepdata[sweep_velocity].tick = cur_tick;
+      sweepdata[sweep_velocity].value = cur_velocity;
+      sweepdata[sweep_velocity].type = 0;
+      sweepdata[sweep_velocity].stepslen = 0;
       continue;
 
     pmxTokCase(T_DUTY):
@@ -2587,10 +2617,10 @@ chs_t parsetrack(chs_t trk)
       } 
       else if (cur_tomson) {
         if (d<1) d=1; else if (d>6) d = 6;
-        cur_note = "\001\062\060\057\055\053\051"[d];
+        cur_note = "\062\062\060\057\055\053\051"[d];
       }
       else {
-        if (d != cur_notelen) event("!length", d);        
+        if (d != cur_notelen) param("length", d);        
         cur_notelen = d;
       }
       n = notenorm(cur_note + cur_transpose + n);
@@ -2650,7 +2680,7 @@ chs_t parsetrack(chs_t trk)
         if (*t != '/') merr("Syntax error", t);
         d = cur_notelen;
         cur_notelen = atoi(t+1);
-        if (d != cur_notelen) event("!length", cur_notelen);        
+        if (d != cur_notelen) param("length", cur_notelen);        
       }
       
       if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
@@ -2691,7 +2721,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(1) != '/') merr("Syntax Error", pmxTokStart(1));
         d = cur_notelen;
         cur_notelen = atoi(pmxTokStart(1)+1);
-        if (d != cur_notelen) event("!length", cur_notelen);        
+        if (d != cur_notelen) param("length", cur_notelen);        
       }
         
       d = (1+pmxTokLen(2));
