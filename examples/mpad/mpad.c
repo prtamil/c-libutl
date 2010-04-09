@@ -1399,29 +1399,29 @@ typedef struct {
   unsigned long tick;
   short value;
   unsigned char  type;
-  unsigned char  stepslen;
+  unsigned char  lsteps;
 } swdata;
 
-swdata sweepdata[150];
+swdata swp_data[150];
 
-#define sweep_velocity 128
-#define sweep_pitch    129
-#define sweep_ndx(x)   (x)
+#define swp_spare    149
+
+#define swp_velocity 128
+#define swp_pitch    129
+#define swp_pan      130
+
+#define swp_ndx(x)   (x)
 
 #define DO_CLEANUP 0
 
 #define EOD 9999999
 
-static chs_t addevent(chs_t track, unsigned long tick, int channel, char *evt, int data, ...)
+static chs_t addevent(chs_t track, unsigned long tick, char *evt, int data, ...)
 {
   va_list ap;
   int i=data;
   
   chsAddFmt(track, "%08lx ",tick);
-  if (channel >= 0)
-    chsAddFmt(track,"%x ",channel & 0x0F);
-  else
-    chsAddStr(track,(channel == -1 ? "! " : "$ "));
   chsAddStr(track, evt);
   va_start(ap, data);
   for (i = data; i != EOD; i = va_arg(ap,int)) {
@@ -1516,7 +1516,7 @@ char *gchordbyname(char *note, int acclen, char *type, int typelen)
   s[typelen] = '\0';
   
   s = lutGetSS(gchords,buf,NULL);
-  fprintf(stderr,"## %s -> [%s]\n",buf,s);
+  //fprintf(stderr,"## %s -> [%s]\n",buf,s);
   return s;  
 }
 
@@ -1862,8 +1862,7 @@ static chs_t parseglobals(chs_t text)
   #define T_GSOFT       x8F   
   
   pmxScannerBegin(text)
-                       
-    pmxTokSet("tempo&K(<+d>)",T_GTEMPO)
+                           
     pmxTokSet("smpteoff<?$set>&K(&d)<?=,>(&d)<?=,>(&d)<?=,>(&d)<?=,>(&d)",T_SMPTE)
     pmxTokSet("resolution&K(<+d>)",T_RESOLUTION)
     pmxTokSet("ppqn&K(<+d>)",T_PPQN)
@@ -1900,24 +1899,17 @@ static chs_t parseglobals(chs_t text)
       continue;
 
     pmxTokCase(T_GSTRESS):
-      if (tempo != DEFAULT_VAL) 
+      if (globalstress != DEFAULT_VAL) 
         merr("Stress already specified", pmxTokStart(0));
       globalstress = atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_GSOFT):
-      if (tempo != DEFAULT_VAL)
+      if (globalsoft != DEFAULT_VAL)
         merr("Soft already specified", pmxTokStart(0));
       globalsoft = atoi(pmxTokStart(1));
       blankit(pmxTokStart(0),pmxTokLen(0));
-      continue;
-
-    pmxTokCase(T_GTEMPO):
-      if (tempo == DEFAULT_VAL)
-        tempo = atoi(pmxTokStart(1));
-        
-      //blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
 
     pmxTokCase(T_RESOLUTION):  
@@ -2033,6 +2025,9 @@ static chs_t parseglobals(chs_t text)
   if (globalstress   == DEFAULT_VAL )  globalstress   = 120;
   if (globalsoft     == DEFAULT_VAL )  globalsoft     = 85;
 
+  if (ppqn < 96) ppqn = 96; 
+
+
      chsCpy(header,"00000000 HEADER\n");
   chsAddFmt(header,"00000000 $ ppqn %d\n",ppqn);
   chsAddFmt(header,"00000000 $ duty %d\n",duty);
@@ -2074,6 +2069,8 @@ static int gettrack(char *str, pmx_t capt)
     else cur_track++;
      
     trk = vecGetZS(tracks, cur_track, NULL); 
+    if (trk == NULL && pmxLen(capt,3) ==0) 
+      chsAddStr(trk," \2");
     chsAddChr(trk,' ');
     chsAddStrL(trk, str+pmxStart(capt,2), len);
     vecSetZH(tracks, cur_track, trk); 
@@ -2084,10 +2081,103 @@ static int gettrack(char *str, pmx_t capt)
 }
 
 
-#define event(...)     (new_trk = addevent(new_trk, cur_tick, cur_channel,  __VA_ARGS__ , EOD))
+#define event(...)     (new_trk = addevent(new_trk, cur_tick,  __VA_ARGS__ , EOD))
 #define eventcont(...) (new_trk = continueevent(new_trk, __VA_ARGS__ , EOD))
-#define param(...)     (new_trk = addevent(new_trk, cur_tick, -1,  __VA_ARGS__ , EOD))
-#define gparam(...)    (new_trk = addevent(new_trk, cur_tick, -2,  __VA_ARGS__ , EOD))
+
+int swpval(int type, int k, int nsteps, int value, int endvalue)
+{
+  int val;
+  val = value + (((endvalue - value) * k) / nsteps);
+  return val;
+} 
+
+
+chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
+{
+  pmx_t mtc = NULL;
+  char buf[128];
+  char *s;
+  
+  int nsteps  = 0;
+  int lsteps  = 16; 
+  int type    = 'i';
+  int endval  = 0;
+  int k;
+  unsigned long endtk = 0;
+ 
+  if (swdef != NULL) {
+    /** Get sweep parameters */
+    s = buf;
+    while (*swdef != '>' && (s-buf) < 100) *s++ = *swdef++;
+    *s = '\0';
+  
+    if (s > buf)
+      mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log>)<*=, >(&d)<*=/ >(&D))");
+    
+    if (mtc) {
+      type = (buf + pmxStart(mtc,2))[1]; /* x i o */
+      nsteps = atoi(buf + pmxStart(mtc,3));
+      fprintf(stderr,"X1x %c %d\n",type, nsteps);
+       
+      if (pmxLen(mtc,1) > 0) { 
+        endval = atoi(buf + pmxStart(mtc,1)); 
+        if (pmxLen(mtc,4) > 0)  
+          lsteps = atoi(buf + pmxStart(mtc,4));
+      }
+      else {
+        lsteps = nsteps;
+        nsteps = 0;
+        if (pmxLen(mtc,4) > 0)
+          merr("Invalid sweep specification", swdef);
+      }
+    }
+    if (lsteps == 0) lsteps = 16;
+    lsteps = (ppqn *4) / lsteps;
+  }
+  else type = '\0';
+
+  swp_data[swp_spare].tick  = tick;
+  swp_data[swp_spare].value = value;
+  swp_data[swp_spare].type   = nsteps > 0 ? 0 : type;
+  swp_data[swp_spare].lsteps = lsteps;
+    
+  /* If it's a "forward" sweep, just do it */
+  if (nsteps > 0) {
+    endtk = tick + nsteps * lsteps;
+  }
+  else if (swp_data[param].type != '\0') {
+  /* If we had a previous point to sweep from, here we go */
+    endtk = tick;
+    endval = value;
+    tick = swp_data[param].tick;
+    value = swp_data[param].value;
+    lsteps = swp_data[param].lsteps;
+    nsteps = ((endtk - tick) / lsteps)  ;
+  }
+  
+  if (endtk > 0) {
+    fprintf(stderr,"XXX %lu %lu %d %d %d %d\n",tick,endtk,lsteps, nsteps, value, endval);
+    
+    switch (param) {
+      case swp_velocity : strcpy(buf,"!vel"); break;
+      case swp_pan      : strcpy(buf,"!pan"); break;
+      case swp_pitch    : strcpy(buf,"!pitch"); break;
+      default           : sprintf(buf, "!ctrl %d",param);
+    }
+    /* sweep from tk until endtk */
+    for (k = 1,tick += lsteps; k<= nsteps && tick < endtk; k++,tick += lsteps) {
+      trk = addevent(trk, tick, buf,swpval(type,k,nsteps,value,endval) , EOD);
+    } 
+  }
+  
+  /* Save for next point */
+  swp_data[param].tick     = swp_data[swp_spare].tick    ; 
+  swp_data[param].value    = swp_data[swp_spare].value   ;
+  swp_data[param].type     = swp_data[swp_spare].type    ;
+  swp_data[param].lsteps   = swp_data[swp_spare].lsteps  ;
+ 
+  return trk;
+}
 
 chs_t parsetrack(chs_t trk)
 {
@@ -2117,7 +2207,7 @@ chs_t parsetrack(chs_t trk)
   int cur_ratio_n = 1;
   int cur_ratio_d = 1;
   int cur_pitch   = 0;
-  int cur_channel = 0;
+  int cur_channel = 0x10;
   
   unsigned long cur_tick  = 0;
   unsigned long last_tick  = 0;
@@ -2185,30 +2275,28 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_METER)
     pmxTokSet("key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
-    pmxTokSet("pitch&K(<?=+&->)(<+d>)",T_PITCH)
-    pmxTokSet("pan&K(&d)",T_PAN)
+    pmxTokSet("pitch&K(<?=+&->)(<+d>)&K(&B>>)",T_PITCH)
+    pmxTokSet("pan&&K(<?=+&->)(<+d>)&K(&B>>)",T_PAN)
     pmxTokSet("guit<?$ar>o(<$n$ff>)",T_GUITMODE)
     pmxTokSet("loose&K(&d),(<+=g0-9>)",T_LOOSE)
     pmxTokSet("velvar&K(&d),(<+=g0-9>)",T_VELVAR)
     pmxTokSet("r&K(<+d>)<?=/>(<*d>)",T_RATIO)
     pmxTokSet("v&K(<+d>)&K(&B>>)",T_VELOCITY)
     pmxTokSet("u&K(<+d>)",T_DUTY)
-    pmxTokSet("tomso(<$n$ff>)",T_TOMSMODE)
-    pmxTokSet("ch&K(<+d>)",T_CHANNEL)
-    pmxTokSet("ctrl&K(<+d>)(),(<+d>)",T_CTRL)
-    pmxTokSet("ctrl&K()(<+q>),(<+d>)",T_CTRL)
+    pmxTokSet("<?=\2>&Ktomso(<$n$ff>)",T_TOMSMODE)
+    pmxTokSet("<?=\2>&Kch&K(<+d>)",T_CHANNEL)
+    pmxTokSet("(<?=\2>)",T_CHANNEL)
+    pmxTokSet("ctrl&K(<+d>)(),(<+d>)&K(&B>>)",T_CTRL)
+    pmxTokSet("ctrl&K()(<+q>),(<+d>)&K(&B>>)",T_CTRL)
     pmxTokSet("i&K(<+d>)()",T_INSTR)
-    pmxTokSet("i&K()(<+q>)",T_INSTR)
+    pmxTokSet("<?=\2>&Ki&K()(<+q>)",T_INSTR)
     pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
     pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
-    
     pmxTokSet("<?=',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
     pmxTokSet("<?=',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
-
     pmxTokSet("<?=',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
     pmxTokSet("<?=',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
     pmxTokSet("<?=',>[&K(<?=a-g>)(<?=#b+&->)()&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD3)
-
     pmxTokSet("/",T_UPOCTAVE)    
     pmxTokSet("\\",T_DOWNOCTAVE)    
     pmxTokSet("(<+d>)&K(<*==>)",T_NUMBER)    
@@ -2269,7 +2357,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) param("length", cur_notelen);        
+        if (n != cur_notelen) event("!length", cur_notelen);        
       }
       d = 1+pmxTokLen(6);
       
@@ -2362,7 +2450,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) param("length", cur_notelen);        
+        if (n != cur_notelen) event("!length", cur_notelen);        
      }
       d = 1+pmxTokLen(6);
       
@@ -2481,14 +2569,15 @@ chs_t parsetrack(chs_t trk)
       if (pmxTokLen(4) > 0)
         cur_meter_b = atoi(pmxTokStart(4));
       
-      gparam("meter",cur_meter_n, cur_meter_d, cur_meter_c, cur_meter_b);
+      event("$meter",cur_meter_n, cur_meter_d, cur_meter_c, cur_meter_b);
       continue;
 
     pmxTokCase(T_TEMPO):
       d = atoi(pmxTokStart(1));
+      fprintf(stderr,"ии %d %d\n",d,tempo);
       if (d != tempo) {
         tempo = d;
-        gparam("tempo",tempo);
+        event("$tempo",tempo);
       }
       continue;
 
@@ -2505,20 +2594,20 @@ chs_t parsetrack(chs_t trk)
       }
       if (d != cur_key) {
         cur_key = d;
-        gparam("key",cur_key);
+        event("key",cur_key);
       }
       continue;
 
     pmxTokCase(T_LOOSE):
       cur_loose_w = atoi(pmxTokStart(1));
       cur_loose_q = (*pmxTokStart(2) == 'g') ? -1 : atoi(pmxTokStart(2));
-      param("loose",cur_loose_w,cur_loose_q);        
+      event("!loose",cur_loose_w,cur_loose_q);        
       continue;
       
     pmxTokCase(T_VELVAR):
       cur_velvar_w = atoi(pmxTokStart(1));
       cur_velvar_q = (*pmxTokStart(2) == 'g') ? -1 : atoi(pmxTokStart(2));
-      param("velvar",cur_velvar_w,cur_velvar_q);        
+      event("!velvar",cur_velvar_w,cur_velvar_q);        
       continue;
       
     pmxTokCase(T_PITCH):
@@ -2539,34 +2628,19 @@ chs_t parsetrack(chs_t trk)
       if (cur_ratio_n < 1) cur_ratio_n = 1;
       if (cur_ratio_d < 1) cur_ratio_d = 1;
       if (cur_ratio_n == cur_ratio_d) { cur_ratio_n =1 ; cur_ratio_d = 1;}
-      param("ratio", cur_ratio_d, cur_ratio_n);
+      event("!ratio", cur_ratio_d, cur_ratio_n);
       continue;
 
     pmxTokCase(T_VELOCITY):
-      cur_velocity = atoi(pmxTokStart(1)) & 0x0F;
-      param("vel", cur_velocity);
-      if (sweepdata[sweep_velocity].type != 0) {
-        tk = cur_tick;
-        cur_tick = sweepdata[sweep_velocity].tick;
-        k  = 0;
-        while (cur_tick <= tk) {
-          n = sweepval(sweepdata[sweep_velocity].type, ++k,
-                       cur_tick, tk,
-                       sweepdata[sweep_velocity].value, cur_velocity);
-          param("vel", n);     
-          cur_ticktk += sweepdata[sweep_velocity].stepslen;
-        }
-        cur_tick = tk;
-      }
-      sweepdata[sweep_velocity].tick = cur_tick;
-      sweepdata[sweep_velocity].value = cur_velocity;
-      sweepdata[sweep_velocity].type = 0;
-      sweepdata[sweep_velocity].stepslen = 0;
+      cur_velocity = atoi(pmxTokStart(1));
+      event("!vel", cur_velocity);
+      new_trk = sweep(new_trk, pmxTokLen(2) ? pmxTokStart(2)+1 : NULL,
+                      swp_velocity, cur_velocity,cur_tick);
       continue;
 
     pmxTokCase(T_DUTY):
       cur_duty = atoi(pmxTokStart(1));
-      param("duty", cur_velocity);
+      event("!duty", cur_velocity);
       continue;
 
     pmxTokCase(T_TRANSPOSE):
@@ -2586,27 +2660,19 @@ chs_t parsetrack(chs_t trk)
       if (cur_tomson) {
         cur_transpose = 0;
         cur_guiton = 0;
-        if (cur_channel != 9) {
+        if (cur_channel != 9 ) {
            cur_channel = 9;
+           event("!channel",cur_channel);
         }
-      }
-      else if (cur_channel == 9) {
-        cur_channel = 0;
       }
       continue;
       
     pmxTokCase(T_GUITMODE):
       cur_guiton = (*pmxTokStart(1) == 'n') ;
-      if (cur_guiton) {
-        if (cur_channel == 9) {
-          cur_channel = 0;
-        }
-      }
       if (24 != cur_instr) {
         cur_instr = 24;
         event("!prog", cur_instr);
       }
-
       continue;
       
     pmxTokCase(T_NUMBER):
@@ -2620,7 +2686,7 @@ chs_t parsetrack(chs_t trk)
         cur_note = "\062\062\060\057\055\053\051"[d];
       }
       else {
-        if (d != cur_notelen) param("length", d);        
+        if (d != cur_notelen) event("!length", d);        
         cur_notelen = d;
       }
       n = notenorm(cur_note + cur_transpose + n);
@@ -2680,7 +2746,7 @@ chs_t parsetrack(chs_t trk)
         if (*t != '/') merr("Syntax error", t);
         d = cur_notelen;
         cur_notelen = atoi(t+1);
-        if (d != cur_notelen) param("length", cur_notelen);        
+        if (d != cur_notelen) event("!length", cur_notelen);        
       }
       
       if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
@@ -2721,7 +2787,7 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(1) != '/') merr("Syntax Error", pmxTokStart(1));
         d = cur_notelen;
         cur_notelen = atoi(pmxTokStart(1)+1);
-        if (d != cur_notelen) param("length", cur_notelen);        
+        if (d != cur_notelen) event("!length", cur_notelen);        
       }
         
       d = (1+pmxTokLen(2));
@@ -2735,8 +2801,16 @@ chs_t parsetrack(chs_t trk)
       continue;
 
     pmxTokCase(T_CHANNEL):
-      d = atoi(pmxTokStart(1)) -1;
-      if (0 <= d && d <= 15 ) {
+      d = atoi(pmxTokStart(1))-1;
+      if (d == -1) d=0;
+      if (15 < d || (cur_channel != d && cur_channel != 0x10))
+        merr("Invalid channel definition", pmxTokStart(0));
+      if (cur_channel != d) {
+        event(" channel",d);
+        if (cur_channel == 0x10 && cur_guiton) {
+           cur_instr = 24;
+           event("!prog", cur_instr);
+        }
         cur_channel = d;
       }
       continue;
@@ -2747,7 +2821,10 @@ chs_t parsetrack(chs_t trk)
         if (d<0) merr("Unknown instrument",pmxTokStart(0));
         if (d & 0x80) {
           if (cur_channel != 9) {
+            if (cur_tick > 0)
+              merr("Can't mix notes and percussions", pmxTokStart(0));
             cur_channel = 9;
+            event("!channel",cur_channel);
           }          
           cur_note = d &= 0x7F;
           continue;
@@ -2756,7 +2833,8 @@ chs_t parsetrack(chs_t trk)
       else {
         d = atoi(pmxTokStart(1))-1;
       }
-      if (d < 0 || d > 127 ) d = 0;
+      if ((d < 0) || (d > 127))
+        merr("Invalid instrument",pmxTokStart(0));
       if (d != cur_instr) {
         cur_instr = d;
         event("!prog",cur_instr);
@@ -2787,7 +2865,7 @@ static int linecmp(const void *a, const void *b)
   char *s = vecSlotGetP((vec_slot_t *)a,"");
   char *t = vecSlotGetP((vec_slot_t *)b,"");
   
-  return strncmp(s,t,12);
+  return strncmp(s,t,10);
 }
 
 chs_t sorttrack(chs_t trk)
@@ -2834,7 +2912,7 @@ vec_t mp_tracks(chs_t text)
   checktrackstart(text);
   
   /* split tracks */
-  pmxScanStr(text,"|(&D)&K(<*!|>)",gettrack);
+  pmxScanStr(text,"|(&D)&K((<?$ch>)<*!|>)",gettrack);
 
   for (k=1; k< vecCount(tracks); k++) {
     trk = vecGetZS(tracks, k, NULL); 
