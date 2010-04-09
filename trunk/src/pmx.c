@@ -594,7 +594,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
 /* */
 
 
-pmx_t pmx_matchstr(char *txt, char *ptrn,size_t offset)
+pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
 {
   pmx_t ret = NULL;
   size_t cnt;
