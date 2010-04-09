@@ -127,10 +127,10 @@ Selected=examples\mpad\mpad.c
 TopLine=1
 Caret=2,4
 [examples\mpad\mpad.c]
-TopLine=2094
-Caret=4,2156
+TopLine=2128
+Caret=46,2144
 BookMark8=6,1579
-Mark1=1,2798
+Mark1=1,2805
 [examples\mpad\makefile]
 TopLine=1
 Caret=1,21
@@ -147,7 +147,7 @@ Caret=1,790
 TopLine=1
 Caret=30,7
 [src\pmx.c]
-TopLine=290
+TopLine=553
 Caret=43,597
 [src\pmx.h]
 TopLine=19
@@ -166,7 +166,7 @@ TopLine=1
 Caret=1,4
 [examples\mpad\11.mp]
 TopLine=1
-Caret=26,3
+Caret=1,7
 [src\chs.c]
 TopLine=303
 Caret=2,334

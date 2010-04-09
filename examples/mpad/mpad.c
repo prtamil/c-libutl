@@ -2152,11 +2152,12 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
     tick = swp_data[param].tick;
     value = swp_data[param].value;
     lsteps = swp_data[param].lsteps;
-    nsteps = ((endtk - tick) / lsteps)  ;
+    nsteps = ((endtk - tick) / lsteps);
+    endtk -= lsteps; 
   }
   
   if (endtk > 0) {
-    fprintf(stderr,"XXX %lu %lu %d %d %d %d\n",tick,endtk,lsteps, nsteps, value, endval);
+    //fprintf(stderr,"XXX %lu %lu %d %d %d %d\n",tick,endtk,lsteps, nsteps, value, endval);
     
     switch (param) {
       case swp_velocity : strcpy(buf,"!vel"); break;
@@ -2165,7 +2166,7 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
       default           : sprintf(buf, "!ctrl %d",param);
     }
     /* sweep from tk until endtk */
-    for (k = 1,tick += lsteps; k<= nsteps && tick < endtk; k++,tick += lsteps) {
+    for (k = 1,tick += lsteps; k<= nsteps && tick <= endtk; k++,tick += lsteps) {
       trk = addevent(trk, tick, buf,swpval(type,k,nsteps,value,endval) , EOD);
     } 
   }
@@ -2276,7 +2277,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
     pmxTokSet("pitch&K(<?=+&->)(<+d>)&K(&B>>)",T_PITCH)
-    pmxTokSet("pan&&K(<?=+&->)(<+d>)&K(&B>>)",T_PAN)
+    pmxTokSet("pan&K(&d)&K(&B>>)",T_PAN)
     pmxTokSet("guit<?$ar>o(<$n$ff>)",T_GUITMODE)
     pmxTokSet("loose&K(&d),(<+=g0-9>)",T_LOOSE)
     pmxTokSet("velvar&K(&d),(<+=g0-9>)",T_VELVAR)
@@ -2316,7 +2317,9 @@ chs_t parsetrack(chs_t trk)
       n = atoi(pmxTokStart(1));
       if (n < -100) n = -100;
       else if (n > 100) n = 100;
-      event("!ctrl", 10, n);
+      event("!pan", n);
+      new_trk = sweep(new_trk, pmxTokLen(2) ? pmxTokStart(2)+1 : NULL,
+                   swp_pan, n,cur_tick);
       continue;
 
     pmxTokCase(T_BTIMEPUSH) :
@@ -2340,6 +2343,8 @@ chs_t parsetrack(chs_t trk)
       
       n = atoi(pmxTokStart(3));
       event("!ctrl", d, n);
+      new_trk = sweep(new_trk, pmxTokLen(4) ? pmxTokStart(4)+1 : NULL,
+                d, n, cur_tick);
       continue;
     
     pmxTokCase(T_STRESS):
@@ -2620,6 +2625,8 @@ chs_t parsetrack(chs_t trk)
       if (cur_pitch < -100) cur_pitch = -100;
       else if (cur_pitch > 100) cur_pitch = 100;
       event("!pitch ",cur_pitch);
+      new_trk = sweep(new_trk, pmxTokLen(3) ? pmxTokStart(3)+1 : NULL,
+                   swp_pitch, cur_pitch,cur_tick);
       continue;
     
     pmxTokCase(T_RATIO):
