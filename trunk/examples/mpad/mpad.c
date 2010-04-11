@@ -14,8 +14,10 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <time.h>
+#include <math.h>
 
 #include "libutl.h"
+
 
 int cgi = 0;
 
@@ -1402,9 +1404,11 @@ typedef struct {
   unsigned char  lsteps;
 } swdata;
 
-swdata swp_data[150];
+#define SWP_MAX 150
+swdata swp_data[SWP_MAX];
 
 #define swp_spare    149
+#define swp_save     148
 
 #define swp_velocity 128
 #define swp_pitch    129
@@ -2086,9 +2090,15 @@ static int gettrack(char *str, pmx_t capt)
 
 int swpval(int type, int k, int nsteps, int value, int endvalue)
 {
-  int val;
-  val = value + (((endvalue - value) * k) / nsteps);
-  return val;
+  double dval = k;
+  dval /= nsteps;
+  switch (type) {
+    case 'i': dval = value + (endvalue - value) * dval; break;
+    case 'x': dval = k/nsteps;
+              break;
+  }
+  fprintf(stderr,"$$ %d %f\n",type, dval);
+  return (int)floor(dval);
 } 
 
 
@@ -2103,37 +2113,51 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
   int type    = 'i';
   int endval  = 0;
   int k;
-  unsigned long endtk = 0;
- 
+  int lastval;
+  int newval;
+  unsigned long endtk;
+  
   if (swdef != NULL) {
     /** Get sweep parameters */
     s = buf;
+    while (isspace((int)(*swdef))) swdef++;
     while (*swdef != '>' && (s-buf) < 100) *s++ = *swdef++;
     *s = '\0';
   
-    if (s > buf)
+    if (*buf) {
       mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log>)<*=, >(&d)<*=/ >(&D))");
     
-    if (mtc) {
-      type = (buf + pmxStart(mtc,2))[1]; /* x i o */
-      nsteps = atoi(buf + pmxStart(mtc,3));
-      fprintf(stderr,"X1x %c %d\n",type, nsteps);
-       
-      if (pmxLen(mtc,1) > 0) { 
-        endval = atoi(buf + pmxStart(mtc,1)); 
-        if (pmxLen(mtc,4) > 0)  
-          lsteps = atoi(buf + pmxStart(mtc,4));
+      if (mtc) {
+        type = (buf + pmxStart(mtc,2))[1]; /* x i o */
+        nsteps = atoi(buf + pmxStart(mtc,3));
+        fprintf(stderr,"X1x %c %d\n",type, nsteps);
+         
+        if (pmxLen(mtc,1) > 0) { 
+          endval = atoi(buf + pmxStart(mtc,1)); 
+          if (pmxLen(mtc,4) > 0)  
+            lsteps = atoi(buf + pmxStart(mtc,4));
+        }
+        else {
+          lsteps = nsteps;
+          nsteps = 0;
+          if (pmxLen(mtc,4) > 0)
+            merr("Invalid sweep specification", swdef);
+        }
       }
-      else {
-        lsteps = nsteps;
-        nsteps = 0;
-        if (pmxLen(mtc,4) > 0)
-          merr("Invalid sweep specification", swdef);
-      }
+      else   
+        merr("Invalid sweep specification", swdef);
+        
+      if (lsteps == 0) lsteps = 16;
+      
+      swp_data[swp_save].type   = type;
+      swp_data[swp_save].lsteps = lsteps;
     }
-    if (lsteps == 0) lsteps = 16;
+    else if (swp_data[swp_save].type != '\0') {
+      type   = swp_data[swp_save].type  ;
+      lsteps = swp_data[swp_save].lsteps;
+    }  
     lsteps = (ppqn *4) / lsteps;
-  }
+  } 
   else type = '\0';
 
   swp_data[swp_spare].tick  = tick;
@@ -2141,14 +2165,15 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
   swp_data[swp_spare].type   = nsteps > 0 ? 0 : type;
   swp_data[swp_spare].lsteps = lsteps;
     
-  /* If it's a "forward" sweep, just do it */
   if (nsteps > 0) {
+    /* If it's a "forward" sweep, just do it */
     endtk = tick + nsteps * lsteps;
   }
   else if (swp_data[param].type != '\0') {
   /* If we had a previous point to sweep from, here we go */
     endtk = tick;
     endval = value;
+    type = swp_data[param].type;
     tick = swp_data[param].tick;
     value = swp_data[param].value;
     lsteps = swp_data[param].lsteps;
@@ -2166,8 +2191,12 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
       default           : sprintf(buf, "!ctrl %d",param);
     }
     /* sweep from tk until endtk */
+    lastval = value;
     for (k = 1,tick += lsteps; k<= nsteps && tick <= endtk; k++,tick += lsteps) {
-      trk = addevent(trk, tick, buf,swpval(type,k,nsteps,value,endval) , EOD);
+      newval = swpval(type,k,nsteps,value,endval); 
+      //if (newval != lastval)   
+        trk = addevent(trk, tick, buf, newval , EOD);
+      lastval = newval;
     } 
   }
   
@@ -2178,6 +2207,13 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
   swp_data[param].lsteps   = swp_data[swp_spare].lsteps  ;
  
   return trk;
+}
+
+void swp_reset()
+{
+  int k;
+  for (k=0; k<SWP_MAX; k++) 
+    swp_data[k].type = 0;
 }
 
 chs_t parsetrack(chs_t trk)
@@ -2212,7 +2248,6 @@ chs_t parsetrack(chs_t trk)
   
   unsigned long cur_tick  = 0;
   unsigned long last_tick  = 0;
-  unsigned long tk = 0;
     
   char tuning[MAX_TUNING] = {52,57,62,67,71,76,0};
   
@@ -2225,6 +2260,8 @@ chs_t parsetrack(chs_t trk)
   char *s;
    
   char buf[32]; 
+    
+  swp_reset();  
      
   chsCpy(new_trk,"00000000 TRACK\n");
     

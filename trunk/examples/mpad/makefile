@@ -12,7 +12,7 @@ NAME=mpad
 include $(TOP)config.mk
 
 $(NAME)$(_EXE): $(CHKLIB) $(NAME)$(_OBJ)
-	$(LN)$@ $(NAME)$(_OBJ) -lutl
+	$(LN)$@ $(NAME)$(_OBJ) -lutl -lm
 
 clean:
 	$(RM) $(NAME)$(_EXE)
