@@ -2091,13 +2091,29 @@ static int gettrack(char *str, pmx_t capt)
 int swpval(int type, int k, int nsteps, int value, int endvalue)
 {
   double dval = k;
+  double dtmp;
+  
   dval /= nsteps;
+  
   switch (type) {
-    case 'i': dval = value + (endvalue - value) * dval; break;
-    case 'x': dval = k/nsteps;
+    case 's': dtmp = 1-dval;
+              dval = dval * dval * dval; dval = dval * dval;  /* x^6 */
+              dtmp = dtmp * dtmp * dval; dtmp = dtmp * dtmp;  /* (1-x)^6 */
+              dval = (dval+(1-dtmp))/2;
               break;
+  
+    case 'o': dval = 1-dval;
+              dval = dval * dval * dval;
+              dval = 1-dval;
+              break;
+              
+    case 'x': dval = dval * dval * dval;
+              break;
+               
+    case 'i': break;
   }
-  fprintf(stderr,"$$ %d %f\n",type, dval);
+  //fprintf(stderr,"$$ %d %f\n",type, dval);
+  dval = value + (endvalue - value) * dval;
   return (int)floor(dval);
 } 
 
@@ -2125,12 +2141,16 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
     *s = '\0';
   
     if (*buf) {
-      mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log>)<*=, >(&d)<*=/ >(&D))");
+      mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log$sin>)<*=, >(&d)<*=/ >(&D))");
     
       if (mtc) {
-        type = (buf + pmxStart(mtc,2))[1]; /* x i o */
+        if (pmxLen(mtc,2) > 0) {
+          type = (buf + pmxStart(mtc,2))[0];/* e l s */
+          if (type != 's')
+            type = (buf + pmxStart(mtc,2))[1]; /* x i o */ 
+        }
         nsteps = atoi(buf + pmxStart(mtc,3));
-        fprintf(stderr,"X1x %c %d\n",type, nsteps);
+        //fprintf(stderr,"X1x %c %d\n",type, nsteps);
          
         if (pmxLen(mtc,1) > 0) { 
           endval = atoi(buf + pmxStart(mtc,1)); 
@@ -2194,7 +2214,7 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
     lastval = value;
     for (k = 1,tick += lsteps; k<= nsteps && tick <= endtk; k++,tick += lsteps) {
       newval = swpval(type,k,nsteps,value,endval); 
-      //if (newval != lastval)   
+      if (newval != lastval)   
         trk = addevent(trk, tick, buf, newval , EOD);
       lastval = newval;
     } 
