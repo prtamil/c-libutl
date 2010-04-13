@@ -1,3 +1,7 @@
-| i NylonStringGuitar [g:C]/4= [g:Amin]=
-| i BassDrum o/16 x---x-x- x-x- ----
+| C v10 >/8> x x x x & v100
+| ch2 C v10 >/8> x x x v100 x
 
+|0 ch1 C C 
+|2 ch1 D D 
+
+|4 iBD x x x i 

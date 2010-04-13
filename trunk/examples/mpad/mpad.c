@@ -2039,8 +2039,7 @@ static chs_t parseglobals(chs_t text)
 
   if (ppqn < 96) ppqn = 96; 
 
-
-     chsCpy(header,"00000000 HEADER\n");
+//     chsCpy(header,"00000000 HEADER\n");
   chsAddFmt(header,"00000000 ppqn %d\n",ppqn);
   chsAddFmt(header,"00000000 duty %d\n",duty);
   chsAddFmt(header,"00000000 velocity %d\n", velocity);
@@ -2051,10 +2050,9 @@ static chs_t parseglobals(chs_t text)
   chsAddFmt(header,"00000000 stress %d\n",globalstress);
   chsAddFmt(header,"00000000 soft %d\n",globalsoft);
   chsAddFmt(header,"00000000 key %d\n",globalkey);
-  chsAddFmt(header,"00000000 key %d\n",globalkey);
   chsAddFmt(header,"00000000 tempo %d\n", tempo);
-  chsAddFmt(header,"00000000 title %s\n", title);
-  chsAddStr(header,"00000000 END\n");
+  chsAddFmt(header,"00000000 title %s\n", title? title : "");
+//  chsAddStr(header,"00000000 END\n");
   
   vecSetH(tracks, 0, header);
   return text;
@@ -2083,8 +2081,6 @@ static int gettrack(char *str, pmx_t capt)
     else cur_track++;
      
     trk = vecGetZS(tracks, cur_track, NULL); 
-    if (trk == NULL && pmxLen(capt,3) ==0) 
-      chsAddStr(trk," \2");
     chsAddChr(trk,' ');
     chsAddStrL(trk, str+pmxStart(capt,2), len);
     vecSetZH(tracks, cur_track, trk); 
@@ -2113,12 +2109,12 @@ int swpval(int type, int k, int nsteps, int value, int endvalue)
               break;
   
     case 's': if (dval <= 0.5) {
-                dval  = 4 * dval * dval * dval;
+                dval  = 4 * dval * dval * dval;  /* 4 * x^3 */
               }
               else {
                 dval = 1 - dval;
                 dval = dval * dval * dval;
-                dval = 1 - 4 * dval;
+                dval = 1 - 4 * dval;  /* 1 - (1- 4 * x^3)) */
               }
               break;
   
@@ -2280,7 +2276,6 @@ chs_t parsetrack(chs_t trk)
   int cur_meter_c   = globalmeter_c;
   int cur_meter_b   = globalmeter_b;
   
-
   int cur_tomson  = 0;
   int cur_note    = 60;
   int cur_notelen = 4;
@@ -2288,7 +2283,7 @@ chs_t parsetrack(chs_t trk)
   int cur_ratio_n = 1;
   int cur_ratio_d = 1;
   int cur_pitch   = 0;
-  int cur_channel = 0x10;
+  int cur_channel = 0x11;
   
   unsigned long cur_tick  = 0;
   unsigned long last_tick  = 0;
@@ -2307,7 +2302,12 @@ chs_t parsetrack(chs_t trk)
     
   swp_reset();  
      
-  chsCpy(new_trk,"00000000 TRACK\n");
+  // chsCpy(new_trk,"00000000 TRACK\n");
+
+  if (cur_guiton) {
+    cur_instr = 24;
+    event(" prog", cur_instr);
+  }
     
   #define T_NOTE        x91
   #define T_STRESS      x92
@@ -2367,13 +2367,12 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("r&K(<+d>)<?=/>(<*d>)",T_RATIO)
     pmxTokSet("v&K(<+d>)&K(&B>>)",T_VELOCITY)
     pmxTokSet("u&K(<+d>)",T_DUTY)
-    pmxTokSet("<?=\2>&Ktomso(<$n$ff>)",T_TOMSMODE)
-    pmxTokSet("<?=\2>&Kch&K(<+d>)<?=,>(&B\"\")",T_CHANNEL)
-    pmxTokSet("(\2)",T_CHANNEL)
+    pmxTokSet("tomso(<$n$ff>)",T_TOMSMODE)
+    pmxTokSet("ch&K(<+d>)<?=,>(&B\"\")",T_CHANNEL)
     pmxTokSet("ctrl&K(<+d>)(),(<+d>)&K(&B>>)",T_CTRL)
     pmxTokSet("ctrl&K()(<+q>),(<+d>)&K(&B>>)",T_CTRL)
-    pmxTokSet("<?=\2>&Ki&K(<+d>)()<?=,>(&B\"\")",T_INSTR)
-    pmxTokSet("<?=\2>&Ki&K()(<+q>)<?=,>(&B\"\")",T_INSTR)
+    pmxTokSet("i&K(<+d>)()<?=,>(&B\"\")",T_INSTR)
+    pmxTokSet("i&K()(<+q>)<?=,>(&B\"\")",T_INSTR)
     pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
     pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
     pmxTokSet("<?=^',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
@@ -2750,10 +2749,9 @@ chs_t parsetrack(chs_t trk)
       if (cur_tomson) {
         cur_transpose = 0;
         cur_guiton = 0;
-        if (cur_channel != 9 ) {
-           cur_channel = 9;
-           event("!channel",cur_channel);
-        }
+        if (cur_channel != 10 && cur_tick > 0)
+          merr("Can't mix notes and percussions", pmxTokStart(0));
+        cur_channel = 10;
       }
       continue;
       
@@ -2891,18 +2889,11 @@ chs_t parsetrack(chs_t trk)
       continue;
 
     pmxTokCase(T_CHANNEL):
-      d = atoi(pmxTokStart(1))-1;
-      if (d == -1) d=0;
-      if (15 < d || (cur_channel != d && cur_channel != 0x10))
+      d = atoi(pmxTokStart(1));
+      if (d < 0 || 16 < d ||
+          ((cur_channel & 0x0F) != d && (cur_channel != 0x11 || cur_tick != 0)))
         merr("Invalid channel definition", pmxTokStart(0));
-      if (cur_channel != d) {
-        event(" channel",d);
-        if (cur_channel == 0x10 && cur_guiton) {
-           cur_instr = 24;
-           event("!prog", cur_instr);
-        }
-        cur_channel = d;
-      }
+      cur_channel = d;
       continue;
       
     pmxTokCase(T_INSTR):
@@ -2910,13 +2901,12 @@ chs_t parsetrack(chs_t trk)
         d = instrbyname(pmxTokStart(2), pmxTokLen(2));
         if (d<0) merr("Unknown instrument",pmxTokStart(0));
         if (d & 0x80) {
-          if (cur_channel != 9) {
-            if (cur_tick > 0)
+          if (cur_channel != 10 && cur_tick > 0)
               merr("Can't mix notes and percussions", pmxTokStart(0));
-            cur_channel = 9;
-            event("!channel",cur_channel);
-          }          
-          cur_note = d &= 0x7F;
+          cur_channel   = 10;
+          cur_note      = d & 0x7F;
+          cur_transpose = 0;
+          cur_tomson    = 0;
           continue;
         }
       }
@@ -2943,7 +2933,9 @@ chs_t parsetrack(chs_t trk)
      
   pmxScannerEnd;
   
-  chsAddFmt(new_trk,"%08lx END\n",cur_tick);
+  new_trk = addevent(new_trk, 0, " channel", cur_channel & 0x0F, EOD);
+
+  //chsAddFmt(new_trk,"%08lx END\n",cur_tick);
   
   chsFree(trk);
   return new_trk;
@@ -2952,8 +2944,8 @@ chs_t parsetrack(chs_t trk)
 static int linecmp(const void *a, const void *b)
 {
 
-  char *s = vecSlotGetP((vec_slot_t *)a,"");
-  char *t = vecSlotGetP((vec_slot_t *)b,"");
+  char *s = vecSlotGetP((vec_slot_t *)a, "");
+  char *t = vecSlotGetP((vec_slot_t *)b, "");
   
   return strncmp(s,t,10);
 }
@@ -2967,7 +2959,7 @@ chs_t sorttrack(chs_t trk)
   
   lines = vecSplitP(trk,"\n",NULL);
   
-  qsort(vecSlots(lines)+2,(vecCount(lines))/2 - 2, sizeof(vec_slot_t)*2, linecmp);
+  qsort(vecSlots(lines),(vecCount(lines))/2 , sizeof(vec_slot_t)*2, linecmp);
   
   for (k=0; k<vecCount(lines); k+=2) {
     s = vecGetP(lines,k,NULL); t = vecGetP(lines,k+1,NULL);
@@ -3025,7 +3017,9 @@ vec_t mp_tracks(chs_t text)
   checktrackstart(text);
   
   /* split tracks */
-  pmxScanStr(text,"|(&D)&K((<?$ch>)<*!|>)",gettrack);
+  pmxScanStr(text,"|(&D)&K(<*!|>)",gettrack);
+  
+  /* merge tracks (1 per channel) */
 
   for (k=1; k< vecCount(tracks); k++) {
     trk = vecGetZS(tracks, k, NULL); 
@@ -3069,6 +3063,7 @@ int hex2dec(char *h)
   
   return n;
 }
+
 vec_t mp_tracks_cgi()
 {
   chs_t text = NULL;
