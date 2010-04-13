@@ -1369,6 +1369,7 @@ static chs_t tmptext = NULL;
 static chs_t rpl     = NULL;
 static vec_t args    = NULL;
 static vec_t tracks  = NULL;
+static chs_t title   = NULL;
 
 #define MAX_BTIME 8
 int btime_cur = 0;
@@ -1864,6 +1865,7 @@ static chs_t parseglobals(chs_t text)
   #define T_GTRANSPOSE  x8D 
   #define T_GSTRESS     x8E
   #define T_GSOFT       x8F   
+  #define T_GTITLE      x90   
   
   pmxScannerBegin(text)
                            
@@ -1871,6 +1873,7 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("resolution&K(<+d>)",T_RESOLUTION)
     pmxTokSet("ppqn&K(<+d>)",T_PPQN)
     pmxTokSet("duty&K(<+d>)",T_GDUTY)
+    pmxTokSet("title&K(&b\"\")", T_GTITLE)
     pmxTokSet("velocity&K(<+d>)",T_GVELOCITY)
     pmxTokSet("g<?$lobal>loose&K(<+d>)<?=,>(<*=0-9g>)",T_GLOOSE)
     pmxTokSet("g<?$lobal>velar&K(<+d>)<?=,>(<*=0-9g>)",T_GVELVAR)
@@ -1886,6 +1889,11 @@ static chs_t parseglobals(chs_t text)
                         
   pmxScannerSwitch
  
+    pmxTokCase(T_GTITLE) :
+      chsCpyL(title,pmxTokStart(1),pmxTokLen(1));
+      blankit(pmxTokStart(0),pmxTokLen(0));
+      continue;
+      
     pmxTokCase(T_GKEY):
       if (pmxTokLen(1) > 0) { 
         val = atoi(pmxTokStart(1));
@@ -2033,17 +2041,19 @@ static chs_t parseglobals(chs_t text)
 
 
      chsCpy(header,"00000000 HEADER\n");
-  chsAddFmt(header,"00000000 $ ppqn %d\n",ppqn);
-  chsAddFmt(header,"00000000 $ duty %d\n",duty);
-  chsAddFmt(header,"00000000 $ velocity %d\n", velocity);
-  chsAddFmt(header,"00000000 $ loose %d,%d\n",globalloose_w ,globalloose_q);
-  chsAddFmt(header,"00000000 $ velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
-  chsAddFmt(header,"00000000 $ guiton %d\n",globalguiton);
-  chsAddFmt(header,"00000000 $ transpose %d\n",globaltranspose);
-  chsAddFmt(header,"00000000 $ stress %d\n",globalstress);
-  chsAddFmt(header,"00000000 $ soft %d\n",globalsoft);
-  chsAddFmt(header,"00000000 $ key %d\n",globalkey);
-  chsAddFmt(header,"00000000 $ tempo %d\n", tempo);
+  chsAddFmt(header,"00000000 ppqn %d\n",ppqn);
+  chsAddFmt(header,"00000000 duty %d\n",duty);
+  chsAddFmt(header,"00000000 velocity %d\n", velocity);
+  chsAddFmt(header,"00000000 loose %d,%d\n",globalloose_w ,globalloose_q);
+  chsAddFmt(header,"00000000 velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
+  chsAddFmt(header,"00000000 guiton %d\n",globalguiton);
+  chsAddFmt(header,"00000000 transpose %d\n",globaltranspose);
+  chsAddFmt(header,"00000000 stress %d\n",globalstress);
+  chsAddFmt(header,"00000000 soft %d\n",globalsoft);
+  chsAddFmt(header,"00000000 key %d\n",globalkey);
+  chsAddFmt(header,"00000000 key %d\n",globalkey);
+  chsAddFmt(header,"00000000 tempo %d\n", tempo);
+  chsAddFmt(header,"00000000 title %s\n", title);
   chsAddStr(header,"00000000 END\n");
   
   vecSetH(tracks, 0, header);
@@ -2096,20 +2106,30 @@ int swpval(int type, int k, int nsteps, int value, int endvalue)
   dval /= nsteps;
   
   switch (type) {
-    case 's': dtmp = 1-dval;
+    case 'a': dtmp = 1-dval;
               dval = dval * dval * dval; dval = dval * dval;  /* x^6 */
               dtmp = dtmp * dtmp * dval; dtmp = dtmp * dtmp;  /* (1-x)^6 */
               dval = (dval+(1-dtmp))/2;
               break;
   
+    case 's': if (dval <= 0.5) {
+                dval  = 4 * dval * dval * dval;
+              }
+              else {
+                dval = 1 - dval;
+                dval = dval * dval * dval;
+                dval = 1 - 4 * dval;
+              }
+              break;
+  
+    case 'e': dval = dval * dval * dval;
+              break;
+               
     case 'o': dval = 1-dval;
               dval = dval * dval * dval;
               dval = 1-dval;
               break;
               
-    case 'x': dval = dval * dval * dval;
-              break;
-               
     case 'i': break;
   }
   //fprintf(stderr,"$$ %d %f\n",type, dval);
@@ -2141,31 +2161,35 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
     *s = '\0';
   
     if (*buf) {
-      mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log$sin>)<*=, >(&d)<*=/ >(&D))");
+      //mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log$sin>)<*=, >(&d)<*=/ >(&D))");
+      mtc = pmxMatchStr(buf,"(&D)<?=,>(&D)<?=/,>(&D)<?=,>(<?$exp$lin$log$sin$asn>)&K(<*.>)");
     
-      if (mtc) {
+      if (mtc && pmxLen(mtc,5) == 0) {
+        k = 0;
+        if (pmxLen(mtc,4) > 0) {
+          type = (buf + pmxStart(mtc,4))[0];/* a e l s */
+          if (type == 'l') type = (buf + pmxStart(mtc,4))[1]; /* i o */
+          k++; 
+        }
+
         if (pmxLen(mtc,2) > 0) {
-          type = (buf + pmxStart(mtc,2))[0];/* e l s */
-          if (type != 's')
-            type = (buf + pmxStart(mtc,2))[1]; /* x i o */ 
-        }
-        nsteps = atoi(buf + pmxStart(mtc,3));
-        //fprintf(stderr,"X1x %c %d\n",type, nsteps);
-         
-        if (pmxLen(mtc,1) > 0) { 
           endval = atoi(buf + pmxStart(mtc,1)); 
-          if (pmxLen(mtc,4) > 0)  
-            lsteps = atoi(buf + pmxStart(mtc,4));
+          nsteps =  atoi(buf + pmxStart(mtc,2));
+          if (nsteps == 0) merr("Invalid sweep specification", buf);
+          if (pmxLen(mtc,3) > 0)  
+            lsteps = atoi(buf + pmxStart(mtc,3));
+          k++;
         }
-        else {
-          lsteps = nsteps;
-          nsteps = 0;
-          if (pmxLen(mtc,4) > 0)
-            merr("Invalid sweep specification", swdef);
+        else if (pmxLen(mtc,3) > 0) {
+          lsteps = atoi(buf + pmxStart(mtc,1));
+          k++;
         }
+        
+        if (k == 0) merr("Invalid sweep specification 310", buf);
+        
+        //fprintf(stderr,"X1x %c %d\n",type, nsteps);
       }
-      else   
-        merr("Invalid sweep specification", swdef);
+      else merr("Invalid sweep specification 123", buf);
         
       if (lsteps == 0) lsteps = 16;
       
@@ -2321,9 +2345,11 @@ chs_t parsetrack(chs_t trk)
   #define T_BTIMERESET  xB2
   #define T_PAN         xB3
   #define T_TEMPO       xB4
+  #define T_LYRICS      xB5
 
   pmxScannerBegin(trk)
     
+    pmxTokSet("&b\"\"",T_LYRICS)
     pmxTokSet("&&[",T_BTIMEPUSH)
     pmxTokSet("&&<?=&&>]",T_BTIMEPOP)
     pmxTokSet("&&",T_BTIMERESET)
@@ -2342,25 +2368,25 @@ chs_t parsetrack(chs_t trk)
     pmxTokSet("v&K(<+d>)&K(&B>>)",T_VELOCITY)
     pmxTokSet("u&K(<+d>)",T_DUTY)
     pmxTokSet("<?=\2>&Ktomso(<$n$ff>)",T_TOMSMODE)
-    pmxTokSet("<?=\2>&Kch&K(<+d>)",T_CHANNEL)
-    pmxTokSet("(<?=\2>)",T_CHANNEL)
+    pmxTokSet("<?=\2>&Kch&K(<+d>)<?=,>(&B\"\")",T_CHANNEL)
+    pmxTokSet("(\2)",T_CHANNEL)
     pmxTokSet("ctrl&K(<+d>)(),(<+d>)&K(&B>>)",T_CTRL)
     pmxTokSet("ctrl&K()(<+q>),(<+d>)&K(&B>>)",T_CTRL)
-    pmxTokSet("i&K(<+d>)()",T_INSTR)
-    pmxTokSet("<?=\2>&Ki&K()(<+q>)",T_INSTR)
+    pmxTokSet("<?=\2>&Ki&K(<+d>)()<?=,>(&B\"\")",T_INSTR)
+    pmxTokSet("<?=\2>&Ki&K()(<+q>)<?=,>(&B\"\")",T_INSTR)
     pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
     pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
-    pmxTokSet("<?=',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
-    pmxTokSet("<?=',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
-    pmxTokSet("<?=',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
-    pmxTokSet("<?=',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
-    pmxTokSet("<?=',>[&K(<?=a-g>)(<?=#b+&->)()&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD3)
+    pmxTokSet("<?=^',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
+    pmxTokSet("<?=^',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
+    pmxTokSet("<?=^',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
+    pmxTokSet("<?=^',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
+    pmxTokSet("<?=^',>[&K(<?=a-g>)(<?=#b+&->)()&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD3)
+    pmxTokSet("(<?=^,'>)n(<?=t>)(<?=+&->)(<+d>)<?=/>(<*=0-9>)&K(<*==>)",T_NUMNOTE)
+    pmxTokSet("(<?=^,'>)(<=a-g><?=#b+&->)(<*=0-9>)(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
+    pmxTokSet("(<?=^,'>)(x)()(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("/",T_UPOCTAVE)    
     pmxTokSet("\\",T_DOWNOCTAVE)    
     pmxTokSet("(<+d>)&K(<*==>)",T_NUMBER)    
-    pmxTokSet("(<?=,'>)n(<?=t>)(<?=+&->)(<+d>)<?=/>(<*=0-9>)&K(<*==>)",T_NUMNOTE)
-    pmxTokSet("(<?=,'>)(<=a-g><?=#b+&->)(<*=0-9>)(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
-    pmxTokSet("(<?=,'>)(x)()(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
     pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)(<?=/><*=0-9>)",T_NOTE)
     pmxTokSet("p(<?=/><*=0-9>)&K(<*==&->)",T_PAUSE)
     pmxTokSet("-()(<*==&->)",T_PAUSE)
@@ -2954,6 +2980,29 @@ chs_t sorttrack(chs_t trk)
   return new_trk;
 }
 
+chs_t lowcase(chs_t text)
+{
+  pmxScannerBegin(text)
+    #define T_NOSTR   x81
+
+    pmxTokSet("&e\\&b\"\"",pmxTokIGNORE)
+    pmxTokSet("\"", pmxTokIGNORE)
+    pmxTokSet("<+!\">",T_NOSTR)
+     
+  pmxScannerSwitch
+  
+    pmxTokCase(T_NOSTR) :
+      chsLowerL(pmxTokStart(0),pmxTokLen(0));
+      continue;
+      
+    pmxTokCase(pmxTokIGNORE):
+      continue;
+    
+  pmxScannerEnd;
+  
+  return text;
+}
+
 vec_t mp_tracks(chs_t text)
 {
   int k;
@@ -2965,8 +3014,8 @@ vec_t mp_tracks(chs_t text)
     chsInsStr(text,0,"| ");
   chsAddChr(text,'\n');
   
-  /* Case insensitiveness */  
-  chsLower(text);
+  /* Case insensitiveness */
+  text = lowcase(text); 
   
   pmxScanStr(text, "&s#&L", blankcomment);
   text = parseglobals(text);
