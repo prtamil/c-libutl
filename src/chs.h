@@ -350,9 +350,15 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f);
 
 #define chsUpper(s) \
  do { char *p=s; if (p) while (*p) {*p = toupper((int)*p); p++;}} while(utlZero)
+
+#define chsUpperL(s) \
+ do { char *p=s; int k=n; if (p) while (*p && k--) {*p = toupper((int)*p); p++;}} while(utlZero)
  
 #define chsLower(s) \
  do { char *p=s; if (p) while (*p) {*p = tolower((int)*p); p++;}} while(utlZero)
+
+#define chsLowerL(s,n) \
+ do { char *p=s; int k=n; if (p) while (*p && k--) {*p = tolower((int)*p); p++;}} while(utlZero)
 
 #define chsReverse(s) \
  do { char *p,*q,t; \
@@ -388,6 +394,8 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
                                      
 #define chsupper   chsUpper          
 #define chslower   chsLower          
+#define chsnupper  chsUpper          
+#define chsnlower  chsLower          
 #define chsreverse chsReverse        
                                      
 #define chsprintf  chsCpyFmt         
