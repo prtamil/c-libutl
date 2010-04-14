@@ -307,7 +307,6 @@ vec_t vec_setsize(vec_t vt, long nslots);
 
 #define vecNew(v)  (v = vec_setsize(NULL, 2))
 
-#define vecStrided(v,n)  (v? (v)->stride = n: n)
 
 vec_t vec_free(vec_t vt) ;
 #define vecFree(v) (v = vec_free(v));
@@ -413,6 +412,12 @@ int vec_cmp (const void *a, const void *b);
 #define vecSort(v)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), vec_cmp)
 
 #define vecSortP(v,f)  qsort((v)->slot, vecCount(v) , sizeof(vec_slot_t), f)
+
+#define vecStrideSet(v,n)  (v? (v)->stride = n: n)
+#define vecStrideCount(v)  (vecCount(v)/((v)->stride))
+
+#define vecStrideSortF(v,n,f) qsort(vecSlots(v), vecCount(v)/(n),\
+                                        sizeof(vec_slot_t)*(n), f)
 
 
 vec_t vec_split(char *s, char *sep,char *trim, int dup);
