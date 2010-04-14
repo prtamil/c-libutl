@@ -2356,9 +2356,11 @@ chs_t parsetrack(chs_t trk)
   #define T_PAN         xB3
   #define T_TEMPO       xB4
   #define T_LYRICS      xB5
+  #define T_SYLLABLE    xB6
+  #define T_PORT        xB7
 
   pmxScannerBegin(trk)
-    pmxTokGroupStart 
+    pmxTokGroupBegin
       pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
       pmxTokSet("&&[",T_BTIMEPUSH)
       pmxTokSet("&&&K<?=&&>]",T_BTIMEPOP)
@@ -2371,6 +2373,7 @@ chs_t parsetrack(chs_t trk)
       pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
       pmxTokSet("pitch&K(<?=+&->)(<+d>)&K(&B>>)",T_PITCH)
       pmxTokSet("pan&K(&d)&K(&B>>)",T_PAN)
+      pmxTokSet("port&K(&d)",T_PORT)
       pmxTokSet("guit<?$ar>&Ko(<$n$ff>)",T_GUITMODE)
       pmxTokSet("loose&K(&d),(<+=g0-9>)",T_LOOSE)
       pmxTokSet("velvar&K(&d),(<+=g0-9>)",T_VELVAR)
@@ -2406,18 +2409,39 @@ chs_t parsetrack(chs_t trk)
     pmxTokGroup(1)
       pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
       
-      pmxTokSet("<=()>",pmxTokIGNORE) 
-      pmxTokSet("(<+! \n\t/&->)(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
-      pmxTokSet(" (<?/",T_SYLLABLE)
+      pmxTokSet("(<+! \n\t/&-=><?=&->)(<?=/><*d>)&K(<*==>)",T_SYLLABLE)
+      pmxTokSet("(-)(<?=/><*d>)&K(<*==>)",T_SYLLABLE)
       
       pmxTokSet("&s",pmxTokIGNORE) 
       pmxTokSet("<.>",pmxTokERROR)
                             
-    pmxTokGroupEnd                        
+    pmxTokGroupEnd   
+                         
   pmxScannerSwitch
 
+    pmxTokCase(T_SYLLABLE) :
+      if (pmxTokLen(2)>0) {
+        t = pmxTokStart(2);
+        if (*t != '/')  merr("398 Syntax Error",pmxTokStart(0));
+        d = cur_notelen;
+        cur_notelen = atoi(t+1);
+        if (d != cur_notelen) event("!length", cur_notelen);        
+      }
+      d = (1+pmxTokLen(3));
+
+      chsCpyFmt(tmptext,"_syll \"%.*s\"",pmxTokLen(1),pmxTokStart(1));
+      event(tmptext, d);
+      
+      n = (ppqn * d * 4)/cur_notelen;
+      if (cur_ratio_n != cur_ratio_d) {
+        n = (n * cur_ratio_n) / cur_ratio_d;
+      }
+      last_tick = cur_tick;
+      cur_tick += n; 
+      continue;
+
     pmxTokCase(T_LYRICS) :
-      pmxTokGroupSet( *pmxTokStart(1) == 'n' : 1 : 0);
+      pmxTokGroupSet( *pmxTokStart(1) == 'n' ? 1 : 0);
       continue;
 
     pmxTokCase(T_PAN) :
@@ -2913,6 +2937,12 @@ chs_t parsetrack(chs_t trk)
       cur_tick += n; 
       continue;
 
+    pmxTokCase(T_PORT):
+      d = atoi(pmxTokStart(1));
+      cur_port = d;
+      event("!port", d);
+      continue;
+      
     pmxTokCase(T_CHANNEL):
       d = atoi(pmxTokStart(1));
       if (d < 0 || 16 < d ||
