@@ -2156,7 +2156,7 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
   int k;
   int lastval;
   int newval;
-  unsigned long endtk;
+  unsigned long endtk=0;
   
   if (swdef != NULL) {
     /** Get sweep parameters */
@@ -2409,7 +2409,7 @@ chs_t parsetrack(chs_t trk)
     pmxTokGroup(1)
       pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
       
-      pmxTokSet("(<+! \n\t/&-=><?=&->)(<?=/><*d>)&K(<*==>)",T_SYLLABLE)
+      pmxTokSet("(<+! \r\n\t/&-=><?=&->)(<?=/><*d>)&K(<*==>)",T_SYLLABLE)
       pmxTokSet("(-)(<?=/><*d>)&K(<*==>)",T_SYLLABLE)
       
       pmxTokSet("&s",pmxTokIGNORE) 
@@ -2673,7 +2673,7 @@ chs_t parsetrack(chs_t trk)
         pmxScannerSwitch
       
           pmxTokCase(T_TUNNOTE) :
-            if (n >= MAX_TUNING) merr("505 Syntax error",t);
+            if (n >= MAX_TUNING) merr("505 Syntax error",pmxTokStart(0));
             tuning[n++] = notenum(*pmxTokStart(1),
                                   pmxTokLen(2) > 0 ? *pmxTokStart(2) : ' ',
                                   atoi(pmxTokStart(3)));
