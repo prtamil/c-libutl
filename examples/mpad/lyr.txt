@@ -1,17 +1,28 @@
 
 
   |  &( (F   G   A  F)*2     (A   Bb  G=    )*2  ( / C/8 D C \ Bb A= F=)*2 & 
-     W( (Fre-re Jac-que,)*2  (dor-mez vous?=)*2  ()
+     L( (Fre-re Jac-que,)*2  (dor-mez vous?=)*2         L)    &)
   
   |   (F   G   A  F)*2     (A   Bb  G=    )*2  (/ C/8 D   C \ Bb  A=  F=)*2 
   |W  (Fre-re Jac-que,)*2  (dor-mez vous?=)*2  (  Son-nez les ma- ti- nes)*2
   
   
+  |1 ch1 | 2 ch1 
   
-  |   (F      G  A   F   )*2  (A   Bb  G=    )*2 
-  |W  (Fre-/4 re Jac-que,)*2  (dor-mez vous?=)*2  
+  tempo 110
+  |1  (F/4    G  A   F   )*2  (A   Bb  G=    )*2 
+  |2 "(Fre-/4 re Jac-que,)*2  (dor-mez vous?=)*2"    
   
-  |   (/ C/8    D   C  \ Bb  A=   F=  )*2   (F/4    C    F=)
-  |W  (  Son-/8 nez les  ma- ti-= nes=)*2   (Din,/4 dan, don.=)
+  |1  (/ C/8    D   C  \ Bb  A=   F=  )*2   (G/4    C    F=)
+  |2 "(  Son-/8 nez les  ma- ti-= nes=)*2   (Din,/4 dan, don.=)"
   
 
+  tempo 110
+  |1 ch1 tempo 110
+  |2 ch1 lyricson
+   
+  |1          ( F/4    G  A   F   )*2  (A   Bb  / C= \   )*2 
+  |2 lyricson ( Fre-/4 re Jac-que,)*2  (dor-mez   vous?= )*2
+  
+  |1 ( / C/8    D   C  \ Bb  A=   F=  )*2   (G/4    C    F= )
+  |2 (   Son-/8 nez les  ma- ti-= nes=)*2   (Din,/4 dan, don.= )

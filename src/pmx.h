@@ -85,13 +85,13 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
  do {\
     char *pmx_tmpstr;\
     char *pmx_tmpptrn;\
-    pmx_t pmx_tmpmtc = (pmx_t)(&pmx_tmpstr);\
     int   pmx_group = 0;\
+    pmx_t pmx_tmpmtc;\
     if (!s || !*s) break;\
-    pmx_tmpmtc = (pmx_t)(&pmx_tmpstr);\
+    pmx_tmpmtc = (pmx_t)(&pmx_group);\
     pmx_tmpstr = s;\
     for(;pmx_tmpmtc;) {\
-      if (pmx_tmpmtc != (pmx_t)&pmx_tmpstr) {\
+      if (pmx_tmpmtc != (pmx_t)&pmx_group) {\
         pmx_tmpstr += pmxLen(pmx_tmpmtc,0);  \
         pmxMatchesPop();\
       }\
