@@ -61,6 +61,11 @@ unsigned char pmxToken(pmx_t mtc);
 #define pmxTok_defstr(y)  #y 
 #define pmxTokCase(y) case pmxTok_defcase(y)
 
+#define pmxTokGroupSet(x)     (pmx_group = (x))
+#define pmxTokGroupBegin    ( (pmx_group == 0) ? 
+#define pmxTokGroup(n)      : (pmx_group == (n)) ?   
+#define pmxTokGroupEnd      : "")
+
 #define pmxSwitch(s,p) \
     switch ( ((pmx_tmpstr = s) && *s ) \
                  ? (pmx_tmpmtc = pmxMatchStr(pmx_tmpstr,p), \
@@ -76,10 +81,42 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 //extern char *pmx_tmpptrn;
 //extern pmx_t pmx_tmpmtc;
 
+#define pmxScannerBegin(s) \
+ do {\
+    char *pmx_tmpstr;\
+    char *pmx_tmpptrn;\
+    pmx_t pmx_tmpmtc = (pmx_t)(&pmx_tmpstr);\
+    int   pmx_group = 0;\
+    if (!s || !*s) break;\
+    pmx_tmpmtc = (pmx_t)(&pmx_tmpstr);\
+    pmx_tmpstr = s;\
+    for(;pmx_tmpmtc;) {\
+      if (pmx_tmpmtc != (pmx_t)&pmx_tmpstr) {\
+        pmx_tmpstr += pmxLen(pmx_tmpmtc,0);  \
+        pmxMatchesPop();\
+      }\
+      pmx_tmpptrn = 
+      
+#define pmxScannerSwitch \
+      ;\
+      pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn);\
+      pmxMatchesPush();\
+      if (pmx_tmpmtc) {\
+        switch (pmxToken(pmx_tmpmtc)) {\
+    
+#define pmxScannerEnd  \
+        } \
+      }   \
+    }     \
+    pmxMatchesPop(); \
+  } while (0)
+
+#if 0
 #define pmxScannerBegin(s) do {\
     char *pmx_tmpstr;\
     char *pmx_tmpptrn;\
     pmx_t pmx_tmpmtc;\
+    int   pmx_group =0;
     for (pmx_tmpstr = s, pmx_tmpptrn =  
     
 #define pmxScannerSwitch  , \
@@ -98,7 +135,7 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
     } ; break; } \
     pmx_tmpstr = ""; pmxMatchesPop();\
   } while (0)
-
+#endif
 
 #define pmxScanner(s,p,c) pmxScannerBegin(s)\
                             p \
