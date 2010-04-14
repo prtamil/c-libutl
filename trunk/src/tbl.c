@@ -868,6 +868,8 @@ vec_t vec_split(char *s, char *sep, char *trim, int dup)
      
      if (*p) p++;
    }
+   
+   if (t && !dup) t->stride = 2;
     
    return t;  
 }
