@@ -124,15 +124,15 @@ vec
 17=doc\usersguide.txt
 [Selected Project Files]
 Main=
-Selected=examples\mpad\mpad.c
+Selected=examples\mpad\6.mp
 [examples\mpad\6.mp]
 TopLine=1
-Caret=2,4
+Caret=14,6
 [examples\mpad\mpad.c]
-TopLine=3084
-Caret=9,3098
-BookMark8=6,1586
-Mark1=1,2945
+TopLine=1892
+Caret=42,1929
+BookMark8=6,1590
+Mark1=1,2951
 [examples\mpad\makefile]
 TopLine=1
 Caret=34,15
