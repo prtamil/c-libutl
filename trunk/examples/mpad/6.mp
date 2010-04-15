@@ -1,5 +1,6 @@
-
-GlobalKey Eb maj
+globalloose 10,2
+gvelvar 10,2
+globalKey Cm
 | tempo 110 
 | r 2/3 A B C r1 - key Eb,minor D key Eb E -
 | o/4 a b c -

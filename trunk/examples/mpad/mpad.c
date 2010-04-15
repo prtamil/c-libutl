@@ -1371,7 +1371,11 @@ static chs_t tmptext = NULL;
 static chs_t rpl     = NULL;
 static vec_t args    = NULL;
 static vec_t tracks  = NULL;
+static vec_t mtrks   = NULL;
 static chs_t title   = NULL;
+static chs_t mastertrk = NULL;
+static chs_t header = NULL;
+
 
 #define MAX_BTIME 8
 int btime_cur = 0;
@@ -1860,7 +1864,6 @@ static chs_t expand(chs_t text)
 static chs_t parseglobals(chs_t text)
 {
   int val;
-  chs_t header = NULL;
   
   #define T_GTEMPO      x81
   #define T_RESOLUTION  x82
@@ -1889,11 +1892,11 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("&ititle&K(&b\"\")", T_GTITLE)
     pmxTokSet("&ivelocity&K(<+d>)",T_GVELOCITY)
     pmxTokSet("&ig<?$lobal>loose&K(<+d>)<?=,>(<*=0-9g>)",T_GLOOSE)
-    pmxTokSet("&ig<?$lobal>velar&K(<+d>)<?=,>(<*=0-9g>)",T_GVELVAR)
+    pmxTokSet("&ig<?$lobal>velvar&K(<+d>)<?=,>(<*=0-9g>)",T_GVELVAR)
     pmxTokSet("&ig<?$lobal>guit<?$ar>on",T_GGUITON) 
     pmxTokSet("&ig<?$lobal>meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_GMETER)
-    pmxTokSet("&ig<?$lobal>key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_GKEY)                   
-    pmxTokSet("&ig<?$lobal>key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_GKEY)                   
+    pmxTokSet("&ig<?$lobal>key&K()(<=a-gA-G><?=#b>)<?=,>(<?$minor$major$min$maj$m>)",T_GKEY)                   
+    pmxTokSet("&ig<?$lobal>key&K(<?=+&-><=0-7>)()<?=,>(<?$minor$major$min$maj$m>)",T_GKEY)                   
     pmxTokSet("&ig<?$lobal>t<?$ranspose>&K(&d)",T_GTRANSPOSE)
     pmxTokSet("&ig<?$lobal>stress&K(<+d>)",T_GSTRESS)
     pmxTokSet("&ig<?$lobal>soft&K(<+d>)",T_GSOFT)
@@ -1920,8 +1923,10 @@ static chs_t parseglobals(chs_t text)
         } 
       }
       else {
+        chsLowerL(pmxTokStart(0),pmxTokLen(0));
         val = 'j';
-        if (pmxTokLen(3)>0) val = pmxTokStart(3)[2];
+        if (pmxTokLen(3)>1) val = pmxTokStart(3)[2];
+        else if (pmxTokLen(3)>0) val = 'n';
         val = keybyname(pmxTokStart(2), pmxTokLen(2), val);
       }
       globalkey = val;
@@ -2057,22 +2062,22 @@ static chs_t parseglobals(chs_t text)
 
   if (ppqn < 96) ppqn = 96; 
 
-//     chsCpy(header,"00000000 HEADER\n");
-  chsAddFmt(header,"00000000 ppqn %d\n",ppqn);
-  chsAddFmt(header,"00000000 duty %d\n",duty);
-  chsAddFmt(header,"00000000 velocity %d\n", velocity);
-  chsAddFmt(header,"00000000 loose %d,%d\n",globalloose_w ,globalloose_q);
-  chsAddFmt(header,"00000000 velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
-  chsAddFmt(header,"00000000 guiton %d\n",globalguiton);
-  chsAddFmt(header,"00000000 transpose %d\n",globaltranspose);
-  chsAddFmt(header,"00000000 stress %d\n",globalstress);
-  chsAddFmt(header,"00000000 soft %d\n",globalsoft);
-  chsAddFmt(header,"00000000 key %d\n",globalkey);
-  chsAddFmt(header,"00000000 tempo %d\n", tempo);
-  chsAddFmt(header,"00000000 title %s\n", title? title : "");
-//  chsAddStr(header,"00000000 END\n");
+//     chsCpy(mastertrk,"00000000 HEADER\n");
+  chsAddFmt(mastertrk,"00000000  ppqn %d\n",ppqn);
+  chsAddFmt(mastertrk,"00000000  duty %d\n",duty);
+  chsAddFmt(mastertrk,"00000000  velocity %d\n", velocity);
+  chsAddFmt(mastertrk,"00000000  loose %d,%d\n",globalloose_w ,globalloose_q);
+  chsAddFmt(mastertrk,"00000000  velvar %d,%d\n",globalvelvar_w,globalvelvar_q);
+  chsAddFmt(mastertrk,"00000000  guiton %d\n",globalguiton);
+  chsAddFmt(mastertrk,"00000000  transpose %d\n",globaltranspose);
+  chsAddFmt(mastertrk,"00000000  stress %d\n",globalstress);
+  chsAddFmt(mastertrk,"00000000  soft %d\n",globalsoft);
+  chsAddFmt(mastertrk,"00000000  key %d\n",globalkey);
+  chsAddFmt(mastertrk,"00000000  tempo %d\n", tempo);
+  chsAddFmt(mastertrk,"00000000  title %s\n", title? title : "");
+//  chsAddStr(mastertrk,"00000000 END\n");
   
-  vecSetH(tracks, 0, header);
+  //vecSetH(tracks, 0, mastertrk);
   return text;
 }
 
@@ -2108,6 +2113,7 @@ static int gettrack(char *str, pmx_t capt)
   return 0;
 }
 
+#define mastevent(...)     (mastertrk = addevent(mastertrk, cur_tick,  __VA_ARGS__ , EOD))
 
 #define event(...)     (new_trk = addevent(new_trk, cur_tick,  __VA_ARGS__ , EOD))
 #define eventcont(...) (new_trk = continueevent(new_trk, __VA_ARGS__ , EOD))
@@ -2715,7 +2721,7 @@ chs_t parsetrack(chs_t trk)
       if (pmxTokLen(4) > 0)
         cur_meter_b = atoi(pmxTokStart(4));
       
-      event("$meter",cur_meter_n, cur_meter_d, cur_meter_c, cur_meter_b);
+      mastevent("$meter",cur_meter_n, cur_meter_d, cur_meter_c, cur_meter_b);
       continue;
 
     pmxTokCase(T_TEMPO):
@@ -2723,7 +2729,7 @@ chs_t parsetrack(chs_t trk)
       fprintf(stderr,"ии %d %d\n",d,tempo);
       if (d != tempo) {
         tempo = d;
-        event("$tempo",tempo);
+        mastevent("$tempo",tempo);
       }
       continue;
 
@@ -2740,7 +2746,7 @@ chs_t parsetrack(chs_t trk)
       }
       if (d != cur_key) {
         cur_key = d;
-        event("$key",cur_key);
+        mastevent("$key",cur_key);
       }
       continue;
 
@@ -2990,7 +2996,7 @@ chs_t parsetrack(chs_t trk)
       continue;
       
     pmxTokCase(pmxTokERROR):
-      merr("509 Syntax error", pmxTokStart(0));
+      merr("519 Syntax error", pmxTokStart(0));
       break;
 
     default: merr("353 Internal error", pmxTokStart(0));
@@ -3093,19 +3099,13 @@ chs_t lowcase(chs_t text)
   return text;
 }
 
-vec_t miditrack (vec_t mtrks)
+vec_t mergetracks (vec_t trks)
 {
   int k;
-  for (k=1; k< vecCount(tracks); k++) {
-    trk = vecGetZS(tracks, k, NULL); 
-    if (trk != NULL) {
-      /* Case insensitiveness */
-      trk = lowcase(trk); 
-      trk = parsetrack(trk);
-      //trk = sorttrack(trk);
-      vecSetZH(tracks, k, trk);
-    }
-  }
+  chs_t trk = NULL;
+  vec_t mtrks = NULL;
+  
+  mtrks = trks;
 
   return mtrks;
 }
@@ -3143,7 +3143,8 @@ vec_t mp_tracks(chs_t text)
     }
   }
 
-  tracks = miditrack(tracks);
+  vecSetH(tracks, 0, mastertrk);
+  tracks = mergetracks(tracks);
   
   if (DO_CLEANUP) {
     chsFree(text);
