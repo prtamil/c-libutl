@@ -392,7 +392,6 @@ documentation (e.g including the GraphViz description in comments).
 
 
 
-
 .%% Using utl.h
 ^^^^^^^^^^^^^^^
 
@@ -744,7 +743,7 @@ typically the value returned by a '{pmxMatchStr()} function call.
 
 .v
    #define T_LETTERS  xF1     <--- tokens are in the form '|x|'/HH/
-   #define T_NUMBERS  xF2          where HH is an hex number >= 128
+   #define T_NUMBERS  xF2          where HH is an hex number >= 80
    #define T_OTHER    xFE
    
    pmxSwitch (s,     <- this '*must* be a '|char *| variable
@@ -811,19 +810,19 @@ pmx patterns to them and then specify the actions to perform when a
 token is encountered in the text. 
   
 .v
-   #define T_LETTERS  xF1     <--- tokens are in the form '|x|'/HH/
-   #define T_NUMBERS  xF2          where HH is an hex number >= 128
+   #define T_LETTERS  xF1      // <--- tokens are in the form '|x|'/HH/
+   #define T_NUMBERS  xF2      //   where HH is an hex number >= 128
    #define T_OTHER    xFE
    
-   pmxScannerBegin("Text to be scanned ....")  <--- Note: '*NO* semicolon
-                                                    at the end of lines
-     pmxTokSet("<+=0-9>",T_NUMBERS)              <---
+   pmxScannerBegin("Text to be scanned ....")  // <--- Note: '*NO* semicolon
+                                               //    at the end of lines
+     pmxTokSet("<+=0-9>",T_NUMBERS)            //  <---
      pmsTokSet("<+=A-Z>",T_LETTERS)
      pmsTokSet("<+=a-z>",T_LETTERS)
      pmsTokSet("<.>",T_OTHER)
      
-   pmxScannerSwitch    <--- This sections is similar to a
-                            regular switch() statement
+   pmxScannerSwitch    // <--- This sections is similar to a
+                       //      regular switch() statement
      pmxTokCase(TK_LETTERS):
        printf("LETTERS: %.*s\n",pmxTokLen(0),pmxTokStart(0));
        continue;
@@ -834,14 +833,50 @@ token is encountered in the text.
        
      default: continue; 
       
-   pmxScannerEnd;      <--- Note: the semicolon at the end!!
+   pmxScannerEnd;      // <--- Note: the semicolon at the end!!
    
 ..
 
-  Scanning will stop as long as the end of text is reached, no match
+  Scanning will stop as soon as the end of text is reached, no match
 is found or a break is executed within the '|pmxTokSwitch| section. 
 
+  There might be the need of grouping the tokens so that only some are checked
+in a given state. The following example transform a text to all lower case 
+except if the text is in single quotes:
 
+.v
+   #define T_LOWER    x81
+   #define T_IGNORE   x82
+   #define T_ENABLE   x83
+   #define T_DISABLE  x84
+   
+   pmxScannerBegin("mIxEd 'CASE' tExT")
+     pmxTokGroupBegin
+       pmxTokSet("'",T_DISABLE)
+       pmsTokSet("<.>",T_LOWER)
+     pmxTokGroup(1)
+       pmxTokSet("'",T_ENABLE)
+       pmsTokSet("<.>",T_IGNORE)     
+     pmxTokGroupEnd
+     
+   pmxScannerSwitch
+     pmxTokCase(T_LOWER):   putchar(tolower(*pmxTokStart(0)));
+                            continue;
+
+     pmxTokCase(T_IGNORE):  putchar(pmxTokStart(0));
+                            continue;
+       
+     pmxTokCase(T_ENABLE):  pmxTokGroupSet(0);
+                            continue;
+       
+     pmxTokCase(T_DISABLE): pmxTokGroupSet(1);
+                            continue;
+      
+   pmxScannerEnd;      
+   
+..
+
+will print: '|mixed CASE text|
 
 .%% Tools
 """"""""

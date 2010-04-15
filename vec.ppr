@@ -20,7 +20,7 @@ vec
 		build\msys_mingw.sh
 		build\win_build.bat
 	+vec
-		-doc
+		+doc
 			doc\stk.gif
 			doc\pmx.txt
 			doc\usersguide.txt
@@ -121,17 +121,18 @@ vec
 14=examples\mpad\13.mp.txt
 15=examples\mpad\lyr.txt
 16=examples\mpad\14.mp
+17=doc\usersguide.txt
 [Selected Project Files]
 Main=
-Selected=examples\mpad\14.mp
+Selected=examples\mpad\mpad.c
 [examples\mpad\6.mp]
 TopLine=1
 Caret=2,4
 [examples\mpad\mpad.c]
-TopLine=1635
-Caret=19,1664
-BookMark8=6,1584
-Mark1=1,2935
+TopLine=3084
+Caret=9,3098
+BookMark8=6,1586
+Mark1=1,2945
 [examples\mpad\makefile]
 TopLine=1
 Caret=34,15
@@ -177,3 +178,6 @@ Caret=1,9
 [examples\mpad\14.mp]
 TopLine=1
 Caret=11,2
+[doc\usersguide.txt]
+TopLine=849
+Caret=1,865
