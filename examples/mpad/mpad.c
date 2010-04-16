@@ -2118,6 +2118,8 @@ static int gettrack(char *str, pmx_t capt)
 #define event(...)     (new_trk = addevent(new_trk, cur_tick,  __VA_ARGS__ , EOD))
 #define eventcont(...) (new_trk = continueevent(new_trk, __VA_ARGS__ , EOD))
 
+#define inctick(n) (last_tick = cur_tick, cur_tick += (n))
+
 int swpval(int type, int k, int nsteps, int value, int endvalue)
 {
   double dval = k;
@@ -2441,19 +2443,16 @@ chs_t parsetrack(chs_t trk)
         if (*t != '/')  merr("398 Syntax Error",pmxTokStart(0));
         d = cur_notelen;
         cur_notelen = atoi(t+1);
-        if (d != cur_notelen) event("!length", cur_notelen);        
+        //if (d != cur_notelen) event("!length", cur_notelen);        
       }
       d = (1+pmxTokLen(3));
-
+      d = (ppqn * d * 4)/cur_notelen;
+      if (cur_ratio_n != cur_ratio_d) {
+        d = (d * cur_ratio_n) / cur_ratio_d;
+      }
       chsCpyFmt(tmptext,"_syll \"%.*s\"",pmxTokLen(1),pmxTokStart(1));
       event(tmptext, d);
-      
-      n = (ppqn * d * 4)/cur_notelen;
-      if (cur_ratio_n != cur_ratio_d) {
-        n = (n * cur_ratio_n) / cur_ratio_d;
-      }
-      last_tick = cur_tick;
-      cur_tick += n; 
+      inctick(d);
       continue;
 
     pmxTokCase(T_LYRICS) :
@@ -2509,10 +2508,13 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("501 Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) event("!length", cur_notelen);        
+        //if (n != cur_notelen) event("!length", cur_notelen);        
       }
       d = 1+pmxTokLen(6);
-      
+      d = (ppqn * d * 4)/cur_notelen;
+      if (cur_ratio_n != cur_ratio_d) 
+        d = (d * cur_ratio_n) / cur_ratio_d;
+              
       if (pmxTokLen(1) == 0) 
         s = gchordbyname(pmxTokStart(2),pmxTokLen(3),pmxTokStart(4),pmxTokLen(4));
       else
@@ -2557,18 +2559,13 @@ chs_t parsetrack(chs_t trk)
           continue;
           
         pmxTokCase(pmxTokIGNORE):  continue;
-        pmxTokCase(pmxTokEOF):     break;
+        pmxTokCase(T_GCHEND):     break;
         pmxTokCase(pmxTokERROR):   merr("502 Syntax error",pmxTokStart(0));
                                    break;
         
       pmxScannerEnd;
         
-      n = (ppqn * d * 4)/cur_notelen;
-      if (cur_ratio_n != cur_ratio_d) 
-        n = (n * cur_ratio_n) / cur_ratio_d;
-        
-      last_tick = cur_tick;
-      cur_tick += n; 
+      inctick(d);
       
       continue;
 
@@ -2602,9 +2599,12 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("503 Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        if (n != cur_notelen) event("!length", cur_notelen);        
+        //if (n != cur_notelen) event("!length", cur_notelen);        
      }
       d = 1+pmxTokLen(6);
+      d = (ppqn * d * 4)/cur_notelen;
+      if (cur_ratio_n != cur_ratio_d) 
+        d = (d * cur_ratio_n) / cur_ratio_d;
       
       switch(*pmxTokStart(0)) {
         case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
@@ -2613,7 +2613,7 @@ chs_t parsetrack(chs_t trk)
                     break;
       }
             
-      event("@chord", d, cur_notelen);
+      event("@chord", d);
       
       pmxScannerBegin(s)
         #define T_CHNUM      x81
@@ -2660,12 +2660,8 @@ chs_t parsetrack(chs_t trk)
         
       pmxScannerEnd;
         
-      n = (ppqn * d * 4)/cur_notelen;
-      if (cur_ratio_n != cur_ratio_d) 
-        n = (n * cur_ratio_n) / cur_ratio_d;
         
-      last_tick = cur_tick;
-      cur_tick += n; 
+      inctick(d);
       
       continue;
 
@@ -2726,7 +2722,7 @@ chs_t parsetrack(chs_t trk)
 
     pmxTokCase(T_TEMPO):
       d = atoi(pmxTokStart(1));
-      fprintf(stderr,"ии %d %d\n",d,tempo);
+      //fprintf(stderr,"ии %d %d\n",d,tempo);
       if (d != tempo) {
         tempo = d;
         mastevent("$tempo",tempo);
@@ -2839,19 +2835,18 @@ chs_t parsetrack(chs_t trk)
         cur_note = "\062\062\060\057\055\053\051"[d];
       }
       else {
-        if (d != cur_notelen) event("!length", d);        
+        //if (d != cur_notelen) event("!length", d);        
         cur_notelen = d;
       }
       n = notenorm(cur_note + cur_transpose + n);
       d = (1+pmxTokLen(2));
-      event("@note", n, d);
 
-      n = (ppqn * d * 4)/cur_notelen;
+      d = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        n = (n * cur_ratio_n) / cur_ratio_d;
+        d = (d * cur_ratio_n) / cur_ratio_d;
       }
-      last_tick = cur_tick;
-      cur_tick += n; 
+      event("@note", n,d);
+      inctick(d);
       continue;    
 
     pmxTokCase(T_NUMNOTE):
@@ -2875,14 +2870,14 @@ chs_t parsetrack(chs_t trk)
       if (pmxTokLen(5) > 0) d = atoi(pmxTokStart(5));
       if (pmxTokLen(2) == 0) {cur_note = n;  cur_notelen = d;}
              
-      event("@note", n, d);
 
-      n = (ppqn * d * 4)/cur_notelen;
+      d = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        n = (n * cur_ratio_n) / cur_ratio_d;
+        d = (d * cur_ratio_n) / cur_ratio_d;
       }
-      last_tick = cur_tick;
-      cur_tick += n; 
+      
+      event("@note", n, d);
+      inctick(d);
       continue;
  
     pmxTokCase(T_NOTE):
@@ -2899,7 +2894,7 @@ chs_t parsetrack(chs_t trk)
         if (*t != '/') merr("508 Syntax error", t);
         d = cur_notelen;
         cur_notelen = atoi(t+1);
-        if (d != cur_notelen) event("!length", cur_notelen);        
+        //if (d != cur_notelen) event("!length", cur_notelen);        
       }
       
       if (pmxTokLen(2) > 0 && pmxTokStart(2)[0] != 'x')  {
@@ -2925,14 +2920,13 @@ chs_t parsetrack(chs_t trk)
       
       d = (1+pmxTokLen(5));
       n = notenorm(cur_note + cur_transpose);
-      event("@note", n, d);
       
-      n = (ppqn * d * 4)/cur_notelen;
+      d = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        n = (n * cur_ratio_n) / cur_ratio_d;
+        d = (d * cur_ratio_n) / cur_ratio_d;
       }
-      last_tick = cur_tick;
-      cur_tick += n; 
+      event("@note", n, d);
+      inctick(d);
       continue;
 
     pmxTokCase(T_PAUSE):
@@ -2940,17 +2934,16 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(1) != '/') merr("509 Syntax Error", pmxTokStart(1));
         d = cur_notelen;
         cur_notelen = atoi(pmxTokStart(1)+1);
-        if (d != cur_notelen) event("!length", cur_notelen);        
+        //if (d != cur_notelen) event("!length", cur_notelen);        
       }
         
       d = (1+pmxTokLen(2));
-      event("@pause", d, cur_notelen);
-      n = (ppqn * d * 4)/cur_notelen;
+      d = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) {
-        n = (n * cur_ratio_n) / cur_ratio_d;
+        d = (d * cur_ratio_n) / cur_ratio_d;
       }
-      last_tick = cur_tick;
-      cur_tick += n; 
+      event("@pause", d);
+      inctick(d);
       continue;
 
     pmxTokCase(T_PORT):
@@ -3008,6 +3001,8 @@ chs_t parsetrack(chs_t trk)
   new_trk[(8+1+9)+0] = buf[0];
   new_trk[(8+1+9)+1] = buf[1];
 
+  event("__",EOD);
+  
   //chsAddFmt(new_trk,"%08lx END\n",cur_tick);
   
   chsFree(trk);
