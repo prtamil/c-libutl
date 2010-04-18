@@ -46,6 +46,7 @@ size_t        pmxStart   (pmx_t mtc, unsigned char n);
 size_t        pmxEnd     (pmx_t mtc, unsigned char n);
 
 unsigned char pmxToken(pmx_t mtc);
+
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
@@ -77,21 +78,17 @@ typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
-//extern char *pmx_tmpstr;
-//extern char *pmx_tmpptrn;
-//extern pmx_t pmx_tmpmtc;
-
 #define pmxScannerBegin(s) \
  do {\
     char *pmx_tmpstr;\
     char *pmx_tmpptrn;\
     int   pmx_group = 0;\
     pmx_t pmx_tmpmtc;\
-    if (!s || !*s) break;\
-    pmx_tmpmtc = (pmx_t)(&pmx_group);\
+    if (s == NULL || *s == (char)pmx_group ) break;\
+    pmx_tmpmtc = NULL;\
     pmx_tmpstr = s;\
-    for(;pmx_tmpmtc;) {\
-      if (pmx_tmpmtc != (pmx_t)&pmx_group) {\
+    for(;;) {\
+      if (pmx_tmpmtc) {\
         pmx_tmpstr += pmxLen(pmx_tmpmtc,0);  \
         pmxMatchesPop();\
       }\
@@ -103,39 +100,14 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
       pmxMatchesPush();\
       if (pmx_tmpmtc) {\
         switch (pmxToken(pmx_tmpmtc)) {\
-    
+
 #define pmxScannerEnd  \
         } \
-      }   \
+      }  break; \
     }     \
     pmxMatchesPop(); \
   } while (0)
 
-#if 0
-#define pmxScannerBegin(s) do {\
-    char *pmx_tmpstr;\
-    char *pmx_tmpptrn;\
-    pmx_t pmx_tmpmtc;\
-    int   pmx_group =0;
-    for (pmx_tmpstr = s, pmx_tmpptrn =  
-    
-#define pmxScannerSwitch  , \
-         pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn), \
-         pmxMatchesPush(); \
-         \
-         *pmx_tmpstr && pmx_tmpmtc; \
-         \
-         pmx_tmpstr += pmxLen(pmx_tmpmtc,0), \
-         pmxMatchesPop(), \
-         pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn),\
-         pmxMatchesPush()) \
-      { switch (pmxToken(pmx_tmpmtc)) { 
-    
-#define pmxScannerEnd  \
-    } ; break; } \
-    pmx_tmpstr = ""; pmxMatchesPop();\
-  } while (0)
-#endif
 
 #define pmxScanner(s,p,c) pmxScannerBegin(s)\
                             p \
