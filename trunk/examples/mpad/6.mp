@@ -14,3 +14,11 @@ globalKey Cm
 
 | 
 | A G & C tempo 120 A G & C
+
+
+merge 1,2,3
+merge 4,5
+
+merge 1+2+3
+merge 4+5
+
