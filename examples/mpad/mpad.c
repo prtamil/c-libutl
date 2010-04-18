@@ -1371,11 +1371,9 @@ static chs_t tmptext = NULL;
 static chs_t rpl     = NULL;
 static vec_t args    = NULL;
 static vec_t tracks  = NULL;
-static vec_t mtrks   = NULL;
+static chs_t merge   = NULL;
 static chs_t title   = NULL;
 static chs_t mastertrk = NULL;
-static chs_t header = NULL;
-
 
 #define MAX_BTIME 8
 int btime_cur = 0;
@@ -1879,6 +1877,7 @@ static chs_t parseglobals(chs_t text)
   #define T_GSOFT       x8F   
   #define T_GTITLE      x90   
   #define T_NOMERGE     x91
+  #define T_MERGE       x92
   
   pmxScannerBegin(text)
                            
@@ -1887,10 +1886,11 @@ static chs_t parseglobals(chs_t text)
     pmxTokSet("&ippqn&K(<+d>)",T_PPQN)
     pmxTokSet("&iduty&K(<+d>)",T_GDUTY)
     pmxTokSet("&inomerge",T_NOMERGE)
+    pmxTokSet("&imerge&K(<+=0-9,+>)",T_MERGE)
     pmxTokSet("&ititle&K(&b\"\")", T_GTITLE)
     pmxTokSet("&ivelocity&K(<+d>)",T_GVELOCITY)
-    pmxTokSet("&ig<?$lobal>loose&K(<+d>)<?=,>(<*=0-9g>)",T_GLOOSE)
-    pmxTokSet("&ig<?$lobal>velvar&K(<+d>)<?=,>(<*=0-9g>)",T_GVELVAR)
+    pmxTokSet("&ig<?$loba>l<?=Ll>oose&K(<+d>),(<+=0-9g>)",T_GLOOSE)
+    pmxTokSet("&ig<?$lobal>velvar&K(<+d>),(<+=0-9g>)",T_GVELVAR)
     pmxTokSet("&ig<?$lobal>guit<?$ar>on",T_GGUITON) 
     pmxTokSet("&ig<?$lobal>meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_GMETER)
     pmxTokSet("&ig<?$lobal>key&K()(<=a-gA-G><?=#b>)<?=,>(<?$minor$major$min$maj$m>)",T_GKEY)                   
@@ -1905,6 +1905,13 @@ static chs_t parseglobals(chs_t text)
  
     pmxTokCase(T_NOMERGE) :
       mergech = 0;
+      blankit(pmxTokStart(0),pmxTokLen(0));
+      continue;
+      
+    pmxTokCase(T_MERGE) :
+      chsAddStrL(merge,pmxTokStart(1), pmxTokLen(1));
+      chsAddChr(merge,'|');
+      dbgmsg("Will merge: %s\n",merge);
       blankit(pmxTokStart(0),pmxTokLen(0));
       continue;
       
@@ -1984,7 +1991,7 @@ static chs_t parseglobals(chs_t text)
       if (globalloose_w != DEFAULT_VAL) 
         merr("277 globalloose already specified", pmxTokStart(0));
       globalloose_w = atoi(pmxTokStart(1));
-      if (pmxTokLen(2) > 0 && *pmxTokStart(2) != 'g')
+      if (*pmxTokStart(2) != 'g')
         globalloose_q = atoi(pmxTokStart(2));
       else 
         globalloose_q = -1;
@@ -1995,7 +2002,7 @@ static chs_t parseglobals(chs_t text)
       if (globalvelvar_w != DEFAULT_VAL)
         merr("278 globalvelvar already specified", pmxTokStart(0));
       globalvelvar_w = atoi(pmxTokStart(1));
-      if (pmxTokLen(2) > 0 && *pmxTokStart(2) != 'g')
+      if (*pmxTokStart(2) != 'g')
         globalvelvar_q = atoi(pmxTokStart(2));
       else 
         globalvelvar_q = -1;
@@ -3100,7 +3107,7 @@ chs_t lowcase(chs_t text)
   return text;
 }
 
-vec_t mergetracks (vec_t trks)
+vec_t mergetracks (vec_t trks, chs_t mrg)
 {
   int k;
   chs_t trk = NULL;
@@ -3108,7 +3115,38 @@ vec_t mergetracks (vec_t trks)
   vec_t mtrks = NULL;
   char ch;
   
-  dbgmsg("merge ch: %d",ch);
+  ch = 17;
+  dbgmsg("About to merge: %s\n",mrg);
+  
+  pmxScannerBegin(mrg)
+    #define T_MERGENUM    x81
+    #define T_MERGEEND    x82
+    
+    pmxTokSet("<+d>",T_MERGENUM)
+    pmxTokSet(",",pmxTokIGNORE)
+    pmxTokSet("|",T_MERGEEND)
+     
+  pmxScannerSwitch
+  
+    pmxTokCase(T_MERGENUM) :
+      k = 1 + atoi(pmxTokStart(0));
+      trk = vecGetZS(trks, k, NULL); 
+      dbgmsg("Merging: %d to %d\n",k,ch);
+      if (trk != NULL) {
+        mt = vecGetZS(mtrks, ch, NULL);
+        chsAddStrL(mt,trk,chsLen(trk));
+        vecSetZH(mtrks, ch, mt);
+      }
+      continue;
+      
+    pmxTokCase(T_MERGEEND) :
+      ch++;
+      continue;
+      
+    pmxTokCase(pmxTokIGNORE):
+      continue;
+    
+  pmxScannerEnd;
   
   for (k=1; k< vecCount(trks); k++) {
     trk = vecGetZS(trks, k, NULL); 
@@ -3116,7 +3154,6 @@ vec_t mergetracks (vec_t trks)
       ch = trk[9]-'@';
       mt = vecGetZS(mtrks, ch, NULL);
       chsAddStrL(mt,trk,chsLen(trk));
-      dbgmsg("merge ch: %d",ch);
       vecSetZH(mtrks, ch, mt);
     }
   }
@@ -3125,10 +3162,42 @@ vec_t mergetracks (vec_t trks)
   return mtrks;
 }
 
-vec_t mp_tracks(chs_t text)
+vec_t tracksevents (vec_t trks)
+{
+  int k; 
+  chs_t trk;
+  for (k=1; k< vecCount(trks); k++) {
+    trk = vecGetZS(trks, k, NULL); 
+    if (trk != NULL) {
+      /* Case insensitiveness */
+      trk = lowcase(trk); 
+      trk = parsetrack(trk);
+      vecSetZH(trks, k, trk);
+    }
+  }
+  return trks;
+}
+
+vec_t compacttracks(vec_t trks)
 {
   int k;
-  char *trk;
+  chs_t trk;
+  vec_t mtrks = NULL;
+  /* Sort tracks */
+  vecSetH(trks, 0, mastertrk);
+  for (k=0; k< vecCount(trks); k++) {
+    trk = vecGetZS(trks, k, NULL); 
+    if (trk != NULL) {
+      trk = sorttrack(trk);
+      vecAddH(mtrks,trk);
+    }
+  }
+  vecFree(trks);
+  return mtrks;
+}
+
+vec_t mp_tracks(chs_t text)
+{
   
   if (!text) return NULL;
   
@@ -3146,31 +3215,15 @@ vec_t mp_tracks(chs_t text)
   /* split tracks */
   pmxScanStr(text,"|(&D)&K(<*!|>)",gettrack);
   
-  for (k=1; k< vecCount(tracks); k++) {
-    trk = vecGetZS(tracks, k, NULL); 
-    if (trk != NULL) {
-      /* Case insensitiveness */
-      trk = lowcase(trk); 
-      trk = parsetrack(trk);
-      vecSetZH(tracks, k, trk);
-    }
-  }
-
+  tracks = tracksevents(tracks); 
   
+  /* merge tracks (following the merge command or 1 per channel) */
   if (mergech) {
-    /* merge tracks (1 per channel) */
-    tracks = mergetracks(tracks);
+    tracks = mergetracks(tracks, merge);
   }
   
-  vecSetH(tracks, 0, mastertrk);
-  for (k=0; k< vecCount(tracks); k++) {
-    trk = vecGetZS(tracks, k, NULL); 
-    if (trk != NULL) {
-      trk = sorttrack(trk);
-      vecSetZH(tracks, k, trk);
-    }
-  }
-  
+  tracks = compacttracks(tracks);
+   
   if (DO_CLEANUP) {
     chsFree(text);
     chsFree(tmptext);
