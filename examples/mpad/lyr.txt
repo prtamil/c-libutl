@@ -1,3 +1,4 @@
+  #nomerge
   |1 ch1 tempo 110
   |2 ch1 lyricson
    
