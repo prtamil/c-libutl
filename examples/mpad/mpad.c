@@ -2507,7 +2507,6 @@ chs_t parsetrack(chs_t trk)
       continue;
     
     pmxTokCase(T_GCHORD):
-      k = 0; 
        
       if (pmxTokLen(5) > 0) {
         if (*pmxTokStart(5) != '/') merr("501 Syntax Error",pmxTokStart(5)-1);
@@ -2527,14 +2526,12 @@ chs_t parsetrack(chs_t trk)
       
       if (s == NULL) merr("551 Unknown chord", pmxTokStart(0));
       
-      switch(*pmxTokStart(0)) {
-        case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
-                    break;
-        case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
-                    break;
-      }      
-
-      event(" @gcrd ?", d);
+      k = *pmxTokStart(0);
+      if ( k == '[')  k = ' ';
+      strcpy(buf," @gcrd ?");
+      buf[7] = k; 
+      event(buf, d);
+      k=0;
       
       pmxScannerBegin(s)
         #define T_GCHNUM   x81
@@ -2598,28 +2595,25 @@ chs_t parsetrack(chs_t trk)
     chord:
       if (s == NULL) merr("542 Unknown chord", pmxTokStart(0));
       
-      k = 0;
        
       if (pmxTokLen(5) > 0) {
         if (*pmxTokStart(5) != '/') merr("503 Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
         //if (n != cur_notelen) event("!length", cur_notelen);        
-     }
+      }
+
       d = 1+pmxTokLen(6);
       d = (ppqn * d * 4)/cur_notelen;
       if (cur_ratio_n != cur_ratio_d) 
         d = (d * cur_ratio_n) / cur_ratio_d;
       
-      switch(*pmxTokStart(0)) {
-        case '\'' : chsAddFmt(new_trk,"%08lx stress %d\n",cur_tick,cur_stress);
-                    break;
-        case ','  : chsAddFmt(new_trk,"%08lx soft %d\n",cur_tick,cur_soft);
-                    break;
-      }
-            
-      event(" @kcrd ?", d);
-      
+      k = *pmxTokStart(0);
+      if ( k == '[')  k = ' ';
+      strcpy(buf," @kcrd ?");
+      buf[7] = k; 
+      event(buf, d);
+      k=0;
       pmxScannerBegin(s)
         #define T_CHNUM      x81
         #define T_CHNOTENUM  x82
