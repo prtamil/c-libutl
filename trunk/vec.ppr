@@ -121,16 +121,18 @@ vec
 14=examples\mpad\lyr.txt
 15=examples\mpad\14.mp
 16=examples\mpad\7.mp
+17=examples\mpad\8.mp
+18=examples\mpad\17.mp
 [Selected Project Files]
 Main=
-Selected=examples\mpad\7.mp
+Selected=examples\mpad\17.mp
 [examples\mpad\6.mp]
 TopLine=1
 Caret=1,25
 [examples\mpad\mpad.c]
-TopLine=2557
-Caret=8,2589
-Mark1=1,2940
+TopLine=2838
+Caret=1,2855
+Mark1=1,2935
 [examples\mpad\makefile]
 TopLine=1
 Caret=34,15
@@ -176,3 +178,9 @@ Caret=11,2
 [examples\mpad\7.mp]
 TopLine=1
 Caret=45,10
+[examples\mpad\8.mp]
+TopLine=1
+Caret=29,10
+[examples\mpad\17.mp]
+TopLine=1
+Caret=23,2
