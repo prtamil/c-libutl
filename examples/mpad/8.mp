@@ -7,9 +7,7 @@
          v90 )
          
       &( v100 ch1 [Emin7]= &
-              ch2 [Dmin] = )
-
-  sweep 8,lin
+              ch1 [Dmin] = )
 
    pan -100 >> A B C pan 100 D
   
