@@ -1,3 +1,5 @@
+
+mergeall
 |A[maj]
 |,[Amin]
 |[A7]
@@ -9,7 +11,7 @@
       &( v100 ch1 [Emin7]= &
               ch1 [Dmin] = )
 
-   pan -100 >> A B C pan 100 D
+|ch2   pan -100 >> A B C pan 100 D
   
   
 
