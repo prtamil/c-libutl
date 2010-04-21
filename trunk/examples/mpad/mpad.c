@@ -2206,7 +2206,7 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
       if (mtc && pmxLen(mtc,5) == 0) {
         k = 0;
         if (pmxLen(mtc,4) > 0) {
-          type = (buf + pmxStart(mtc,4))[0];/* a e l s */
+          type = (buf + pmxStart(mtc,4))[0]; /* a e l s */
           if (type == 'l') type = (buf + pmxStart(mtc,4))[1]; /* i o */
           k++; 
         }
@@ -2271,6 +2271,7 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
       case swp_velocity : strcpy(buf," &velc"); break;
       case swp_pan      : strcpy(buf," &cpan"); break;
       case swp_pitch    : strcpy(buf," &bend"); break;
+      case swp_duty     : strcpy(buf," &duty"); break;
       default           : sprintf(buf, " &ctrl %d",param);
     }
     /* sweep from tk until endtk */
@@ -3137,8 +3138,10 @@ vec_t mergetracks (vec_t trks, chs_t mrg)
     
   pmxScannerEnd;
   
+  trk = vecGetZS(trks, 0, NULL); 
+  vecSetZH(mtrks, 0, trk);
   for (k=1; k< vecCount(trks); k++) {
-    trk = vecGetZS(trks, k, NULL); 
+    trk = vecGetS(trks, k, NULL); 
     if (trk != NULL) {
       ch = trk[9]-'@';
       mt = vecGetZS(mtrks, ch, NULL);
@@ -3146,6 +3149,27 @@ vec_t mergetracks (vec_t trks, chs_t mrg)
       vecSetZH(mtrks, ch, mt);
     }
   }
+  
+  vecFree(trks);
+  return mtrks;
+}
+
+vec_t mergeall (vec_t trks)
+{
+  int k;
+  chs_t trk = NULL;
+  chs_t mt = NULL;
+  vec_t mtrks = NULL;
+  char ch;
+  
+  mt = vecGetZS(trks, 0, NULL); 
+  for (k=1; k< vecCount(trks); k++) {
+    trk = vecGetS(trks, k, NULL); 
+    if (trk != NULL) {
+      chsAddStrL(mt,trk,chsLen(trk));
+    }
+  }
+  vecSetZH(mtrks, 0, mt);
   
   vecFree(trks);
   return mtrks;
@@ -3164,6 +3188,7 @@ vec_t tracksevents (vec_t trks)
       vecSetZH(trks, k, trk);
     }
   }
+  vecSetH(trks, 0, mastertrk);
   return trks;
 }
 
@@ -3173,7 +3198,6 @@ vec_t compacttracks(vec_t trks)
   chs_t trk;
   vec_t mtrks = NULL;
   /* Sort tracks */
-  vecSetH(trks, 0, mastertrk);
   for (k=0; k< vecCount(trks); k++) {
     trk = vecGetZS(trks, k, NULL); 
     if (trk != NULL) {
@@ -3208,7 +3232,7 @@ vec_t mp_tracks(chs_t text)
   
   /* merge tracks (following the merge command or 1 per channel) */
   switch (mergech) {
-    case 2  :
+    case 2  : tracks = mergeall(tracks); break;
     case 1  : tracks = mergetracks(tracks, merge); break;
     default : break;
   }
