@@ -2439,12 +2439,12 @@ chs_t parsetrack(chs_t trk)
       pmxTokSet("(<?=^,'>)n(<?=t>)(<?=+&->)(<+d>)<?=/>(<*=0-9>)&K(<*==>)",T_NUMNOTE)
       pmxTokSet("(<?=^,'>)(<=a-g><?=#b+&->)(<*=0-9>)(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
       pmxTokSet("(<?=^,'>)(x)()(<?=/><*=0-9>)&K(<*==>)",T_NOTE)
-      pmxTokSet("/",T_UPOCTAVE)    
-      pmxTokSet("\\",T_DOWNOCTAVE)    
       pmxTokSet("(<?=^,'>)(<+d>)&K(<*==>)",T_NUMBER)    
       pmxTokSet("(o)(<?=a-g><?=#b+&->)(<*=0-9>)(<?=/><*=0-9>)",T_NOTE)
       pmxTokSet("p(<?=/><*=0-9>)&K(<*==&->)",T_PAUSE)
       pmxTokSet("-()(<*==&->)",T_PAUSE)
+      pmxTokSet("/",T_UPOCTAVE)    
+      pmxTokSet("\\",T_DOWNOCTAVE)    
       pmxTokSet("<=()>",pmxTokIGNORE) 
       pmxTokSet("&s",pmxTokIGNORE) 
       pmxTokSet("<.>",pmxTokERROR)
@@ -3113,7 +3113,7 @@ vec_t mergetracks (vec_t trks, chs_t mrg)
   char ch;
   
   ch = 17;
-  dbgmsg("About to merge: %s\n",mrg);
+  _dbgmsg("About to merge: %s\n",mrg);
   
   pmxScannerBegin(mrg)
     #define T_MERGENUM    x81
@@ -3167,7 +3167,6 @@ vec_t mergeall (vec_t trks)
   chs_t trk = NULL;
   chs_t mt = NULL;
   vec_t mtrks = NULL;
-  char ch;
   
   mt = vecGetZS(trks, 0, NULL); 
   for (k=1; k< vecCount(trks); k++) {

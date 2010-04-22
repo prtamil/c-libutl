@@ -33,6 +33,24 @@ int main (void)
       pmxScanStr(lorem,">&r<.>",printfirst);
       TST("scan",1);
     }
+    
+    TSTGROUP("failall") {
+      pmxScannerBegin("abcbdade")        
+        pmxTokSet("ab&!c", x81)
+        pmxTokSet("ade", x82)
+        pmxTokSet("bda", x83)
+      pmxScannerSwitch
+      
+        pmxTokCase(x81) : printf("ABC"); continue;
+        pmxTokCase(x82) : printf("ADE"); continue;
+        pmxTokCase(x83) : printf("BDA"); continue;
+          
+        default: break;
+                
+      pmxScannerEnd;
+      printf("\n");  
+      TST("failall",1);
+    }
   }
   TSTDONE();
   
