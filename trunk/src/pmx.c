@@ -279,7 +279,9 @@ static int braced(void *text, int left, int right, char esc)
 #define FAILED     0x0200
 #define ENDPATTERN 0x0100
 
-#define FAIL   goto chk_fail
+static char *nullptrn="";
+
+#define FAIL  do {if (failall) *next=nullptrn; return NULL;} while(0)
 
 /* {MAX_MAX} limits the number of repetitions that are allowed
 ** As a side effect this is an hard limit to the lenght of
@@ -291,6 +293,7 @@ static int braced(void *text, int left, int right, char esc)
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
+  short failall = 0;
   int ch,left,right;
   unsigned long min,max,cnt;
   char op;
@@ -330,7 +333,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case '?' : min = 0; max = 1; 
                         rep : op = *++p;
                               break;
-                   case '\0': return NULL;
+                   case '\0': FAIL;
                  }
                  reverse = (isupper((int)op) ? mTRUE : mFALSE);
                  op = tolower((int)op);
@@ -357,11 +360,11 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case '.' : W(is_any(ch))   ; break;
 
                    case '!' : reverse = mTRUE;
-                   case '=' : if (*++p == 0) return NULL;
+                   case '=' : if (*++p == 0) FAIL;
                               eW(isclass(p,ch));
                               break;
                                                 
-                   case 'j' : if (*++p == 0) return NULL;
+                   case 'j' : if (*++p == 0) FAIL;
                               eW(issortedclass(p,ch));
                               break;
                                                 
@@ -376,19 +379,19 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               W(iscapt(text,op));     
                               break;
 
-                   case '\0': return NULL;
+                   case '\0': FAIL;
                    
                  }
                  
-                 if (cnt < min) return NULL;
+                 if (cnt < min) FAIL;
                  
                  while (*p && *p != '>')
                    if (*p++ =='&' && *p) p++;
                    
-                 if (*p != '>') return NULL;
+                 if (*p != '>') FAIL;
                  break;
 
-      case '>' : return NULL;
+      case '>' : FAIL;
       
       case '&' : cnt = 0;  
                  left = '\0'; right = '\0';
@@ -415,24 +418,24 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                                 else ch = pmxGetc(text);
                                 cnt++;
                               }
-                              if (cnt == 0 && !reverse) return NULL;
+                              if (cnt == 0 && !reverse) FAIL;
                               break;
 
                    case 'N' : reverse = mTRUE;
                    case 'n' : if (ch == '\r') { ch = pmxGetc(text); cnt++;}
                               if (ch == '\n') { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) return NULL;
+                              if (cnt == 0 && !reverse) FAIL;
                               break;
                               
                    case 'D' : reverse = mTRUE;
                    case 'd' : if (ch == '-' || ch == '+') { ch = pmxGetc(text); }
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) return NULL;
+                              if (cnt == 0 && !reverse) FAIL;
                               break;
                               
                    case 'X' : reverse = mTRUE;
                    case 'x' : while (isxdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) return NULL;
+                              if (cnt == 0 && !reverse) FAIL;
                               break;
                               
                    case 'F' : reverse = mTRUE;
@@ -440,15 +443,17 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
                               if (ch == '.') { ch = pmxGetc(text); }
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) return NULL;
+                              if (cnt == 0 && !reverse) FAIL;
                               break;
                               
+                   case '!' : failall = 1; break;
+                   
                    case '|' : ch = ENDPATTERN; break;
                    
                    case 'E' : esc = '\0'; break;
                    
-                   case 'e' : if ((esc=*++p)=='\0') return NULL;
-                              if ((esc == '&') && ((esc=*++p)=='\0')) return NULL;
+                   case 'e' : if ((esc=*++p)=='\0') FAIL;
+                              if ((esc == '&') && ((esc=*++p)=='\0')) FAIL;
                               break;
                               
                    case 'Q' : reverse = mTRUE;
@@ -458,41 +463,41 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                                 if (braced(text,left,right,esc)) break;
                               }
                               if (reverse) break;
-                              return NULL;
+                              FAIL;
                               
                    case 'B' : reverse = mTRUE;
-                   case 'b' : if ((left  = *++p) == '\0') return NULL;
-                              if ((right = *++p) == '\0') return NULL;
+                   case 'b' : if ((left  = *++p) == '\0') FAIL;
+                              if ((right = *++p) == '\0') FAIL;
                               ch = READ_NEXT;
                               if (braced(text,left,right,esc)) break;
                               if (reverse) break;
-                              return NULL;
+                              FAIL;
 
                    case 'K' : min = 0;
                    case 'k' : max = MAX_MAX;
                               W(is_blank(ch)) ; 
                               if (cnt >= min) break;
-                              return NULL;
+                              FAIL;
                               
                    case 'S' : min = 0;
                    case 's' : max = MAX_MAX;
                               W(isspace(ch)) ; 
                               if (cnt >= min) break;
-                              return NULL;
+                              FAIL;
                               
                    case 'W' : min = 0;
                    case 'w' : max = MAX_MAX;
                               W(is_word(ch)) ; 
                               if (cnt >= min) break;
-                              return NULL;
+                              FAIL;
                               
-                   case '\0': return NULL;
+                   case '\0': FAIL;
                    
                    default : if (*p & 0x80) {
                                capt[pmxCaptMax][1] = *p;
                              }
                              else {
-                               if (ic(ch) != ic(*p)) return NULL;
+                               if (ic(ch) != ic(*p)) FAIL;
                                ch = READ_NEXT;
                              }
                              break;
@@ -511,7 +516,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  }
                  break;
 
-      default  : if (ic(ch) != ic(*p)) return NULL;
+      default  : if (ic(ch) != ic(*p)) FAIL;
                  ch = READ_NEXT;
                  break;
     }
@@ -529,7 +534,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   }
 
   /* refuse to match the empty string! */
-  if (capt[0][0] >= capt[0][1]) return NULL;
+  if (capt[0][0] >= capt[0][1]) FAIL;
 
   /*printf("*|* %s\n",p);*/
 /* {{ remove the optional elements at the end of the pattern */
@@ -541,14 +546,15 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                      while(*p && *p != '>') if (*p++ =='&' && *p) p++;
                      break;
                    }
-                   return NULL;
+                   FAIL;
   
-        case '>' : if (!pmxEof(text)) return NULL;
-                   ch='\0';
+        case '>' : if (!pmxEof(text)) FAIL;
+                   ch = '\0';
                    break;
         
         case '&' : switch (*++p) {
                      case 'B' : if (*++p) p++;
+                     case '!' : failall = 1; 
                      case 'G' : 
                      case 'F' :
                      case 'D' :
@@ -563,7 +569,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                      case 'E' : break;
                      case '|' : ch = '\0'; break;
                      case '\0': if (pmxEof(text)) break;
-                     default  : if ((*p & 0x80) == 0) return NULL;
+                     default  : if ((*p & 0x80) == 0) FAIL;
                                 capt[pmxCaptMax][1] = *p;
                    }
                    break;
@@ -580,7 +586,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    }
                    break;
   
-        default  : return NULL;
+        default  : FAIL;
       }
       if (ch) ch = *p;
       if (ch) ch = *++p;
