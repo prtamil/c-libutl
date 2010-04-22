@@ -2145,7 +2145,13 @@ int swpval(int type, int k, int nsteps, int value, int endvalue)
   dval /= nsteps;
   
   switch (type) {
-    case 'a': dtmp = 1-dval;
+    case 'd': dval = ((float) rand())/RAND_MAX;
+              break;
+              
+    case 't': dval = (float) (nsteps % 1);
+              break;
+              
+    case 'n': dtmp = 1-dval;
               dval = dval * dval * dval; dval = dval * dval;  /* x^6 */
               dtmp = dtmp * dtmp * dval; dtmp = dtmp * dtmp;  /* (1-x)^6 */
               dval = (dval+(1-dtmp))/2;
@@ -2201,13 +2207,14 @@ chs_t sweep(chs_t trk, char *swdef, int param, int value, unsigned long tick)
   
     if (*buf) {
       //mtc = pmxMatchStr(buf,"(&D)<*=, >(<$exp$lin$log$sin>)<*=, >(&d)<*=/ >(&D))");
-      mtc = pmxMatchStr(buf,"(&D)<?=,>(&D)<?=/,>(&D)<?=,>(<?$exp$lin$log$sin$asn>)&K(<*.>)");
+      mtc = pmxMatchStr(buf,"(&D)<?=,>(&D)<?=/,>(&D)<?=,>(<?$exp$lin$log$sin$asn$alt$rnd>)&K(<*.>)");
     
       if (mtc && pmxLen(mtc,5) == 0) {
         k = 0;
         if (pmxLen(mtc,4) > 0) {
-          type = (buf + pmxStart(mtc,4))[0]; /* a e l s */
-          if (type == 'l') type = (buf + pmxStart(mtc,4))[1]; /* i o */
+          type = (buf + pmxStart(mtc,4))[0]; /* a e l s r*/
+          if (type == 'a') type = (buf + pmxStart(mtc,4))[2]; /* n t */
+          else if (type == 'l') type = (buf + pmxStart(mtc,4))[1]; /* i o */
           k++; 
         }
 
