@@ -2407,7 +2407,7 @@ chs_t parsetrack(chs_t trk)
       pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
       pmxTokSet("&&[",T_BTIMEPUSH)
       pmxTokSet("&&&K<?=&&>]",T_BTIMEPOP)
-      pmxTokSet("&&",T_BTIMERESET)
+      pmxTokSet("&&&!",T_BTIMERESET)
       pmxTokSet("stress&K(<+d>)",T_STRESS)
       pmxTokSet("soft&K(<+d>)",T_SOFT)
       pmxTokSet("tempo&K(<+d>)",T_TEMPO)
@@ -3166,7 +3166,6 @@ vec_t mergeall (vec_t trks)
   int k;
   chs_t trk = NULL;
   chs_t mt = NULL;
-  vec_t mtrks = NULL;
   
   mt = vecGetZS(trks, 0, NULL); 
   for (k=1; k< vecCount(trks); k++) {
@@ -3175,10 +3174,9 @@ vec_t mergeall (vec_t trks)
       chsAddStrL(mt,trk,chsLen(trk));
     }
   }
-  vecSetZH(mtrks, 0, mt);
-  
-  vecFree(trks);
-  return mtrks;
+  vecDel(trks,0,-1);
+  vecSetZH(trks, 0, mt);
+  return trks;
 }
 
 vec_t tracksevents (vec_t trks)
