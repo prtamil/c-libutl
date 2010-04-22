@@ -750,7 +750,6 @@ vec_t vec_move(vec_t vt, long from, long to)
 
 vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val)
 {
-  
   vec_slot_t *slot;
   
   ndx = fixndx(vt,ndx);
@@ -772,11 +771,22 @@ vec_t vec_ins(vec_t vt, long ndx, char v_type, val_u val)
 vec_t vec_del(vec_t vt, long from, long to)
 {
   long sq;
+  vec_slot_t *slot;
   
   from = fixndx(vt,from);
   to = fixndx(vt,to);
+
+  if (from > to) {sq = from; from = to; to = sq;}
   
-  vt = vec_move(vt,from,to+1); 
+  if (from == 0 && to == vt->count-1) {
+     slot = slot_ptr(vt,0);
+     for (sq = 0; sq < vt->count; sq++) {
+       val_del(slot_val_type(slot), slot_val(slot));
+     }
+     vt->count = 0;
+  }
+  else 
+    vt = vec_move(vt,from,to+1); 
   
   sq = lsqrt(vt->size);
   if (vt->count + (2 * sq) < vt->size) 
