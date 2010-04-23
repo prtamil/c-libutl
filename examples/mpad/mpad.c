@@ -1659,9 +1659,9 @@ static char *braceit(char *str, pmx_t capt)
    
    switch(*(str+pmxStart(capt,1))) {
    
-     case '&' : chsCpy(tmptext,"(&[ ");
+     case '&' : chsCpy(tmptext,"(&< ");
                 chsAddStrL(tmptext, s, l);
-                chsAddStr(tmptext," &])");
+                chsAddStr(tmptext," &>)");
                 break;
                 
      case 'L' : chsCpy(tmptext,"(lyricson ");
@@ -2404,13 +2404,11 @@ chs_t parsetrack(chs_t trk)
 
   pmxScannerBegin(trk)
     pmxTokGroupBegin
-      pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
-      pmxTokSet("&&[",T_BTIMEPUSH)
-      pmxTokSet("&&&K<?=&&>]",T_BTIMEPOP)
-      pmxTokSet("&&&!",T_BTIMERESET)
+      pmxTokSet("&&&<",T_BTIMEPUSH)
+      pmxTokSet("&&&K<?=&&>&>",T_BTIMEPOP)
+      pmxTokSet("&&",T_BTIMERESET)
       pmxTokSet("stress&K(<+d>)",T_STRESS)
       pmxTokSet("soft&K(<+d>)",T_SOFT)
-      pmxTokSet("tempo&K(<+d>)",T_TEMPO)
       pmxTokSet("meter&K(<+d>)/(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_METER)
       pmxTokSet("key&K(<?=+&-><=0-7>)()&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
       pmxTokSet("key&K()(<=a-g><?=#b>)&K<?=,>&K(<?$minor$major$min$maj>)",T_KEY)                   
@@ -2418,19 +2416,21 @@ chs_t parsetrack(chs_t trk)
       pmxTokSet("pan&K(&d)&K(&B>>)",T_PAN)
       pmxTokSet("port&K(&d)",T_PORT)
       pmxTokSet("guit<?$ar>&Ko(<$n$ff>)",T_GUITMODE)
+      pmxTokSet("lyrics&Ko(<$n$ff>)",T_LYRICS)
       pmxTokSet("loose&K(&d),(<+=g0-9>)",T_LOOSE)
       pmxTokSet("velvar&K(&d),(<+=g0-9>)",T_VELVAR)
       pmxTokSet("r&K(<+d>)<?=/>(<*d>)",T_RATIO)
       pmxTokSet("v&K(<+d>)&K(&B>>)",T_VELOCITY)
       pmxTokSet("u&K(<+d>)&K(&B>>)",T_DUTY)
-      pmxTokSet("toms&Ko(<$n$ff>)",T_TOMSMODE)
       pmxTokSet("ch&K(<+d>)<?=,>(&B\"\")",T_CHANNEL)
       pmxTokSet("ctrl&K(<+d>)(),(<+d>)&K(&B>>)",T_CTRL)
       pmxTokSet("ctrl&K()(<+q>),(<+d>)&K(&B>>)",T_CTRL)
       pmxTokSet("i&K(<+d>)()<?=,>(&B\"\")",T_INSTR)
       pmxTokSet("i&K()(<+q>)<?=,>(&B\"\")",T_INSTR)
-      pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
       pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
+      pmxTokSet("toms&Ko(<$n$ff>)",T_TOMSMODE)
+      pmxTokSet("tempo&K(<+d>)",T_TEMPO)
+      pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
       pmxTokSet("<?=^',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
       pmxTokSet("<?=^',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
       pmxTokSet("<?=^',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)

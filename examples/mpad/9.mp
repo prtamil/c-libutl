@@ -1,2 +1,2 @@
-| C &('E ,G & D ) & a b c & c6
+| C &<'E ,G & D  a b /c & d6
 

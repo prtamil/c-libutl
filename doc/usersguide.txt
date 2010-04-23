@@ -240,7 +240,7 @@ has been defined before including '|utl.h|.
 
 
 
-.%% Logging levels
+.%%% Logging levels
 ~~~~~~~~~~~~~~~~~~
 
   Logging levels are hierarchical and structured as in log4j. The variable 
@@ -263,7 +263,7 @@ printed (Y) or not (N) given the current level of logging.
 ..
 
 
-.%% Logging format
+.%%% Logging format
 ~~~~~~~~~~~~~~~~~~
 
 Log files have the following format:
@@ -286,7 +286,7 @@ These variables are used internally to compose and print log messages:
 
 
 
-.%% Setting the log file
+.%%% Setting the log file
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
   By default, logging messages will be sent to stderr. The internal
@@ -655,19 +655,28 @@ expression '|A&`|B| matches if '|A| matches or if '|A| fails and '|B| matches.
 
   Note that using '|&`|| in conjunction with '|>| may have unexpected results.
 
-.v 
-   "abcac"
-..
+  To signal the only possible match in a sequence of alternative expressions
+you can use the '|&!| option. This is useful to avoid trying to match next
+expressions if you already partially matched one.
 
+  Consider, for example, what happens when trying to match the string '|axx| 
+against the pattern '|abc&'|def|: the pmx engine will first try to match '|abc|
+and then, having failed that when the first '|x| is encountered, it will
+try '|def|.
 
-.%%% Expression length
-^^^^^^^^^^^^^^^^^^^^^
+  It does not take advantage of the fact that having matched the '|a| in '|axx|,
+it could never possibly match '|def|! 
+
+  The pattern '|a&!bc&'|def|', instead, says that once you start matching
+the first pattern, you will never possibly match any other alternative and,
+hence, the entire match should fail.     
+   
   The operator "'|&:|'/x/" is meant to be used, in conjunction with '|&`||,
-by tools that generate pmx expressions and not for expressions created
-"by hand".
+by tools that generate pmx expressions. It's use in hand-made expressions
+created is higlhly discouraged.
 
   The value /x/ is the length of the expression, this makes faster skipping
-over an alternative expressions that failed.
+over alternative expressions that fail.
 
 
 .%% pmx API '<pmxapi>
@@ -841,7 +850,7 @@ token is encountered in the text.
 is found or a break is executed within the '|pmxTokSwitch| section. 
 
   There might be the need of grouping the tokens so that only some are checked
-in a given state. The following example transform a text to all lower case 
+in a given state. The following example transforms a text to all lower case 
 except if the text is in single quotes:
 
 .v
@@ -849,12 +858,14 @@ except if the text is in single quotes:
    #define T_IGNORE   x82
    #define T_ENABLE   x83
    #define T_DISABLE  x84
+   #define G_OUTQUOTES  0
+   #define G_INQUOTES   1
    
    pmxScannerBegin("mIxEd 'CASE' tExT")
      pmxTokGroupBegin
        pmxTokSet("'",T_DISABLE)
        pmsTokSet("<.>",T_LOWER)
-     pmxTokGroup(1)
+     pmxTokGroup(G_INQUOTES)
        pmxTokSet("'",T_ENABLE)
        pmsTokSet("<.>",T_IGNORE)     
      pmxTokGroupEnd
@@ -866,10 +877,10 @@ except if the text is in single quotes:
      pmxTokCase(T_IGNORE):  putchar(pmxTokStart(0));
                             continue;
        
-     pmxTokCase(T_ENABLE):  pmxTokGroupSet(0);
+     pmxTokCase(T_ENABLE):  pmxTokGroupSet(G_OUTQUOTES);
                             continue;
        
-     pmxTokCase(T_DISABLE): pmxTokGroupSet(1);
+     pmxTokCase(T_DISABLE): pmxTokGroupSet(G_INQUOTES);
                             continue;
       
    pmxScannerEnd;      
@@ -932,31 +943,29 @@ will print: '|mixed CASE text|
   ['|<9>|]  matches capture 9
   ['|>|]    at the start of the pattern matches everywhere in the text
             at the end of the pattern, matches the end of the text
- ..
 ..
 
 .[]
-   ['|&:||]    expressione lengt
-   ['|&`||]    Alternate expression
-   ['|&E|]     Clear the escape character.
-   ['|&G|]    Set the /goal/ of the match.
-   ['|&I|]    Stop case insensitive match.
+   ['|&:|]      expressione length
+   ['|&`||]     Alternate expression
+   ['|&!|]      fail all
+   ['|&E|]      Clear the escape character.
+   ['|&G|]      Set the /goal/ of the match.
+   ['|&I|]      Stop case insensitive match.
    ['|&b|'/xy/] Braced string.                
-   ['|&d|]     A possibly signed integer
-   ['|&e|'/x/] Set the the escape character.
-   ['|&f|]     A possibly signed decimal number.               
-   ['|&i|]     Start case insensitive match.
-   ['|&k|]     A sequence of blanks (space or tab)
-   ['|&l|]     The rest of the line up to the newline character(s)
-   ['|&n|]     The end of the line.
-   ['|&q|]     A single or double quoted string (including the quotes).
-   ['|&r|]     Matches the beginning of a line 
-   ['|&s|]     A sequence of spaces (space, tab, newlines, vertical tabs, etc)
-   ['|&w|]     An hexadecimal number.
-   ['|&x|]     An hexadecimal number.
+   ['|&d|]      A possibly signed integer
+   ['|&e|'/x/]  Set the the escape character.
+   ['|&f|]      A possibly signed decimal number.               
+   ['|&i|]      Start case insensitive match.
+   ['|&k|]      A sequence of blanks (space or tab)
+   ['|&l|]      The rest of the line up to the newline character(s)
+   ['|&n|]      The end of the line.
+   ['|&q|]      A single or double quoted string (including the quotes).
+   ['|&r|]      Matches the beginning of a line 
+   ['|&s|]      A sequence of spaces (space, tab, newlines, vertical tabs, etc)
+   ['|&w|]      An hexadecimal number.
+   ['|&x|]      An hexadecimal number.
    ['|&|'/z/]  If z > 0x7F sets the '/token/.
-  ..
-
 ..
 
 .% Strings
