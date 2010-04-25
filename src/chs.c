@@ -86,6 +86,22 @@ chs_t chs_Set(chs_t s, long ndx, char c)
   return s;
 }
 
+chs_t chs_SetByte(chs_t s, long ndx, char c)
+{
+  chs_blk_t *cb;
+  
+  if (ndx >= chsLen(s)) s = chs_setsize(s,ndx+1);
+
+  s[ndx] = c;
+  cb = chs_blk(s);
+  
+  if (ndx >= cb->len) {
+    cb->len = ndx+1;
+    s[ndx+1] = '\0';
+  }
+  return s;
+}
+
 char chsChrAt(chs_t s, long ndx)
 {
   ndx = fixndx(s,ndx);
