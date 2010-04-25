@@ -417,4 +417,18 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
                                      
 #define chschrat   chsChrAt          
 
+
+chs_t chs_SetByte(chs_t s, long ndx, char c);
+
+#define chb_t            chs_t
+#define chbNew           chsNew
+#define chbFree          chsFree
+#define chbSet(b,n,c)    (b=chs_SetByte(n,n,c))
+#define chbDel           chsDel
+#define chbIns           chsIns
+#define chbGet           chsChrAt
+#define chbSize          chsSize
+#define chbLen           chsLen
+
+
 #endif  /* CHS_H */
