@@ -2133,8 +2133,8 @@ static int gettrack(char *str, pmx_t capt)
 
 #define inctick(n) (last_tick = cur_tick, cur_tick += (n))
 #define calclen(d) ( d = (ppqn * d * 4)/cur_notelen,\
-                    d = (cur_ratio_n != cur_ratio_d) ?\
-                        (d * cur_ratio_n) / cur_ratio_d : d)
+                     d = (cur_ratio_n != cur_ratio_d) ?\
+                         (d * cur_ratio_n) / cur_ratio_d : d)
       
 
 int swpval(int type, int k, int nsteps, int value, int endvalue)
@@ -2337,10 +2337,13 @@ chs_t parsetrack(chs_t trk)
   int cur_channel = 0x11;
   int cur_port    = 0;
   
+  
   unsigned long cur_tick  = 0;
   unsigned long last_tick  = 0;
     
-  char tuning[MAX_TUNING] = {52,57,62,67,71,76,0};
+  char tuning[MAX_TUNING] = {52,57,62,67,71,76,-1};
+  
+  char cur_chord[MAX_TUNING] ={-1};
   
   int   d;
   int   n;
@@ -2353,6 +2356,7 @@ chs_t parsetrack(chs_t trk)
   char buf[32]; 
     
   swp_reset();  
+  cur_chord[0] = -1;
      
   // chsCpy(new_trk,"00000000 TRACK\n");
   //event("  chnl", EOD);
@@ -2401,6 +2405,7 @@ chs_t parsetrack(chs_t trk)
   #define T_LYRICS      xB5
   #define T_SYLLABLE    xB6
   #define T_PORT        xB7
+  #define T_STRUM       xB8
 
   pmxScannerBegin(trk)
     pmxTokGroupBegin
@@ -2427,12 +2432,14 @@ chs_t parsetrack(chs_t trk)
       pmxTokSet("ctrl&K()(<+q>),(<+d>)&K(&B>>)",T_CTRL)
       pmxTokSet("i&K(<+d>)()<?=,>(&B\"\")",T_INSTR)
       pmxTokSet("i&K()(<+q>)<?=,>(&B\"\")",T_INSTR)
+      pmxTokSet("strum&K(<+d>)<?=,>(<*d>)<?=,>(<*d>)",T_STRUM)
       pmxTokSet("tuning&K[(<+!]>)]",T_TUNING)
       pmxTokSet("toms&Ko(<$n$ff>)",T_TOMSMODE)
       pmxTokSet("tempo&K(<+d>)",T_TEMPO)
       pmxTokSet("t<?$ranspose>&K(&d)",T_TRANSPOSE)
       pmxTokSet("<?=^',>[g:&K(<+=0-9, &->)]()()()(<?=/><*d>)&K(<*==>)",T_GCHORD)
       pmxTokSet("<?=^',>[g:&K()(<=a-g>)(<?=#b+&->)&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_GCHORD)
+      pmxTokSet("<?=^',>[&K(x)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
       pmxTokSet("<?=^',>[&K(<=0-9a-gn&-><?=#b+&-><*d>&K,<+=0-9a-gn#+&-,>)()()()](<?=/><*d>)&K(<*==>)",T_CHORD1)
       pmxTokSet("<?=^',>[&K()()()(<$au$di><*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD2)
       pmxTokSet("<?=^',>[&K(<?=a-g>)(<?=#b+&->)()&K(<*! ]>)&K](<?=/><*d>)&K(<*==>)",T_CHORD3)
@@ -2461,6 +2468,13 @@ chs_t parsetrack(chs_t trk)
     pmxTokGroupEnd   
                          
   pmxScannerSwitch
+
+    pmxTokCase(T_STRUM) :
+      n = atoi(pmxTokStart(1));
+      d = (pmxTokLen(2)>0) ? atoi(pmxTokStart(2)) : 0;
+      k = (pmxTokLen(3)>0) ? atoi(pmxTokStart(3)) : 90;
+      event(" &strm",n,d,k);        
+      continue;
 
     pmxTokCase(T_SYLLABLE) :
       if (pmxTokLen(2)>0) {
@@ -2529,12 +2543,9 @@ chs_t parsetrack(chs_t trk)
         if (*pmxTokStart(5) != '/') merr("501 Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        //if (n != cur_notelen) event("!length", cur_notelen);        
       }
       d = 1+pmxTokLen(6);
-      d = (ppqn * d * 4)/cur_notelen;
-      if (cur_ratio_n != cur_ratio_d) 
-        d = (d * cur_ratio_n) / cur_ratio_d;
+      calclen(d);
               
       if (pmxTokLen(1) == 0) 
         s = gchordbyname(pmxTokStart(2),pmxTokLen(3),pmxTokStart(4),pmxTokLen(4));
@@ -2548,7 +2559,7 @@ chs_t parsetrack(chs_t trk)
       strcpy(buf," @gcrd ?");
       buf[7] = k; 
       event(buf, d);
-      k=0;
+      k=0; i=0;
       
       pmxScannerBegin(s)
         #define T_GCHNUM   x81
@@ -2565,16 +2576,17 @@ chs_t parsetrack(chs_t trk)
       pmxScannerSwitch
       
         pmxTokCase(T_GCHNUM) :
-          if (tuning[k] > 0) {
-            n = tuning[k++] + atoi(pmxTokStart(0));
+          if (tuning[i] > 0) {
+            n = tuning[i] + atoi(pmxTokStart(0));
             n = notenorm(n+cur_transpose);
-            buf[1] = i+'0'; i++;
+            cur_chord[k++] = n; cur_chord[k] = -2;
             eventcont(n);
-          }          
+          }
+          i++;          
           continue;
           
         pmxTokCase(T_GCHMINUS) :
-          if (tuning[k] > 0) k++;
+          if (tuning[i] > 0) i++;
           continue;
           
         pmxTokCase(pmxTokIGNORE):  continue;
@@ -2611,13 +2623,11 @@ chs_t parsetrack(chs_t trk)
 
     chord:
       if (s == NULL) merr("542 Unknown chord", pmxTokStart(0));
-      
        
       if (pmxTokLen(5) > 0) {
         if (*pmxTokStart(5) != '/') merr("503 Syntax Error",pmxTokStart(5)-1);
         n = cur_notelen;
         cur_notelen = atoi(pmxTokStart(5)+1);
-        //if (n != cur_notelen) event("!length", cur_notelen);        
       }
 
       d = 1+pmxTokLen(6);
@@ -2628,58 +2638,68 @@ chs_t parsetrack(chs_t trk)
       strcpy(buf," @kcrd ?");
       buf[7] = k; 
       event(buf, d);
-      k=0;
-      pmxScannerBegin(s)
-        #define T_CHNUM      x81
-        #define T_CHNOTENUM  x82
-        #define T_CHNOTE     x83
-        #define T_CHEND      x84
-
-        pmxTokSet("&d",T_CHNUM)
-        pmxTokSet("n(<+d>)", T_CHNOTENUM)
-        pmxTokSet("(<=a-g>)(<?=#b+&->)(<*d>)", T_CHNOTE)
-        pmxTokSet("]",T_CHEND)
-        pmxTokSet(",", pmxTokIGNORE)
-        pmxTokSet("&s",pmxTokIGNORE) 
-        pmxTokSet("<.>",pmxTokERROR)
-         
-      pmxScannerSwitch
+      k=0; i=0;
       
-        pmxTokCase(T_CHNUM) :
-          n = atoi(pmxTokStart(0));
-          n = notenorm(cur_note+n+cur_transpose);
-          eventcont(n);
-          continue;
-          
-        pmxTokCase(T_CHNOTENUM) :
-          cur_note = atoi(pmxTokStart(1));
-          n = notenorm(cur_note+cur_transpose);
-          eventcont(n);
-          continue;
-          
-        pmxTokCase(T_CHNOTE) :
-          if (pmxTokLen(3) > 0) o = atoi(pmxTokStart(3));
-          else o = noteoctave(cur_note);
-          if (pmxTokLen(2) > 0) k = *pmxTokStart(2);
-          else k = " # #  # # # "[cur_note % 12];
-          cur_note = notenum(*pmxTokStart(1),k,o);
-          n = notenorm(cur_note+cur_transpose);
-          eventcont(n);
-          continue;
-          
-        pmxTokCase(pmxTokIGNORE):  continue;
-        pmxTokCase(T_CHEND):       break;
-        pmxTokCase(pmxTokERROR):   merr("504 Syntax error",pmxTokStart(0));
-                                   break;
+      if (*pmxTokStart(1) == 'x') {
+        while ((n = cur_chord[k++]) >= 0) 
+            eventcont(n);
+      }
+      else {
+        pmxScannerBegin(s)
+          #define T_CHNUM      x81
+          #define T_CHNOTENUM  x82
+          #define T_CHNOTE     x83
+          #define T_CHEND      x84
+  
+          pmxTokSet("&d",T_CHNUM)
+          pmxTokSet("n(<+d>)", T_CHNOTENUM)
+          pmxTokSet("(<=a-g>)(<?=#b+&->)(<*d>)", T_CHNOTE)
+          pmxTokSet("]",T_CHEND)
+          pmxTokSet(",", pmxTokIGNORE)
+          pmxTokSet("&s",pmxTokIGNORE) 
+          pmxTokSet("<.>",pmxTokERROR)
+           
+        pmxScannerSwitch
         
-      pmxScannerEnd;
+          pmxTokCase(T_CHNUM) :
+            n = atoi(pmxTokStart(0));
+            n = notenorm(cur_note+n+cur_transpose);
+            cur_chord[k++] = n; cur_chord[k] = -1;
+            eventcont(n);
+            continue;
+            
+          pmxTokCase(T_CHNOTENUM) :
+            cur_note = atoi(pmxTokStart(1));
+            n = notenorm(cur_note+cur_transpose);
+            cur_chord[k++] = n; cur_chord[k] = -1;
+            eventcont(n);
+            continue;
+            
+          pmxTokCase(T_CHNOTE) :
+            if (pmxTokLen(3) > 0) o = atoi(pmxTokStart(3));
+            else o = noteoctave(cur_note);
+            if (pmxTokLen(2) > 0) i = *pmxTokStart(2);
+            else i = " # #  # # # "[cur_note % 12];
+            cur_note = notenum(*pmxTokStart(1), i, o);
+            n = notenorm(cur_note+cur_transpose);
+            cur_chord[k++] = n; cur_chord[k] = -1;
+            eventcont(n);
+            continue;
+            
+          pmxTokCase(pmxTokIGNORE):  continue;
+          pmxTokCase(T_CHEND):       break;
+          pmxTokCase(pmxTokERROR):   merr("504 Syntax error",pmxTokStart(0));
+                                     break;
+          
+        pmxScannerEnd;
+      }
       inctick(d);
       continue;
 
     pmxTokCase(T_TUNING):
       s = pmxTokStart(1);
 
-      n = 0;
+      k = 0;
 
       #define T_TUNNOTE     x81
       #define T_TUNEND      x83
@@ -2699,14 +2719,14 @@ chs_t parsetrack(chs_t trk)
         pmxTokCase(T_TUNNOTE) :
           _dbgmsg("TUNING: Note %.*s\n",pmxTokLen(0),pmxTokStart(0));
           if (n >= MAX_TUNING) merr("505 Syntax error",pmxTokStart(0));
-          tuning[n++] = notenum(*pmxTokStart(1),
+          tuning[k++] = notenum(*pmxTokStart(1),
                                 pmxTokLen(2) > 0 ? *pmxTokStart(2) : ' ',
                                 atoi(pmxTokStart(3)));
           continue;
       
         pmxTokCase(T_TUNNOTENUM) :
           if (n >= MAX_TUNING) merr("506 Syntax error",t);
-          tuning[n++] = atoi(pmxTokStart(1)) & 0x7F;
+          tuning[k++] = atoi(pmxTokStart(1)) & 0x7F;
           continue;
       
         pmxTokCase(pmxTokIGNORE):  continue;
@@ -2716,7 +2736,7 @@ chs_t parsetrack(chs_t trk)
         
       pmxScannerEnd;
       
-      tuning[n] = 0;
+      tuning[k] = -1;
       continue;
 
     pmxTokCase(T_METER):
