@@ -289,7 +289,26 @@ static char *nullptrn="";
 */
 #define MAX_MAX 0xFFFFFFFE
 
-
+char *setminmax(char *p, unsigned long *min, unsigned long *max)
+{
+  unsigned long xmin = 0, xmax = 0;
+  
+  ++p;
+  if (isdigit((int)*p)) {
+    xmin = atoi(p);
+    xmax = xmin;
+    while (*p && *p!= ',' && *p!=':' && *p!='>') p++;
+  }
+  if (*p == ',') {
+    p++;
+    xmax = atoi(p);
+    if (xmax == 0) xmax = MAX_MAX;
+  }
+  while (*p && *p!=':' && *p!='>') p++;
+  *min = xmin; *max = xmax;
+  if (*p == ':') return p;
+  return NULL;
+}
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
@@ -328,13 +347,16 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     switch (*p) {
       case '<' : op = *++p;
                  switch (op) {
-                   case '+' : min = 1; max = MAX_MAX; goto rep;
-                   case '*' : min = 0; max = MAX_MAX; goto rep;
+                   case ':' : if ((p = setminmax(p,&min,&max))) goto rep;
+                              else FAIL;
+                   case '+' : min = 1; max = MAX_MAX;     goto rep;
+                   case '*' : min = 0; max = MAX_MAX;     goto rep;
                    case '?' : min = 0; max = 1; 
                         rep : op = *++p;
                               break;
                    case '\0': FAIL;
                  }
+                   
                  reverse = (isupper((int)op) ? mTRUE : mFALSE);
                  op = tolower((int)op);
                  switch (op) {
