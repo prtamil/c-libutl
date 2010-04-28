@@ -63,6 +63,8 @@ unsigned char pmxToken(pmx_t mtc);
 #define pmxTokCase(y) case pmxTok_defcase(y)
 
 #define pmxTokGroupSet(x)     (pmx_group = (x))
+#define pmxTokGroupGet()       pmx_group
+#define pmxTokGroupMain        0
 #define pmxTokGroupBegin    ( (pmx_group == 0) ? 
 #define pmxTokGroup(n)      : (pmx_group == (n)) ?   
 #define pmxTokGroupEnd      : "")

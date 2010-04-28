@@ -291,24 +291,22 @@ static char *nullptrn="";
 
 char *setminmax(char *p, unsigned long *min, unsigned long *max)
 {
-  unsigned long xmin = 0, xmax = 0;
-  
   ++p;
   if (isdigit((int)*p)) {
-    xmin = atoi(p);
-    xmax = xmin;
+    *min = atoi(p);
+    *max = *min;
     while (*p && *p!= ',' && *p!=':' && *p!='>') p++;
   }
   if (*p == ',') {
     p++;
-    xmax = atoi(p);
-    if (xmax == 0) xmax = MAX_MAX;
+    *max = atoi(p);
+    if (*max == 0) *max = MAX_MAX;
   }
   while (*p && *p!=':' && *p!='>') p++;
-  *min = xmin; *max = xmax;
   if (*p == ':') return p;
   return NULL;
 }
+
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
