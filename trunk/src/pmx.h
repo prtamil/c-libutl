@@ -96,6 +96,9 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
       }\
       pmx_tmpptrn = 
       
+#define pmxScannerLoop \
+      ;\
+      
 #define pmxScannerSwitch \
       ;\
       pmx_tmpmtc = pmxMatchStr(pmx_tmpstr, pmx_tmpptrn);\

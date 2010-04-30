@@ -122,9 +122,10 @@ vec
 15=examples\mpad\14.mp
 16=examples\mpad\7.mp
 17=examples\mpad\17.mp
+18=Nuovo1.h
 [Selected Project Files]
 Main=
-Selected=src\pmx.h
+Selected=Nuovo1.h
 [examples\mpad\6.mp]
 TopLine=1
 Caret=1,25
@@ -148,8 +149,8 @@ Caret=30,7
 TopLine=281
 Caret=1,294
 [src\pmx.h]
-TopLine=44
-Caret=20,73
+TopLine=74
+Caret=25,99
 [examples\mpad\5.mp]
 TopLine=1
 Caret=1,4
@@ -180,3 +181,6 @@ Caret=45,10
 [examples\mpad\17.mp]
 TopLine=1
 Caret=10,2
+[Nuovo1.h]
+TopLine=1
+Caret=9,7
