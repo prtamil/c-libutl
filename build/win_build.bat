@@ -153,13 +153,15 @@ copy utl.h+pmx.h+chs.h+tbl.h libutl.h
 copy *.%O% ..\dist
 copy libutl.%A% ..\dist
 copy libutl.h ..\dist
-goto done
 
 cd ..\examples\uncomment
 
 %CC% %CCFLAGS% -I..\..\dist unc.c
 %LN% %LN_OUT%unc.exe unc.%O% ..\..\dist\libutl.%A%
 unc < ..\..\src\libutl.h > ..\..\dist\libutl.h    
+
+cd ..\..\build
+@goto done
 
 :: --------- pmx2c ------------
 @echo Building pmx2c tool
