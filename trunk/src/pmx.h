@@ -70,11 +70,15 @@ unsigned char pmxToken(pmx_t mtc);
 #define pmxTokGroupEnd      : "")
 
 #define pmxSwitch(s,p) \
+ do {\
+    char *pmx_tmpstr;\
+    pmx_t pmx_tmpmtc;\
     switch ( ((pmx_tmpstr = s) && *s ) \
                  ? (pmx_tmpmtc = pmxMatchStr(pmx_tmpstr,p), \
                            s += pmxLen(pmx_tmpmtc,0), pmxToken(pmx_tmpmtc))\
                  : 0x7F )
              
+#define pmxSwitchEnd   } while(0)
 
 typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 

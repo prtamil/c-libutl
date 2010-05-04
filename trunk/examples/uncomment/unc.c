@@ -56,13 +56,14 @@ int main(void)
                            cur = utlEmptyString;
                            break;
                        }
+                       pmxSwitchEnd;
                        break;
 
         case COMMENT : pmxSwitch (cur,
                          pmxTokSet("&K*/&K(&N)",   T_COMMENT)
                          pmxTokSet("*",            T_SKIP)
                          pmxTokSet("<+!*>",        T_SKIP)
-                         pmxTokSet("&K&n",        T_SKIP)
+                         pmxTokSet("&K&n",         T_SKIP)
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = CODE;
@@ -74,6 +75,7 @@ int main(void)
                            cur = utlEmptyString;
                            break;
                        }
+                       pmxSwitchEnd;
                        break;
       }
       startline--;
