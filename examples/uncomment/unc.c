@@ -60,15 +60,17 @@ int main(void)
                        break;
 
         case COMMENT : pmxSwitch (cur,
-                         pmxTokSet("&K*/&K(&N)",   T_COMMENT)
-                         pmxTokSet("*",            T_SKIP)
-                         pmxTokSet("<+!*>",        T_SKIP)
-                         pmxTokSet("&K&n",         T_SKIP)
+                         pmxTokSet("&K*/&K",    T_COMMENT)
+                         pmxTokSet("*",         T_SKIP)
+                         pmxTokSet("&K(&n)",    T_SKIP)
+                         pmxTokSet("<+!*\n\r>", T_SKIP)
                        ) {
                          pmxTokCase(T_COMMENT):
                            state = CODE;
-                           if (pmxTokLen(1) != 0 && 
-                               startline <= 0)          putchar('\n');
+                           break;
+                           
+                         pmxTokCase(T_SKIP):
+                           if (pmxTokLen(1) != 0)  putchar('\n');
                            break;
                            
                         pmxTokCase(pmxTokEOF) :

@@ -61,10 +61,6 @@ of the application that are really critical.
      
    # Use the object files and headers you need by linking/including them
      directly.
-     
-   # Use '|utl.h| alone. If you just need macros for logging, debugging,
-     unit tests and error handling, simply include the '|utl.h| header.
-     The example in '<'|utlh.c|=examples/utl_h/utlh.c#> shows how to do it. 
 
    # Use '|pmx| alone. The pattern matching functions have no dependencies
      on the other functions, you can simply include '|pmx.h| and link
@@ -239,7 +235,6 @@ Logging functions are available only if the symbol '{=UTL_LOGGING}
 has been defined before including '|utl.h|.
 
 
-
 .%%% Logging levels
 ~~~~~~~~~~~~~~~~~~
 
@@ -392,7 +387,7 @@ documentation (e.g including the GraphViz description in comments).
 
 
 
-.%% Using utl.h
+.%% Using libutl
 ^^^^^^^^^^^^^^^
 
 .% Pattern Matching

@@ -41,48 +41,6 @@
 ** for the details.
 */
 
-/* .% Using '|utl.h| as an header
-** ==============================
-**
-**   To use '|utl.h| without linking to libutl.a, you have simply to define
-** the symbol '{=UTL_MAIN} '/before/ including it. 
-**   The '<'|utlh.c| = ../examples/utlh.c#> is a more detailed example of
-** how this can be done.
-** 
-*/
-/* .%% Handling '|extern| variables
-** ================================
-**
-**    When used with the rest of the '|libutl| library, the global variables
-**  needed (and provided) by '|utl.h| will be defined in the '|'<utl.c=utl.c#>| 
-**  file but when it used as an header, those globals will have to be defined
-**  and initialized somewhere else. 
-**
-**    The '{=UTL_EXTERN} macro takes care of this. You will see in the rest of
-**  the code that it is used as follows:
-** .v
-**      UTL_EXTERN (int x, = 0);
-** ..
-** where the second argument is the initializer.
-**
-**   The file that defines '{=UTL_MAIN}' before including '|utl.h| will expand
-** '|UTL_EXTERN (int x, = 0);| to '|int x = 0;|' while the others will expand
-** it to '|extern int x;|.
-**
-**   I've seen this problem solved using an '|EXTERN| macro that would expand
-** to '|extern| or to nothing depending on the cases but is has the drawback 
-** of not allowing initiatlization. In fact initialization would have been
-** expanded to '|extern int x = 0;| and many compilers, rightly, complain
-** about initializing an '|extern| variable. 
-**  
-*/
-
-#ifndef UTL_MAIN
-#define UTL_EXTERN(x,y) extern x 
-#else
-#define UTL_EXTERN(x,y) x y
-#endif
-
 /* .% Variables
 ** ============
 **
@@ -97,9 +55,6 @@
 **  ..
 */
 
-#ifdef UTL_MAIN
-void utlEmptyFun(void) {}
-#endif
 void utlEmptyFun(void);
 
 /*  .[utlEmptyString]  A pointer to the empty string "" that provides unique
@@ -107,7 +62,7 @@ void utlEmptyFun(void);
 **  ..
 */
 
-UTL_EXTERN( char *utlEmptyString , = "") ;
+extern char *utlEmptyString;
 
 /*   .[utlZero]  Is a constant whose value is 0 and that is to be used in
 **               idioms like '|do { ... } while (utlZero)|.
@@ -119,7 +74,7 @@ UTL_EXTERN( char *utlEmptyString , = "") ;
 #ifdef __GNUC__
 #define utlZero 0
 #else
-UTL_EXTERN( int utlZero , = 0) ;
+extern const int utlZero;
 #endif
 
 /* .% Messages Output
@@ -140,7 +95,7 @@ UTL_EXTERN( int utlZero , = 0) ;
 **   Actually I see no reason why you should need it, nut just in case ... 
 */
 
-UTL_EXTERN( FILE *utl_stderr , = NULL) ;
+extern FILE *utl_stderr;
 #define utlStderr (utl_stderr? utl_stderr: stderr)
 
 /*   The '/public/ function to set the output file, is '{=utlSetOutput()}
@@ -185,10 +140,7 @@ UTL_EXTERN( FILE *utl_stderr , = NULL) ;
 ** and over again in the code.
 */
 
-/*
-UTL_EXTERN( char *utlErrInternal , = "Internal error") ;
-*/
-#define utlErrInternal "Internal error"
+extern char *utlErrInternal; 
 
 /* .% UnitTest
 ** ===========
@@ -548,10 +500,10 @@ extern FILE *log_file;
 
 #define utl_fsmmax 16
 
-UTL_EXTERN( int utl_fsmcur , = 0) ;
-UTL_EXTERN( int utl_fsmcnt , = 0) ;
-UTL_EXTERN( int utl_fsmret , = 0) ;
-UTL_EXTERN( int utl_fsmrets[utl_fsmmax] , = {0}) ;
+extern int utl_fsmcur;
+extern int utl_fsmcnt;
+extern int utl_fsmret;
+extern int utl_fsmrets[utl_fsmmax];
 
 #define FSM for(utl_fsmret=0;;)
 #define STATE(x) \
@@ -602,13 +554,21 @@ UTL_EXTERN( int utl_fsmrets[utl_fsmmax] , = {0}) ;
 #endif 
 #define strdup(p) utl_strdup(p,__FILE__,__LINE__)
 
+#endif
+
 void *utl_malloc  (size_t size, char *file, int line );
 void *utl_calloc  (size_t num, size_t size, char *file, int line);
 void *utl_realloc (void *ptr, size_t size, char *file, int line);
 void  utl_free    (void *ptr, char *file, int line );
 void *utl_strdup  (void *ptr, char *file, int line);
 
-#endif
+#define utlMemInvalid    -2
+#define utlMemOverflow   -1
+#define utlMemValid       0
+#define utlMemNull        1
+
+int utl_check(void *ptr,char *file, int line);
+#define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
 
 #endif /*- UTL_H */
 
