@@ -4,8 +4,12 @@ rgr_pmx_nested$(_EXE)\
 rgr_rec$(_EXE)\
 rgr_tbl$(_EXE)\
 rgr_vec$(_EXE)\
+rgr_mem$(_EXE)\
 
 allall: $(RGR_TESTS)
+
+rgr_mem$(_EXE): $(CHKLIB) rgr_mem$(_OBJ)
+	$(LN)$@ rgr_mem$(_OBJ) -lutl
 
 rgr_chs$(_EXE): $(CHKLIB) rgr_chs$(_OBJ)
 	$(LN)$@ rgr_chs$(_OBJ) -lutl

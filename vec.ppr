@@ -77,13 +77,9 @@ vec
 			src\chs.c
 			src\tbl.h
 			src\tbl.c
-			src\exp\obj.h
-			src\exp\obj.c
 			src\makefile
 			src\hif.h
 			src\hif.c
-			src\rec.h
-			src\rec.c
 		+test
 			+regress
 				test\regress\rgr_tbl.c
@@ -122,10 +118,11 @@ vec
 15=examples\mpad\14.mp
 16=examples\mpad\7.mp
 17=examples\mpad\17.mp
-18=Nuovo1.h
+18=src\utl.h
+19=src\utl.c
 [Selected Project Files]
 Main=
-Selected=Nuovo1.h
+Selected=src\utl.c
 [examples\mpad\6.mp]
 TopLine=1
 Caret=1,25
@@ -181,6 +178,9 @@ Caret=45,10
 [examples\mpad\17.mp]
 TopLine=1
 Caret=10,2
-[Nuovo1.h]
-TopLine=1
-Caret=9,7
+[src\utl.h]
+TopLine=143
+Caret=15,172
+[src\utl.c]
+TopLine=25
+Caret=1,67
