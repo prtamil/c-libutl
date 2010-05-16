@@ -365,9 +365,12 @@ static const char *TSTKO  = "not ok";
 /* Logging functions are available only if the symbol '{=UTL_LOGGING}
 ** has been defined before including '|utl.h|.
 */
-
+#define UTL_LOGGING
 #ifdef UTL_LOGGING
 #include <time.h>
+extern char log_timestr[32];
+extern time_t log_time;
+extern  char *log_abbrev[];
 
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
@@ -386,8 +389,8 @@ static const char *TSTKO  = "not ok";
 #define logFATAL  5
 #define logOFF    6
 
-UTL_EXTERN(int logLevel , = logOFF) ;
-#define logSetLevel(level)     (logLevel = (x))
+extern int logLevel;
+#define logSetLevel(level)     (logLevel = (level))
 
 /*
 ** The table below shows whether a message of a certain level will be
@@ -419,26 +422,7 @@ UTL_EXTERN(int logLevel , = logOFF) ;
 **     2009-01-29 13:46:02 FTL An unrecoverable error
 ** ..
 **
-** These variables are used internally to compose and print log messages:
-**
-**  .['{=log_abbrev}] The string abbreviations for the levels. Note that the 
-**                    macro '{=log_ABR} is defined only to ensure a correct
-**                    macro expansion.
-**  ..
 */
-
-#define log_ABR {"ALL","DBG","INF","WRN","ERR","FTL","OFF"} 
-UTL_EXTERN(char *log_abbrev[],  = log_ABR);
-
-/* 
-**  .['{=log_timestr}]  A buffer to compose current time.
-**   ['{=log_time}]     A '|time_t| structure to compose current time. 
-**  .. 
-*/
-
-UTL_EXTERN(char log_timestr[32], ;)
-UTL_EXTERN(time_t log_time, = 0) ;
-
 
 /* .%% Setting the log file
 ** ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -450,8 +434,7 @@ UTL_EXTERN(time_t log_time, = 0) ;
 ** you should use the '{=logFile} macro.
 */
 
-UTL_EXTERN(FILE *log_file, = NULL) ;
-
+extern FILE *log_file;
 #define logFile         (log_file? log_file: stderr) 
 
 /*    Log files can be opened in "write" or "append" mode as any normal file 
@@ -517,6 +500,19 @@ UTL_EXTERN(FILE *log_file, = NULL) ;
 */
 #define logIndent     "                        "                            
 
+#else
+
+#define logSetLevel(level)
+#define logFile                 stderr 
+#define logSetFile(fname,mode)
+#define logWrite(lvl,...)
+#define logDebug(...)
+#define logInfo(...)
+#define logWarn(...)
+#define logError(...)
+#define logFatal(...)
+#define logMessage(...)
+
 #endif /*- UTL_LOGGING */
 
 
@@ -575,6 +571,44 @@ UTL_EXTERN( int utl_fsmrets[utl_fsmmax] , = {0}) ;
                   } while (utlZero) 
 
 #define BREAK break
+
+/*  .% Traced memory check
+**  ======================
+*/
+#ifdef UTL_MEMCHECK
+
+#ifdef malloc
+#undef malloc
+#endif 
+#define malloc(n) utl_malloc(n,__FILE__,__LINE__)
+
+#ifdef calloc
+#undef calloc
+#endif 
+#define calloc(n) utl_calloc(n,__FILE__,__LINE__)
+
+#ifdef realloc
+#undef realloc
+#endif 
+#define realloc(p,n) utl_realloc(p,n,__FILE__,__LINE__)
+
+#ifdef free
+#undef free
+#endif 
+#define free(p) utl_free(p,__FILE__,__LINE__)
+
+#ifdef strdup
+#undef strdup
+#endif 
+#define strdup(p) utl_strdup(p,__FILE__,__LINE__)
+
+void *utl_malloc  (size_t size, char *file, int line );
+void *utl_calloc  (size_t num, size_t size, char *file, int line);
+void *utl_realloc (void *ptr, size_t size, char *file, int line);
+void  utl_free    (void *ptr, char *file, int line );
+void *utl_strdup  (void *ptr, char *file, int line);
+
+#endif
 
 #endif /*- UTL_H */
 
