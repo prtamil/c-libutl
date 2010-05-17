@@ -84,6 +84,8 @@ typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
 
+#define pmxScannerCur pmx_tmpstr
+
 #define pmxScannerBegin(s) \
  do {\
     char *pmx_tmpstr;\
