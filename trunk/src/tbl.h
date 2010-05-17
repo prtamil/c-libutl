@@ -506,7 +506,7 @@ struct rec_f_t {
   int   (*cmp)  (void * , void *) ;
   void *(*cpy)  (void * , void *) ;
   char *(*uid)  (void *) ;
-  void  (*free) (void *) ;
+  void  (*del) (void *) ;
 };
 
 typedef struct { struct rec_f_t  *rec_f; } *rec_t;
@@ -517,7 +517,7 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
   int    t##_cmp(t *a, t *b); \
   void   t##_cpy(t *a, t *b);\
   char  *t##_uid(t *a);\
-  void   t##_free(t *a); \
+  void   t##_del(t *a); \
   void   t##_init(t *); \
   char  *t##_name = #t; \
   struct rec_##t##_f {\
@@ -526,13 +526,13 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
     int   (*cmp)  (t * , t *) ;\
     void  (*cpy)  (t * , t *) ;\
     char *(*uid)  (t *) ;\
-    void  (*free) (t *) ;\
+    void  (*del) (t *) ;\
   }
 
 #define recFunCmp(t,a,b)   int   t##_cmp(t *a, t *b)
 #define recFunCpy(t,a,b)   void  t##_cpy(t *a, t *b)
 #define recFunUid(t,a)     char *t##_uid(t *a)
-#define recFunFree(t,a)    void  t##_free(t *a)
+#define recFunFree(t,a)    void  t##_del(t *a)
 
 #define recFunNew(t,a) \
     static struct rec_##t##_f rec_##t##_func; \
@@ -543,7 +543,7 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
       rec_##t##_func.cmp  = t##_cmp;   \
       rec_##t##_func.cpy  = t##_cpy;   \
       rec_##t##_func.uid  = t##_uid;   \
-      rec_##t##_func.free = t##_free;  \
+      rec_##t##_func.del  = t##_del;  \
       if (p) {\
         p->rec_f = &rec_##t##_func;\
         t##_init(p);\
@@ -565,7 +565,7 @@ typedef struct { struct rec_f_t  *rec_f; } *rec_t;
 #define recNew(t,r)  (r = t##_new())
 
 #define recFree(r)  \
-  (r = (void *)(r? (( (rec_t)(r))->rec_f->free(r),free(r),NULL):NULL))
+  (r = (void *)(r? (( (rec_t)(r))->rec_f->del(r),free(r),NULL):NULL))
 
 #define recSize(a)   ((a)? ((rec_t)(a))->rec_f->size : 0)
 

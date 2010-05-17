@@ -537,7 +537,7 @@ extern int utl_fsmrets[utl_fsmmax];
 #ifdef calloc
 #undef calloc
 #endif 
-#define calloc(n) utl_calloc(n,__FILE__,__LINE__)
+#define calloc(n,s) utl_calloc(n,s,__FILE__,__LINE__)
 
 #ifdef realloc
 #undef realloc
@@ -554,6 +554,9 @@ extern int utl_fsmrets[utl_fsmmax];
 #endif 
 #define strdup(p) utl_strdup(p,__FILE__,__LINE__)
 
+#define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
+#else
+#define utlMemCheck(p) 
 #endif
 
 void *utl_malloc  (size_t size, char *file, int line );
@@ -568,7 +571,6 @@ void *utl_strdup  (void *ptr, char *file, int line);
 #define utlMemNull        1
 
 int utl_check(void *ptr,char *file, int line);
-#define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
 
 #endif /*- UTL_H */
 
