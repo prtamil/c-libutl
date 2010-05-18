@@ -51,7 +51,7 @@ unsigned char pmxToken(pmx_t mtc);
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
 
-#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+
 
 #define pmxTokNONE    x00
 #define pmxTokEOF     x7F
@@ -61,6 +61,14 @@ unsigned char pmxToken(pmx_t mtc);
 #define pmxTok_defcase(y) 0##y 
 #define pmxTok_defstr(y)  #y 
 #define pmxTokCase(y) case pmxTok_defcase(y)
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+#define pmxTok_defstr_msvc(x,y) pmxTok_defstr(x##y)
+#define pmxTokSet(x,y) "&|" x pmxTok_defstr_msvc(&\,y)
+#else 
+#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+#endif
+
 
 #define pmxTokGroupSet(x)     (pmx_group = (x))
 #define pmxTokGroupGet()       pmx_group
@@ -83,8 +91,6 @@ unsigned char pmxToken(pmx_t mtc);
 typedef int (*pmxScanFun_t)(char *txt, pmx_t mtc);
 
 int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
-
-#define pmxScannerCur pmx_tmpstr
 
 #define pmxScannerBegin(s) \
  do {\
