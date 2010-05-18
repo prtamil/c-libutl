@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "libutl.h"
 
@@ -157,7 +156,7 @@ static unsigned long hash_num(unsigned long a)
 
 static unsigned long hash_float(float f)
 {
-  f = f + 1.0;
+  f = f + (float)1.0;
   return hash_djbL((unsigned char *)(&f),sizeof(float));  
 }
 
@@ -349,20 +348,20 @@ static long tbl_search_hash(tbl_t tb, char k_type, val_u key,
   }
   
   *candidate = FIND_NONE;
-  *distance = d_max-1;  
+  *distance = (unsigned char)(d_max-1);  
     
   while (d < d_max) {
     slot = slot_ptr(tb, ndx);
     
     if (slot_isempty(slot)) { 
-      *distance  = d;
+      *distance  = (unsigned char)d;
       *candidate = ndx;
       return FIND_EMPTY;
     }
     
     if (modsz(tb, ndx - slot_dist(slot)) == hk) { /* same hash!! */
       if (val_cmp(k_type, key, slot_val_type(slot), slot_key(slot)) == 0) { /* same value!! */
-        *distance  = d;
+        *distance  = (unsigned char)d;
         *candidate = ndx;
         return ndx;
       }
@@ -371,7 +370,7 @@ static long tbl_search_hash(tbl_t tb, char k_type, val_u key,
       /* TODO: What's the best criteria for selecting candidate?
       **       Currently, the latest slot with lowest distance is selected.
       */
-      *distance = d;
+      *distance = (unsigned char)d;
       *candidate = ndx;
     }
     
