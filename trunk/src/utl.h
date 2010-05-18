@@ -572,5 +572,9 @@ void *utl_strdup  (void *ptr, char *file, int line);
 
 int utl_check(void *ptr,char *file, int line);
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 #endif /*- UTL_H */
 
