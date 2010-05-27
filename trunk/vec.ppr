@@ -33,11 +33,11 @@ vec
 			-scanner
 				examples\scanner\mpnotes.c
 				examples\scanner\makefile
-			+uncomment
+			-uncomment
 				examples\uncomment\unc.c
 				examples\uncomment\uncomment.pmx
 				examples\uncomment\makefile
-			+cxrf
+			-cxrf
 				examples\cxrf\cxrf.pmx
 				examples\cxrf\makefile
 			+fsm
@@ -45,7 +45,7 @@ vec
 				examples\fsm\fsm.pmx
 				examples\fsm\makefile
 				examples\fsm\fsm.c
-			+fmt
+			-fmt
 				examples\fmt\fmt.pmx
 				examples\fmt\fmt9.txt
 				examples\fmt\fmt.c
@@ -117,15 +117,16 @@ vec
 14=test\regress\rgr_mem.c
 15=README
 16=doc\usersguide.txt
+17=examples\fsm\fsm.txt
 [Selected Project Files]
 Main=
-Selected=src\pmx.h
+Selected=examples\fsm\fsm.txt
 [src\tbl.h]
 TopLine=1
 Caret=9,18
 [src\tbl.c]
 TopLine=751
-Caret=10,786
+Caret=4,786
 [examples\mpad\2.mp]
 TopLine=1
 Caret=30,7
@@ -172,3 +173,6 @@ Caret=1,1
 [doc\usersguide.txt]
 TopLine=38
 Caret=72,60
+[examples\fsm\fsm.txt]
+TopLine=35
+Caret=20,14
