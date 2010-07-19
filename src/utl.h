@@ -296,10 +296,11 @@ static const char *TSTKO  = "not ok";
 ** 
 **   If you are worried about the fact that identifiers beginning with an
 ** underscore may be reserved (as per ISO Stanadard 7.1.3) you can replace
-** it with another character (e.g. '|Xdbgmsg()|).  So far I've not find any
+** it with '|Xdbgmsg()|.  So far I've not find any
 ** reason to do it and using an underscore seems more natural to me. 
 */
 #define _dbgmsg(...)
+#define Xdbgmsg(...)
 
 
 /* .% Logging
@@ -437,12 +438,15 @@ extern FILE *log_file;
 */
 #define logMessage(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
 
+#define logIndent     "\n                        "    
+#define logContinue(...)  (fputs(logIndent,logFile),logMessage(__VA_ARGS__))                       
+
 /*   To ease text alignment in the log, the string '{=logIndent} contains 
 ** the spaces needed to pass the date, time and type field.
 ** For example:
 ** .v
-**   logError("Too many items at counter %d",numcounter);
-**   logMessage(" (%d)\n%sOccured %d times",numitems,logIndent,times++);
+**   logError("Too many items at counter %d (%d)",numcounter,numitems);
+**   logContinue("Occured %d times",times++);
 ** ..
 ** will produce:
 ** .v
@@ -450,7 +454,6 @@ extern FILE *log_file;
 **                             Occured 3 times
 ** ..
 */
-#define logIndent     "                        "                            
 
 #else
 
