@@ -106,6 +106,7 @@ int pmxScanStr(char* text, char *ptrn, pmxScanFun_t f);
       if (pmx_tmpmtc) {\
         pmx_tmpstr += pmxLen(pmx_tmpmtc,0);  \
         pmxMatchesPop();\
+        pmx_tmpmtc = NULL;\
       }\
       pmx_tmpptrn = 
       
