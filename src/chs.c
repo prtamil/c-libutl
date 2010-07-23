@@ -320,7 +320,8 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
       once = 1;
       pat += 2;
     }
-    else break;
+    else
+      break;
   }
     
   if (!*pat) return s;
@@ -339,7 +340,8 @@ chs_t chs_SubFun(chs_t s, long pos, char *pat, chsSubF_t f)
   
         if (repeat) l = 0;
       }
-      else  l = pmxLen(ret,0);
+      else
+        l = pmxLen(ret,0);
     }
     else l = 1;
     if ( once && l>0) break;

@@ -168,11 +168,12 @@ extern char *utlErrInternal;
 */
 
 #define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
-                       TSTWRITE("#\n# * %d. %s\n",TSTSEC, s)),!utlZero)
+                       TSTWRITE("#\n# * %d. %s (%s:%d)\n",TSTSEC, s,__FILE__, __LINE__)),!utlZero)
 
-/* to disable an intere test section, just prepend ''|_|' */
+/* to disable an intere test section, just prepend ''|_|' or ''|X|'*/
  
 #define _TSTSECTION(s) if (utlZero)  
+#define XTSTSECTION(s) if (utlZero)  
 
 /* In each section, tests can be logically grouped so that different aspects
 ** of related functions can be tested.
@@ -184,10 +185,12 @@ extern char *utlErrInternal;
                      
 /* to disable an intere test group , just prepend ''|_|' */
 #define _TSTGROUP(s) if (utlZero)  
+#define XTSTGROUP(s) if (utlZero)  
 
 /* You may want to disable just a block of instructions */
 #define TSTBLOCK if (!utlZero) 
 #define _TSTBLOCK if (utlZero) 
+#define XTSTBLOCK if (utlZero) 
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
 **   .['|s|] is a short string that identifies the test
@@ -200,9 +203,9 @@ extern char *utlErrInternal;
                      TSTWRITE("\n"),TSTRES)
 
 #define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
-                     TSTWRITE("%s %4d - %s",\
+                     TSTWRITE("%s %4d - %s (:%d)",\
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
-                              TSTGTT, s))
+                              TSTGTT, s, __LINE__))
 
 #define TSTTD(s,x,r) (TST_DO(s,x), TSTWRITE(" # TODO %s\n",r), TSTRES)
 

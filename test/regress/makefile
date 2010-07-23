@@ -16,5 +16,6 @@ clean:
 	$(RM) $(RGR_TESTS) 
 	$(RM) $(RGR_OBJS) 
 	$(RM) gmon.out
+	$(RM) *.gc??
 
 include $(TOP)targets.mk
