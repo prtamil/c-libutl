@@ -46,6 +46,7 @@ clean:
 	$(RM) $(LIBOBJ)
 	$(RM) $(DIST)/*
 	$(RM) gmon.out
+	$(RM) *.gc??
 
 gdb_t2: t2$(_EXE) XXX
 	-$(GDB) t2

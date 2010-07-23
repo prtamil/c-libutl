@@ -13,9 +13,9 @@
 #include <ctype.h>
 
 char *lorem =
-  "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. "
-  "Sed libero sapien, sollicitudin consequat, tempor ut, elementum a, "
-  "diam. Morbi eu risus sed felis porta fermentum. Phasellus sit amet."
+  "Lorem ipsum dolor sit amet, consectetuer adipiscing elit.\n"
+  "Sed libero sapien, sollicitudin consequat, tempor ut, elementum a,\n"
+  "diam. Morbi eu risus sed felis porta fermentum. Phasellus sit amet.\n"
 #if 0  
   "Diam in gravida. Nunc et arcu vel turpis porttitor semper. Nulla "
   "facilisi. Integer lobortis urna in dolor. Nam eu nisl ac nibh "
@@ -56,6 +56,7 @@ int main(void)
     
       chsDel(buf,'M'-'A','P'-'A');
       TST("Deleted \"MNOP\". Length is correct", k == chsLen(buf)+4);
+      TST("Deleted \"MNOP\". ", strcmp(buf,"ABCDEFGHIJKLQRSTUVWXYZ") == 0);
       TSTWRITE("# Check that next lines don't have MNOP in it!\n");
       TSTWRITE("# >>  \"%s\"\n",buf);
     
@@ -65,47 +66,57 @@ int main(void)
       k = chsLen(buf);
       chsDel(buf, -4, -1);
       TST("Deleted \"WXYZ\" at the end. Length is correct", k == chsLen(buf)+4);
+      TST("Deleted \"WXYZ\" at the end. ", strcmp(buf,"ABCDEFGHIJKLQRSTUV") == 0);
       TSTWRITE("# >>  \"%s\"\n",buf);
     
       k = chsLen(buf);
       chsDel(buf, 0, 3);
       TST("Deleted \"ABCD\" at the beginning. Length is correct", k == chsLen(buf)+4);
+      TST("Deleted \"ABCD\" at the beginning. ", strcmp(buf,"EFGHIJKLQRSTUV") == 0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
       k = chsLen(buf);
       chsInsStr(buf, chsLen(buf), "ABCD");
       TST("Added \"ABCD\" at the end. Length is correct", k == chsLen(buf)-4);
+      TST("Added \"ABCD\" at the end. ", strcmp(buf,"EFGHIJKLQRSTUVABCD") == 0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
       
       k = chsLen(buf);
       chsInsStr(buf, 0, "WXYZ");
       TST("Added \"WXYZ\" at the beginning. Length is correct", k == chsLen(buf)-4);
+      TST("Added \"WXYZ\" at the beginning. ", strcmp(buf,"WXYZEFGHIJKLQRSTUVABCD") == 0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
       
       k = chsLen(buf);
       chsInsStr(buf,'M'-'A', "MNOP");
       TST("Added \"MNOP\" in the middle. Length is correct", k == chsLen(buf)-4);
+      TST("Added \"MNOP\" in the middle. ", strcmp(buf,"WXYZEFGHIJKLMNOPQRSTUVABCD") == 0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
     }
     
     TSTGROUP("Replace") {
       chsSubStr(buf ,0, "<=EGIKM>","++");
-      TST("Replacing <=EGIKM> with '++'",1);
+      TST("Replacing <=EGIKM> with '++'",strcmp(buf,"WXYZ++F++H++J++L++NOPQRSTUVABCD") == 0);
       TSTWRITE("# >>  \"%s\"\n",buf);
     
       chsSubStr(buf ,0, "<=PQRS>","[&0&0]");
-      TST("Replacing <=PQRS> with '[&0&0]'", 4);
-      TSTWRITE("# >>  \"%s\"\n",buf);
-      
+      TST("Replacing <=PQRS> with '[&0&0]'",strcmp(buf,"WXYZ++F++H++J++L++NO[PP][QQ][RR][SS]TUVABCD") == 0);
+      TSTWRITE("# >>  \"%s\"\n",buf);    
     }
       
     TSTGROUP ("Replace arr") {
       char *ra[] = {"A","B",NULL};
       char *rb[] = {"#&1#","$&2$&1$",NULL};
       char *rc[] = {"b","B",NULL};
+      char *rd[] = {"&A","&B",NULL};
       
       chsCpy(buf,"xabc");
       chsSubArr(buf,0,"a&|b",ra);
+      TST("repl arr1",strcmp(buf,"xABc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+      
+      chsCpy(buf,"xabc");
+      chsSubArr(buf ,0, "a&|b",rd);
       TST("repl arr1",strcmp(buf,"xABc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
@@ -119,12 +130,16 @@ int main(void)
       TST("repl arr1",strcmp(buf,"xBBc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
-      chsSubStr(buf ,0, "&rB","Z");
-      TST("repl arr1",strcmp(buf,"xBBc")==0);
+      chsSubStr(buf ,0, "B","Z");
+      TST("repl arr1",strcmp(buf,"xZZc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    
+      chsSubStr(buf ,0, "&rZ","B");
+      TST("repl arr1",strcmp(buf,"xZZc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
       chsSubStr(buf ,0, "&rx","z");
-      TST("repl arr1",strcmp(buf,"zBBc")==0);
+      TST("repl arr1",strcmp(buf,"zZZc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
     }
@@ -134,49 +149,61 @@ int main(void)
       TST("CHS destroyed", buf == NULL);
     }
       
-    TSTGROUP("Basic file reading") {
-      f = fopen("txt.txt","r");
-      if (f) { 
-        chsCpyFile(buf,f);
-        TSTWRITE("[[**************************\n");
-        TSTWRITE("%s\n",buf);
-        TSTWRITE("]]**************************\n");
-        fclose(f);
-        k = chsLen(buf);
-        TST("File reading [1]", buf && k > 0);
-      }
-      else  TST("File reading [1]", 0);
-      
-      f = fopen("txt.txt","r");
-      if (f) {
-        chsAddFile(buf,f);
-        TSTWRITE("[[**************************\n");
-        TSTWRITE("%s\n",buf);
-        TSTWRITE("]]**************************\n");
-        fclose(f);
-        TST("File reading [2]", buf && k *2 == chsLen(buf));
-      }
-      else  TST("File reading [2]", 0);
-      
-      f = fopen("txt.txt","r");
-      if (f) {
-        TSTWRITE("[[**************************\n");
-        do {
-          chsCpyLine(buf,f);
-          if (chsLen(buf) == 0) break;
-          TSTWRITE("{%s}",buf);
-        } while (1);
-        TSTWRITE("]]**************************\n");
-        fclose(f);
-        TST("File reading [3]", 1);
-      } 
-      else  TST("File reading [3]", 0);
-
-      assert(buf != NULL);  
-      chsFree(buf);
-      assert(buf == NULL);  
-    } 
+    f = fopen("txt.txt","w");
+    if (f) {
+      fprintf(f,lorem);
+      fclose(f);
     
+      TSTGROUP("Basic file reading") {
+        f = fopen("txt.txt","r");
+        if (f) { 
+          chsCpyFile(buf,f);
+          TSTWRITE("[[**************************\n");
+          TSTWRITE("%s\n",buf);
+          TSTWRITE("]]**************************\n");
+          fclose(f);
+          k = chsLen(buf);
+          TST("File reading [1]", buf && (strcmp(buf, lorem) == 0));
+        }
+        else  TST("File reading [1]", 0);
+        
+        f = fopen("txt.txt","r");
+        if (f) {
+          chsAddFile(buf,f);
+          TSTWRITE("[[**************************\n");
+          TSTWRITE("%s\n",buf);
+          TSTWRITE("]]**************************\n");
+          fclose(f);
+          TST("File reading [2]", buf && k *2 == chsLen(buf) && strncmp(buf,buf+k,k) == 0);
+        }
+        else  TST("File reading [2]", 0);
+        
+        f = fopen("txt.txt","r");
+        if (f) {
+          chsCpy(buf,"");
+          k = 0;
+          TSTWRITE("[[**************************\n");
+          do {
+            chsAddLine(buf,f);
+            if (k == chsLen(buf)) break;
+            k = chsLen(buf);
+          } while (1);
+          TSTWRITE("%s\n",buf);
+          TSTWRITE("]]**************************\n");
+          fclose(f);
+          TST("File reading [3]" , buf && (strcmp(buf, lorem) == 0));
+        } 
+        else  TST("File reading [3]", 0);
+  
+        assert(buf != NULL);  
+        chsFree(buf);
+        assert(buf == NULL);  
+      } 
+    }
+    else  {
+      TST("Create text file",0);
+    }
+        
     TSTGROUP("Upper/Lower/Reverse") {
       chsCpy(buf,"abc");
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      

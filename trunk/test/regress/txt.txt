@@ -1,5 +1,3 @@
-/*
-** Copyright holder makes no representations about the suitability
-** of this software for any purpose. It is provided "as is" without
-** express or implied warranty.
-*/
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+Sed libero sapien, sollicitudin consequat, tempor ut, elementum a,
+diam. Morbi eu risus sed felis porta fermentum. Phasellus sit amet.

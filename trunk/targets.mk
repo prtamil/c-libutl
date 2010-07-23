@@ -15,6 +15,9 @@ release:
 profile:
 	make CCOPTS="-O2 -pg" LNOPTS="-pg"
 
+coverage:
+	make CCOPTS="-fprofile-arcs -ftest-coverage"
+
 $(CHKLIB): 
 	cd $(TOP)src ; make CCOPTS="$(CCOPTS)" LNOPTS="$(LNOPTS)" libutl$(_LIB)
 
