@@ -103,6 +103,32 @@ char *val_Sfree(char *s)
   return chsFree(s);
 }
 
+/* FLoating point comparison.
+   See: Bruce Dawson, "Comparing floating point numbers"
+   http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
+*/
+
+#define sign(x) ((*(int*)&x) & 0x80000000)
+#define ulps 4
+static int flt_cmp(float A, float B)
+{
+    int a,b,d;
+    
+    if (sign(A) != sign(B))  return A == B;
+
+    a = *(int*)&A;
+    if (a < 0)  a = 0x80000000 - a;
+    b = *(int*)&B;
+    if (b < 0)  b = 0x80000000 - b;
+    d = a - b;
+    if (abs(d) <= ulps) return 0;
+    return d;
+}
+
+/* Floating point normalization 
+
+*/
+
 static int val_cmp(char atype, val_u a, char btype, val_u b)
 {
   int ret;
@@ -114,7 +140,7 @@ static int val_cmp(char atype, val_u a, char btype, val_u b)
       case 'S' : ret = strcmp(a.s, b.s);                           break;
       case 'N' : ret = a.n - b.n;                                  break;
       case 'U' : ret = (a.u == b.u) ? 0 : ((a.u > b.u) ? 1 : -1);  break;
-      case 'F' : ret = (a.f == b.f) ? 0 : ((a.f > b.f) ? 1 : -1);  break;
+      case 'F' : ret = flt_cmp(a.f, b.f);                          break;
       case 'R' : ret = recCmp(a.p,b.p);                            break;
       default  : ret = (char *)(a.p) - (char *)(b.p);              break;
     }
@@ -156,7 +182,7 @@ static unsigned long hash_num(unsigned long a)
 
 static unsigned long hash_float(float f)
 {
-  f = f + (float)1.0;
+  f = f + 1.0;
   return hash_djbL((unsigned char *)(&f),sizeof(float));  
 }
 
@@ -196,9 +222,10 @@ static long val_hash(char k_type, val_u key)
 
 #define MAX_DIST(tb) (llog2(tb->size) + 2)
 
-void tbl_print(tbl_t tb)
+void tbl_print(FILE *f, tbl_t tb)
 {
   long ndx;
+  int ty;
   tbl_slot_t *slot;
   
   if (!tb) return ;
@@ -206,13 +233,28 @@ void tbl_print(tbl_t tb)
   for (ndx = 0; ndx < tb->size; ndx++) {
     slot = &tb->slot[ndx];
     if (slot_isempty(slot))
-      fprintf(stderr,"[%04ld] X X <0,0> (0)\n",ndx);
-    else
-      fprintf(stderr,"[%04ld] %c %c <%ld,%ld> (%d)\n",ndx, 
-                slot_key_type(slot) ? slot_key_type(slot) :'X',
-                slot_val_type(slot) ? slot_val_type(slot) :'X',
-                slot_key(slot).n,slot_val(slot).n,
-                slot_dist(slot));
+      fprintf(f,"[%04ld] () -> () (0)\n",ndx);
+    else {
+      ty = slot_key_type(slot) ? slot_key_type(slot) :'X';
+      fprintf(f,"[%04ld] (%c ",ndx,ty);
+      switch (ty) {
+        case 'X' : break;
+        case 'N' : fprintf(f,"%ld",slot_key(slot).n); break;
+        case 'F' : fprintf(f,"%f",slot_key(slot).f); break;
+        case 'S' : fprintf(f,"%s",slot_key(slot).s); break;
+        case 'U' : fprintf(f,"%lu",slot_key(slot).u); break;
+      }
+      ty = slot_val_type(slot) ? slot_val_type(slot) :'X';
+      fprintf(f,") -> (%c ",ty);
+      switch (ty) {
+        case 'X' : break;
+        case 'N' : fprintf(f,"%ld",slot_val(slot).n); break;
+        case 'F' : fprintf(f,"%f",slot_val(slot).f); break;
+        case 'S' : fprintf(f,"%s",slot_val(slot).s); break;
+        case 'U' : fprintf(f,"%lu",slot_val(slot).u); break;
+      }
+      fprintf(f,") (%d)\n",slot_dist(slot));
+    }
   }
 }
 
@@ -360,7 +402,7 @@ static long tbl_search_hash(tbl_t tb, char k_type, val_u key,
     }
     
     if (modsz(tb, ndx - slot_dist(slot)) == hk) { /* same hash!! */
-      if (val_cmp(k_type, key, slot_val_type(slot), slot_key(slot)) == 0) { /* same value!! */
+      if (val_cmp(k_type, key, slot_key_type(slot), slot_key(slot)) == 0) { /* same value!! */
         *distance  = (unsigned char)d;
         *candidate = ndx;
         return ndx;

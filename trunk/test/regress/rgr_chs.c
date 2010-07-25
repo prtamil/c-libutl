@@ -63,6 +63,9 @@ int main(void)
       k = chsChrAt(buf,'L'-'A');
       TST("ChrAt in the middle", k == 'L');
     
+      k = chsChrAt(buf,chsLen(buf)+100);
+      TST("ChrAt past the end", k == '\0');
+    
       k = chsLen(buf);
       chsDel(buf, -4, -1);
       TST("Deleted \"WXYZ\" at the end. Length is correct", k == chsLen(buf)+4);
@@ -91,7 +94,8 @@ int main(void)
       chsInsStr(buf,'M'-'A', "MNOP");
       TST("Added \"MNOP\" in the middle. Length is correct", k == chsLen(buf)-4);
       TST("Added \"MNOP\" in the middle. ", strcmp(buf,"WXYZEFGHIJKLMNOPQRSTUVABCD") == 0);
-      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);      
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+            
     }
     
     TSTGROUP("Replace") {
@@ -142,6 +146,25 @@ int main(void)
       TST("repl arr1",strcmp(buf,"zZZc")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
     
+    }
+    
+    TSTGROUP("Insert") {
+      chsCpy(buf,"xabc");
+      chsInsChr(buf,2,'1');
+      TST("Insert char",strcmp(buf,"xa1bc")==0);
+      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+    }
+    
+    TSTGROUP("Delete") {
+      chsCpy(buf,"xZabc");
+      chsDel(buf, 1, 1);
+      TST("Deleted 1 char in the middle. ", strcmp(buf,"xabc") == 0);
+      
+      chsDel(buf, -1, -1);
+      TST("Deleted 1 char at the end. ", strcmp(buf,"xab") == 0);
+      
+      chsDel(buf, 0, 0);
+      TST("Deleted 1 char at the beginning. ", strcmp(buf,"ab") == 0);
     }
     
     TSTGROUP("Destroy") {
