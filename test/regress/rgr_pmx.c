@@ -19,9 +19,13 @@ char *lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
 
 char *simp = "ab\ncd\r\nef\n";
  
+char buf[32];
+int k = 0;
+ 
 int printfirst(char *txt, pmx_t mtc)
 {
-  printf("%c\n",txt[pmxStart(mtc,0)]);
+  buf[k++] = txt[pmxStart(mtc,0)];
+  buf[k] = '\0';
   return 0;
 }
 
@@ -31,7 +35,7 @@ int main (void)
   TSTSECTION("pmx Basics") {
     TSTGROUP("scan") {
       pmxScanStr(lorem,">&r<.>",printfirst);
-      TST("scan",1);
+      TST("scan",strcmp(buf,"LPvAcMf") == 0);
     }
     
     TSTGROUP("failall") {

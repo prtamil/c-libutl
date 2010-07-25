@@ -56,8 +56,9 @@ int main(void)
       kk = 0;
       ii = 0; 
       jj = 0;
-      tblPrint(stderr,tt);
-      TSTNOTE("COUNT %ld (%ld, max: %ld) HTSIZE: %ld",tt->count,jj,ll,tt->size);
+      
+      ///tblPrint(stderr,tt);
+      TSTNOTE("# COUNT %ld (%ld, max: %ld) HTSIZE: %ld",tt->count,jj,ll,tt->size);
       
       for (ii=0; ii<49150; ii++) {
        kk = tblGetNN(tt,ii,-1);
@@ -70,7 +71,7 @@ int main(void)
       tblFree(tt);
       TST("TBL freed",(tt == NULL));
       
-      _TSTBLOCK {
+      TSTBLOCK {
       
         tblNew(tt);
         tblSetNN(tt,432,431);
@@ -97,7 +98,7 @@ int main(void)
         str = tblValS(tt,kk);
         chsInsStr(str ,0,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); 
         
-        TSTWRITE("[%s] = %s\n",tblKeyS(tt,kk), tblValS(tt,kk));
+        TSTNOTE("[%s] = %s\n",tblKeyS(tt,kk), tblValS(tt,kk));
         
         tblSetSS(tt,"",NULL);
         
@@ -118,20 +119,22 @@ int main(void)
       for (kk = 0; kk < 100; kk++) {
         tblSetFN(tt,2.00+(float)kk/1000,kk);
       }
-      tblPrint(stderr,tt);
+      //tblPrint(stderr,tt);
       f = 2.00+(float)3/1000;
       kk = tblGetFN(tt,f,-1);
       TST("Float set", kk == 3);
-      TSTWRITE("[%f] -> %d\n",f, kk);
+      TSTNOTE("[%f] -> %d\n",f, kk);
     }
     
     TSTGROUP("Shrink")  {
       ll = tt->size;
-      TSTWRITE("Cur Size: %d",ll);
-      for (kk=10; kk<120;kk++) {
+      for (kk=1; kk<99;kk++) {
         tblDelF(tt,2.00+(float)kk/1000);
       }
-      TSTWRITE(" after Size: %d",tt->size);
+      //tblPrint(stderr,tt);
+      TST("Shrunk", tt->size < ll);
+      TST("Float get", tblGetFN(tt,2.0,-1) == 0);
+      TST("Float get", tblGetFN(tt,2.099,-1) == 99);
     }    
     
   }    
