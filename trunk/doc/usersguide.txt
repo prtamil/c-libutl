@@ -433,7 +433,7 @@ exceptions:
     ['|>|] Ends a complex pattern except when placed at the beginning or at
            the end of the pattern.
     
-           At the beginning of a pattern indicates that it  can be matched
+           At the beginning of a pattern indicates that it can be matched
            anywhere in the string.  Without it, a PMX pattern will only be
            matched at the beginning of the string.  This is the opposite of 
            what Regular Expressions do: without the '^^ character a RE will
