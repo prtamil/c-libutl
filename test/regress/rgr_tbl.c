@@ -56,11 +56,7 @@ int main(void)
       kk = 0;
       ii = 0; 
       jj = 0;
-      tblForeach(tt,ii) {
-       TSTWRITE("# %d T[%c %d] = (%c %d)\n",kk++,tblKeyType(tt,ii),tblKeyN(tt,ii),
-                                                 tblValType(tt,ii),tblValN(tt,ii));
-      }
-      
+      tblPrint(stderr,tt);
       TSTNOTE("COUNT %ld (%ld, max: %ld) HTSIZE: %ld",tt->count,jj,ll,tt->size);
       
       for (ii=0; ii<49150; ii++) {
@@ -119,12 +115,25 @@ int main(void)
     TSTGROUP("floats")  {
       float f;
       tblNew(tt);
-      for (kk = 0; kk < 1000; kk++) {
-        tblSetFN(tt,2.00+(float)kk/100,kk);
+      for (kk = 0; kk < 100; kk++) {
+        tblSetFN(tt,2.00+(float)kk/1000,kk);
       }
-      f = 2.00+(float)3/100;
-      TST("Float set", tblGetFN(tt,f,-1) == 3);
+      tblPrint(stderr,tt);
+      f = 2.00+(float)3/1000;
+      kk = tblGetFN(tt,f,-1);
+      TST("Float set", kk == 3);
+      TSTWRITE("[%f] -> %d\n",f, kk);
     }
+    
+    TSTGROUP("Shrink")  {
+      ll = tt->size;
+      TSTWRITE("Cur Size: %d",ll);
+      for (kk=10; kk<120;kk++) {
+        tblDelF(tt,2.00+(float)kk/1000);
+      }
+      TSTWRITE(" after Size: %d",tt->size);
+    }    
+    
   }    
   
   

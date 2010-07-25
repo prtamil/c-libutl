@@ -202,8 +202,8 @@ chs_t chs_Del(chs_t dst, long from, long to)
     to = fixndx(dst, to);
     if (to > len) to = len;
     if (to >= from) { 
-      if (to == len) {
-        chs_blk(dst)->len -= (to-from);   
+      if (to == len-1) {
+        chs_blk(dst)->len -= (to-from+1);   
       }
       else {
         memmove(dst+from, dst+to+1, len - to);

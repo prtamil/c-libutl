@@ -285,6 +285,8 @@ val_u tbl_val(tbl_t tb, tblptr_t ndx);
 #define tblValU(tb,n)  valGetU(tbl_val(tb,n))
 #define tblValF(tb,n)  valGetF(tbl_val(tb,n))
 
+void tbl_print(FILE *f, tbl_t tb);
+#define tblPrint(f,t) tbl_print(f,t)
 
 /******************/
 
