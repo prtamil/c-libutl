@@ -22,7 +22,7 @@ char *simp = "ab\ncd\r\nef\n";
 char buf[32];
 int k = 0;
  
-int printfirst(char *txt, pmx_t mtc)
+int getfirst(char *txt, pmx_t mtc)
 {
   buf[k++] = txt[pmxStart(mtc,0)];
   buf[k] = '\0';
@@ -31,13 +31,44 @@ int printfirst(char *txt, pmx_t mtc)
 
 int main (void)
 { 
-     
+  pmx_t ret;
+       
   TSTSECTION("pmx Basics") {
-    TSTGROUP("scan") {
-      pmxScanStr(lorem,">&r<.>",printfirst);
-      TST("scan",strcmp(buf,"LPvAcMf") == 0);
-    }
+  
+    ret = pmxMatchStr(lorem,"Lorem");
+    TST("match literal string (1)",ret && pmxStart(ret,0)==0 && pmxLen(ret,0)==5);
+    ret = pmxMatchStr(lorem,"ipsum");
+    TST("match literal string (2)",!ret);
+    ret = pmxMatchStr(lorem,">ipsum");
+    TST("match literal string (3)",ret && pmxStart(ret,0)==6 && pmxLen(ret,0)==5);
     
+    ret = pmxMatchStr(lorem,"<.><:4:l>");
+    TST("match counted chars (1)",ret && pmxStart(ret,0)==0 && pmxLen(ret,0)==5);
+    ret = pmxMatchStr(lorem,"<l><:4:l>");
+    TST("match counted chars (2)",!ret);
+    ret = pmxMatchStr(lorem,"><l><:4:l>");
+    TST("match counted chars (3)",ret && pmxStart(ret,0)==6 && pmxLen(ret,0)==5);
+
+    ret = pmxMatchStr(lorem,">d<*a>");
+    TST("match star",ret && strncmp(lorem+pmxStart(ret,0), "dolor" ,pmxLen(ret,0))==0);
+        
+    ret = pmxMatchStr(lorem,"> <+=s-u> ");
+    TST("match plus",ret && strncmp(lorem+pmxStart(ret,0), " ut " ,pmxLen(ret,0))==0);
+    TSTIF_NOTOK {
+      if (ret) TSTWRITE("%.*s\n",pmxLen(ret,0),lorem+pmxStart(ret,0));
+    }
+        
+    ret = pmxMatchStr("1abc4","(<?d>)(<*D>)(<?d>)");
+    k = (ret != NULL);
+    if (k)  k = (pmxStart(ret,1) == 0) && (pmxStart(ret,2) == 1) && (pmxStart(ret,3) == 4); 
+    if (k)  k = (pmxLen(ret,1)   == 1) && (pmxLen(ret,2)   == 3) && (pmxLen(ret,3) == 1);     
+    TST("match options",k);
+    k=0;    
+    pmxScanStr(lorem,">&r<.>",getfirst);
+    TST("scan string",strcmp(buf,"LPvAcMf") == 0);
+  }
+    
+  TSTSECTION("pmx failall") {
     TSTGROUP("failall") {
       pmxScannerBegin("abcbdade")        
         pmxTokSet("ab&!c", x81)
@@ -56,6 +87,7 @@ int main (void)
       TST("failall",1);
     }
   }
+  
   TSTDONE();
   
   exit(0);
