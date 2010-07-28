@@ -27,7 +27,7 @@
 */
 #define pmxCaptMax 10
 
-typedef size_t pmxMatches[pmxCaptMax+1][2];
+typedef size_t pmxMatches[pmxCaptMax+2][2];
 typedef pmxMatches *pmx_t;
 
 extern int pmx_capt_cur;
@@ -44,6 +44,10 @@ int           pmxMatched (pmx_t mtc);
 size_t        pmxLen     (pmx_t mtc, unsigned char n);
 size_t        pmxStart   (pmx_t mtc, unsigned char n);
 size_t        pmxEnd     (pmx_t mtc, unsigned char n);
+
+char *        pmxStartP  (pmx_t mtc, unsigned char n);
+char *        pmxEndP    (pmx_t mtc, unsigned char n);
+
 
 unsigned char pmxToken(pmx_t mtc);
 
