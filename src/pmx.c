@@ -103,6 +103,8 @@ static int pmxBeginLine(sbuf *s)
     +=============================+=============================+
  10 | matched pattern             | token of matched pattern    |
     +-----------------------------+-----------------------------+
+ 11 | start offset                |                             |
+    +-----------------------------+-----------------------------+
 ..
  
   Start/end index are offset with respect to the start of the string
@@ -137,6 +139,16 @@ size_t pmxStart(pmx_t mtc, unsigned char n)
 size_t pmxEnd(pmx_t mtc, unsigned char n)
 {
   return (mtc && (n < pmxCaptMax)) ? (*mtc)[n][1] : 0;
+}
+
+char *pmxStartP(pmx_t mtc, unsigned char n)
+{
+  return (mtc && n < pmxCaptMax) ? (char *)0 + (*mtc)[pmxCaptMax+1][0] + (*mtc)[n][0] : NULL;
+}
+
+char *pmxEndP(pmx_t mtc, unsigned char n)
+{
+  return (mtc && (n < pmxCaptMax)) ? (char *)0 + (*mtc)[pmxCaptMax+1][0] + (*mtc)[n][1] : NULL;
 }
 
 int pmxMatched(pmx_t mtc)
@@ -654,6 +666,7 @@ pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
     }    
     if (ret) {
       (*ret)[pmxCaptMax][0] = ptnum;
+      (*ret)[pmxCaptMax+1][0] = txt - (char *)0;
       break;
     }
     if (ptlen) ptrn += ptlen;

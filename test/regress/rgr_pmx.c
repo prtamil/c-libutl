@@ -50,19 +50,35 @@ int main (void)
     TST("match counted chars (3)",ret && pmxStart(ret,0)==6 && pmxLen(ret,0)==5);
 
     ret = pmxMatchStr(lorem,">d<*a>");
-    TST("match star",ret && strncmp(lorem+pmxStart(ret,0), "dolor" ,pmxLen(ret,0))==0);
+    TST("match star",ret && strncmp(pmxStartP(ret,0), "dolor" ,pmxLen(ret,0))==0);
         
     ret = pmxMatchStr(lorem,"> <+=s-u> ");
-    TST("match plus",ret && strncmp(lorem+pmxStart(ret,0), " ut " ,pmxLen(ret,0))==0);
+    TST("match plus",ret && strncmp(pmxStartP(ret,0), " ut " ,pmxLen(ret,0))==0);
     TSTIF_NOTOK {
-      if (ret) TSTWRITE("%.*s\n",pmxLen(ret,0),lorem+pmxStart(ret,0));
+      if (ret) TSTWRITE("%.*s\n",pmxLen(ret,0),pmxStartP(ret,0));
     }
         
     ret = pmxMatchStr("1abc4","(<?d>)(<*D>)(<?d>)");
     k = (ret != NULL);
     if (k)  k = (pmxStart(ret,1) == 0) && (pmxStart(ret,2) == 1) && (pmxStart(ret,3) == 4); 
     if (k)  k = (pmxLen(ret,1)   == 1) && (pmxLen(ret,2)   == 3) && (pmxLen(ret,3) == 1);     
-    TST("match options",k);
+    TST("match options (and captures)",k);
+    
+    ret = pmxMatchStr("1abc4","(<?d>((<*D>)<?d>))");
+    k = (ret != NULL);
+    if (k)  k = (pmxStart(ret,1) == 0) && (pmxStart(ret,2) == 1) && (pmxStart(ret,3) == 1); 
+    if (k)  k = (pmxLen(ret,1)   == 5) && (pmxLen(ret,2)   == 4) && (pmxLen(ret,3) == 3);     
+    TST("match options (and nested captures)",k);
+
+    ret = pmxMatchStr("xxxx","(<?d>((<*A>)<?d>))");
+    TST("Don't match emptiness",ret == NULL);
+    
+    ret = pmxMatchStr("01AfEX","<+x>");
+    TST("Hex digits",ret && strncmp(lorem+pmxStart(ret,0), "01AfE" ,pmxLen(ret,0))==0);
+    
+    ret = pmxMatchStr("0x01AfEX","<?$0x$0X><+x>");
+    TST("Hex digits (and optional string)",ret && strncmp(lorem+pmxStart(ret,0), "0x01AfE" ,pmxLen(ret,0))==0);
+    
     k=0;    
     pmxScanStr(lorem,">&r<.>",getfirst);
     TST("scan string",strcmp(buf,"LPvAcMf") == 0);

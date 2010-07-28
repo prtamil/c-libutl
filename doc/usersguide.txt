@@ -994,7 +994,7 @@ will print: '|mixed CASE text|
 ===========
 
 
-  I'm firmly convinced that concrete examples are much better than exhaustive
+  I'm firmly convinced that concrete examples are much better than over-detailed
 documentation that's why I provided a set of them in the '|examples| directory.
 
   .['|pmx2c|]      This is actually a tool that comes with the libraries.
