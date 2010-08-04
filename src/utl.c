@@ -23,12 +23,6 @@ char *utlEmptyString = "";
 char *utlErrInternal = "Internal error" ;
 
 FILE *utl_stderr = NULL;
-/*************************************/
-
-int utl_fsmcur = 0;
-int utl_fsmcnt = 0;
-int utl_fsmret = 0;
-int utl_fsmrets[utl_fsmmax] = {0} ;
 
 /*************************************/
 

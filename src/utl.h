@@ -504,31 +504,40 @@ extern FILE *log_file;
 ** documentation (e.g including the GraphViz description in comments).
 */
 
-#define utl_fsmmax 16
-
-extern int utl_fsmcur;
-extern int utl_fsmcnt;
-extern int utl_fsmret;
-extern int utl_fsmrets[utl_fsmmax];
-
-#define FSM for(utl_fsmret=0;;)
-#define STATE(x) \
-   utl_##x##_s : utl_fsmcur = __LINE__ ;  \
+#define fsmStart(x) for(;;){\
+          int utl_fsmcur; \
+          int utl_fsmcnt; \
+          int utl_fsmret; \
+          int utl_fsmrets[16]; \
+          for(utl_fsmcnt=0;utl_fsmcnt<16;utl_fsmcnt++) \
+            utl_fsmrets[utl_fsmcnt] = 0;\
+          for(utl_fsmret=0,utl_fsmcnt=0;;) { \
+            goto fsm_##x##_s;\
+            fsm_##x##_s : utl_fsmcur = __LINE__ ;  \
                  if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
                                
-#define GOTO(x)   goto utl_##x##_s
-#define GOSUB(x)  do { \
-                    if (utl_fsmcnt < utl_fsmmax) \
-                      utl_fsmrets[utl_fsmcnt++] = utl_fsmcur; \
-                    goto utl_##x##_s; \
-                  } while (utlZero) 
+
+
+#define fsmState(x) \
+   fsm_##x##_s : utl_fsmcur = __LINE__ ;  \
+                 if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
+                               
+#define fsmGoto(x)  goto fsm_##x##_s
+#define fsmGosub(x) do { \
+                      if (utl_fsmcnt < utl_fsmmax) \
+                        utl_fsmrets[utl_fsmcnt++] = utl_fsmcur; \
+                      goto fsm_##x##_s; \
+                    } while (utlZero) 
                   
-#define GOBACK    do { \
+#define fsmReturn do { \
                     utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0);\
                     continue; \
                   } while (utlZero) 
 
-#define BREAK break
+#define fsmExit(x) goto fsm_##x##_e 
+
+#define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; break;} break;} 
+
 
 /*  .% Traced memory check
 **  ======================
