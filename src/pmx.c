@@ -235,13 +235,14 @@ static int iscapt(void *text, int cap_num)
   size_t pos = pmxTell(text)-1;
   size_t k = capt[cap_num][0];
   size_t n = capt[cap_num][1];
+  short ch ;
 
   if (k >= n) return mFALSE;
 
   pmxSeek(text,pos,SEEK_SET);
-  while (k < n && (ic(pmxGetc(text)) == ic(pmxChrAt(text,k))))
+  while (k < n && (ch = ic(pmxGetc(text)), ch == ic(pmxChrAt(text,k))))
     k++;
-  
+
   if (k == n) return mTRUE;
   
   pmxSeek(text,pos+1,SEEK_SET);
