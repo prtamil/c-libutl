@@ -57,7 +57,7 @@ chs_t chs_setsize(chs_t s, long ndx)
   if (ndx >= sz) {
     sz = (ndx / chs_blk_inc) * chs_blk_inc;
     cb = realloc(cb, sizeof(chs_blk_t) + sz);
-    if (!cb) utlError(8911,utlErrInternal);
+    if (!cb) utlError(8911,"%s",utlErrInternal);
     cb->size = sz + chs_blk_inc;
   }
   if (s == NULL) {  /* created a fresh string */
@@ -271,7 +271,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
         chsAddStrL(dst, chs_buf,k+1);
         break;
       }
-      utlError(8313,utlErrInternal);
+      utlError(8313,"%s",utlErrInternal);
     }
     if (what == 'L' && chsChrAt(dst,-1) != '\n')
       chsAddChr(dst, '\n');
