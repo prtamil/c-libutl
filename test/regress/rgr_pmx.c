@@ -74,10 +74,10 @@ int main (void)
     TST("Don't match emptiness",ret == NULL);
     
     ret = pmxMatchStr("01AfEX","<+x>");
-    TST("Hex digits",ret && strncmp(lorem+pmxStart(ret,0), "01AfE" ,pmxLen(ret,0))==0);
+    TST("Hex digits",ret && strncmp(pmxStartP(ret,0), "01AfE" ,pmxLen(ret,0))==0);
     
     ret = pmxMatchStr("0x01AfEX","<?$0x$0X><+x>");
-    TST("Hex digits (and optional string)",ret && strncmp(lorem+pmxStart(ret,0), "0x01AfE" ,pmxLen(ret,0))==0);
+    TST("Hex digits (and optional string)",ret && strncmp(pmxStartP(ret,0), "0x01AfE" ,pmxLen(ret,0))==0);
     
     k=0;    
     pmxScanStr(lorem,">&r<.>",getfirst);
