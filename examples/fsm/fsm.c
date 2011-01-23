@@ -6,7 +6,7 @@
 **   http://opensource.org/licenses/bsd-license.php
 */
 
-
+#define DEBUG
 #include <stdio.h>
 #include <ctype.h>
 #include "libutl.h"
@@ -29,9 +29,14 @@ recDefCpy(state,a,b) { }
 int cur_ln = 1;
 char *err = NULL;
 
+chs_t cur_statename = NULL;
+chs_t cur_pattern = NULL;
+chs_t cur_replace = NULL;
+chs_t cur_nextstate = NULL;
+
 /*
 .v
-script = state*
+script = rule* state*
 
 state = "[" state_name "]" rule*
 
@@ -59,6 +64,7 @@ mid = "@mid" "(" var_name "," value "," value "," value ")"
 len = "@len" "(" var_name "," value ")"
 
 if = "@if" "(" value op value "," func ("," func)? ")"
+
 op = "=" | "<" | ">" | "<=" | ">=" | "!="
 
 string = "'" echr* "'" | '"' echr* '"'
@@ -73,115 +79,166 @@ echr = !\\"' | '\\\'' | CHAR
 #define T_COMMENT       x83
 #define T_STATE_NAME    x84
 #define T_PATTERN       x85
+#define T_ANY           x86
+#define T_ENDPATTERN    x87
+#define T_ENDREPLACE    x87
+#define T_NEXTSTATE     x88
+#define T_VARIABLE      x8A
+#define T_FUNCTION      x8B
+#define T_STRING        x8C
+#define T_NUMBER        x8D
+
+#define T_SYNTAX_ERROR  xEF
 
 /* Recursive descent parser */
 
-char *parse_replace(char *cur)
-{
-  if (cur == NULL) return cur;
-  
-  while (isspace(*cur)) {
-    if (*cur == '\n') cur_ln++;
-    cur++;
-  }
-  if (*cur == '=') {
-    
-  }
-  return cur;
+static char *err_syn(int ln,char *msg)
+{ 
+  fprintf(stderr,"Error line %d %s\n",ln, msg ? msg : "");
+  return NULL;
 }
 
-char *parse_rule(char *cur)
+char *parse_nextstate(char *cur)
 {
-  char *pat = NULL;
-  
-  while (pat == NULL) {
-          pmxSwitch (cur, 
-            pmxTokSet("&K&n",T_NEWLINE)
-            pmxTokSet("&K#&L&n",T_COMMENT)
-            pmxTokSet("&s",T_SPACE)
-            pmxTokSet("&K&e\\(&q)&K",T_PATTERN)
-          ) {
-            pmxTokCase(T_NEWLINE):
-            pmxTokCase(T_COMMENT):
-                  cur_ln++;
-                  break;
-                  
-            pmxTokCase(T_SPACE):
-                  break;
+  chsCpy(cur_nextstate,"");
+  while (cur && *cur) {
+    pmxSwitch (cur, 
+      pmxTokSet("&n",T_NEWLINE)
+      pmxTokSet("#&L",T_COMMENT)
+      pmxTokSet("&k",T_SPACE)
+      pmxTokSet("->&K(<=A-Z_a-z><*=0-9A-Z_a-z>)&K",T_NEXTSTATE)
+      pmxTokSet(";",T_ENDPATTERN)
+    ) {
+      pmxTokCase(T_NEWLINE): cur_ln++;
+      pmxTokCase(T_COMMENT):
+      pmxTokCase(T_SPACE)  : break;
 
-            pmxTokCase(T_PATTERN):
-                  pat = pmxTokStart(1);
-                  break;
-                  
-            pmxTokCase(pmxTokEOF) :
-                  return NULL;
-                                    
-            default :
-                  return cur;      
-          }
+      pmxTokCase(T_NEXTSTATE) : chsCpyL(cur_nextstate, pmxTokStart(1), pmxTokLen(1));
+      pmxTokCase(T_ENDPATTERN): return cur;
+      
+      pmxTokCase(pmxTokEOF) :  return NULL;
+                              
+      default :  return err_syn(cur_ln,"parse_nextstate"); 
+    } pmxSwitchEnd ;
   }
   
-  printf("pattern: %.*s\n",pmxTokLen(1),pmxTokStart(1));                  
+  return cur;
+} 
+
+char *parse_replace(char *cur)
+{
+  Xdbgmsg("replace: %30s\n",cur);
+  chsCpy(cur_replace,"");
   
-  cur = parse_replace(cur);
+  while (cur && *cur) {
+    pmxSwitch (cur, 
+      pmxTokSet("&n",T_NEWLINE)
+      pmxTokSet("#&L",T_COMMENT)
+      pmxTokSet("&k",T_SPACE)
+      pmxTokSet("&=",T_SPACE)
+      pmxTokSet("(&d)",T_NUMBER)
+      pmxTokSet("($<=0-9A-Za-z>)",T_VARIABLE)
+      pmxTokSet("&e\\(&q)&K",T_STRING)
+      pmxTokSet("<?=@>(<+a>&K&B())",T_FUNCTION)
+      pmxTokSet(";",T_ENDREPLACE)
+      pmxTokSet("-&>",T_ENDREPLACE)
+    ) {
+      pmxTokCase(T_NEWLINE): cur_ln++;
+      pmxTokCase(T_COMMENT):
+      pmxTokCase(T_SPACE)  : break;
+
+      pmxTokCase(T_STRING):
+      pmxTokCase(T_FUNCTION):
+      pmxTokCase(T_VARIABLE):
+            chsAddStrL(cur_replace, pmxTokStart(1), pmxTokLen(1));
+            chsAddChr(cur_replace,' ');
+            break;
+            
+      pmxTokCase(T_ENDREPLACE): return pmxTokStart(0);
+           
+      pmxTokCase(pmxTokEOF) :  return NULL;
+                              
+      default : return err_syn(cur_ln,"parse_replace");      
+    } pmxSwitchEnd ;
+  }
   
   return cur;
 }
 
 char *parse_state(char *cur)
 {
-  char *name = NULL;
-  
-  while (name == NULL) {
-  
-          pmxSwitch (cur,
-            pmxTokSet("&K&n",T_NEWLINE)
-            pmxTokSet("&K#&L&n",T_COMMENT)
-            pmxTokSet("&K[&K(<=A-Z_a-z><*=0-9A-Z_a-z>)&K]&K",T_STATE_NAME)
-            pmxTokSet("&s",T_SPACE)
-          ) {
-            pmxTokCase(T_NEWLINE):
-            pmxTokCase(T_COMMENT):
-                  cur_ln++;
-                  break;
-                  
-            pmxTokCase(T_STATE_NAME):
-                  name = pmxTokStart(1);
-                  break;
-                  
-            pmxTokCase(T_SPACE):
-                  break;
+  while (cur && *cur) {
+    pmxSwitch (cur,
+      pmxTokSet("&n",T_NEWLINE)
+      pmxTokSet("#&L",T_COMMENT)
+      pmxTokSet("&k",T_SPACE)
+      pmxTokSet("[",T_STATE_NAME)
+      pmxTokSet("&e\\(&q)&K",T_PATTERN)
+      pmxTokSet(";",T_SPACE)
+    ) {
+      pmxTokCase(T_NEWLINE): cur_ln++;
+      pmxTokCase(T_COMMENT):
+      pmxTokCase(T_SPACE)  : break;
 
-            pmxTokCase(pmxTokEOF) :
-                  return NULL;
-                  
-            default :
-                  fprintf(stderr,"Syntax error line %d\n",cur_ln);
-                  return NULL;      
-          }
+      pmxTokCase(T_STATE_NAME): return pmxTokStart(0);
+            
+      pmxTokCase(T_PATTERN): chsCpyL(cur_pattern, pmxTokStart(1), pmxTokLen(1));
+                             cur = parse_replace(cur);
+                             cur = parse_nextstate(cur);
+                             chsTrim(cur_replace,NULL," ");
+                             printf("[%s] [%s] [%s] [%s]\n",cur_statename,cur_pattern, cur_replace,cur_nextstate);
+                             break;
+                             
+      pmxTokCase(pmxTokEOF) : return NULL;
+
+      default :  return err_syn(cur_ln,"parse_state");
+      
+    } pmxSwitchEnd;
   }
   
-  printf("state: %.*s\n",pmxTokLen(1),pmxTokStart(1));
-     
-  do {
-    cur = parse_rule(++cur);
-  } while (cur && *cur == ';');
-      
   return cur;
 }
 
 char *parse (char *cur)
 {
-   while (cur && *cur)
-     cur = parse_state(cur) ;
-
-   return NULL;
+ 
+  chsCpy(cur_statename,"start");
+  while (cur && *cur) {
+    pmxSwitch (cur,
+      pmxTokSet("&n",T_NEWLINE)
+      pmxTokSet("#&L",T_COMMENT)
+      pmxTokSet("[&K(<=A-Z_a-z><*=0-9A-Z_a-z>)&K]&K",T_STATE_NAME)
+      pmxTokSet("&k",T_SPACE)
+      pmxTokSet(";",T_SPACE)
+      pmxTokSet("\"",T_PATTERN)
+    ) {
+      pmxTokCase(T_NEWLINE): cur_ln++;
+      pmxTokCase(T_COMMENT):
+      pmxTokCase(T_SPACE)  : break;
+                  
+      pmxTokCase(T_PATTERN): cur = parse_state(pmxTokStart(0));
+                             break;
+      
+      pmxTokCase(T_STATE_NAME):
+            chsCpyL(cur_statename, pmxTokStart(1),pmxTokLen(1));
+            cur = parse_state(cur);
+            break;
+            
+      pmxTokCase(pmxTokEOF) : return NULL;
+      
+      default :  return err_syn(cur_ln,"parse");      
+      
+    } pmxSwitchEnd;
+  }
+    
+  return cur;
 }
 
 void usage()
 {
    fprintf(stderr,"Usage: fsm mach.fsm [input [output]]\n");
 }
+
 
 int main(int argc, char *argv[])
 {
