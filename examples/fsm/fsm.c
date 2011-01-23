@@ -33,15 +33,20 @@ char *err = NULL;
 .v
 script = state*
 
-state = "[" state_name "]" rule+
+state = "[" state_name "]" rule*
 
-rule  = "\"" pattern "\"" replace? ";"
+rule  = '"' pattern '"' replace? next_state? ";"
+
+nextsate = "->" state_name
 
 replace = "=" (value | func)+
 
-value = "$" var_name | "$" DIGIT | STRING | NUMBER
+term = "$" var_name | "$" DIGIT | string | NUMBER
 
-func = add | sub | cat | set | div | mul | mod | len | nxt | if
+value = term+
+
+func = add | sub | cat | set | div | mul | mod |
+       cat | mid | len | if
 
 add = "@add" "(" var_name "," value ")"
 sub = "@sub" "(" var_name "," value ")"
@@ -52,14 +57,13 @@ mod = "@mod" "(" var_name "," value ")"
 cat = "@cat" "(" var_name "," value ")"
 mid = "@mid" "(" var_name "," value "," value "," value ")"
 len = "@len" "(" var_name "," value ")"
-nxt = "@nxt" "(" (state_name | "$" var_name | "$" DIGIT) ")"
 
-out = "@out" "(" value ")"
-in  = "@in"  "(" value ")"
-wrt = "@wrt" "(" value ")"
-
-if = ("@if" | "@ifn") "(" value op value "," func ("," func)? ")"
+if = "@if" "(" value op value "," func ("," func)? ")"
 op = "=" | "<" | ">" | "<=" | ">=" | "!="
+
+string = "'" echr* "'" | '"' echr* '"'
+
+echr = !\\"' | '\\\'' | CHAR 
 
 ..
 */

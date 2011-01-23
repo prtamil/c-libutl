@@ -45,15 +45,18 @@ script = state*
 
 state = "[" state_name "]" rule*
 
-rule  = "\"" pattern "\"" replace? next_state? ";"
+rule  = '"' pattern '"' replace? next_state? ";"
 
 nextsate = "->" state_name
 
 replace = "=" (value | func)+
 
-value = "$" var_name | "$" DIGIT | STRING | NUMBER
+term = "$" var_name | "$" DIGIT | string | NUMBER
 
-func = add | sub | cat | set | div | mul | mod
+value = term+
+
+func = add | sub | cat | set | div | mul | mod |
+       cat | mid | len | if
 
 add = "@add" "(" var_name "," value ")"
 sub = "@sub" "(" var_name "," value ")"
@@ -67,6 +70,11 @@ len = "@len" "(" var_name "," value ")"
 
 if = "@if" "(" value op value "," func ("," func)? ")"
 op = "=" | "<" | ">" | "<=" | ">=" | "!="
+
+string = "'" echr* "'" | '"' echr* '"'
+
+echr = !\\"' | '\\\'' | CHAR 
+
 
 
     +----+       +----+
