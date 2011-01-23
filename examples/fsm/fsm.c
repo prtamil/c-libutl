@@ -42,11 +42,11 @@ state = "[" state_name "]" rule*
 
 rule  = '"' pattern '"' replace? next_state? ";"
 
-nextsate = "->" state_name
+nextsate = "->" state_name | "$" var_name
 
 replace = "=" (value | func)+
 
-term = "$" var_name | "$" DIGIT | string | NUMBER
+term = "$" var_name | "$" DIGIT | STRING | NUMBER
 
 value = term+
 
@@ -66,10 +66,6 @@ len = "@len" "(" var_name "," value ")"
 if = "@if" "(" value op value "," func ("," func)? ")"
 
 op = "=" | "<" | ">" | "<=" | ">=" | "!="
-
-string = "'" echr* "'" | '"' echr* '"'
-
-echr = !\\"' | '\\\'' | CHAR 
 
 ..
 */
@@ -96,17 +92,19 @@ static char *err_syn(int ln,char *msg)
 { 
   fprintf(stderr,"Error line %d %s\n",ln, msg ? msg : "");
   return NULL;
-}
+} 
 
 char *parse_nextstate(char *cur)
 {
+  Xdbgmsg("nextstate: [%.10s]\n",cur);
   chsCpy(cur_nextstate,"");
   while (cur && *cur) {
     pmxSwitch (cur, 
       pmxTokSet("&n",T_NEWLINE)
       pmxTokSet("#&L",T_COMMENT)
       pmxTokSet("&k",T_SPACE)
-      pmxTokSet("->&K(<=A-Z_a-z><*=0-9A-Z_a-z>)&K",T_NEXTSTATE)
+      pmxTokSet("-&>&K(<=A-Z_a-z><*=0-9A-Z_a-z>)&K",T_NEXTSTATE)
+      pmxTokSet("-&>&K($<=0-9A-Z_a-z>)&K",T_NEXTSTATE)
       pmxTokSet(";",T_ENDPATTERN)
     ) {
       pmxTokCase(T_NEWLINE): cur_ln++;
