@@ -1,11 +1,17 @@
 # prova
 
+"s" = "y";
+
 [state_1]
 
+"pattern1" =
+"string" 
+$a 
+sub(a,3)
+ ;
 
-"pattern1" = "string" &a sub(a,3) ;
-
-"pattern2" = &A "strung" &4 # comment
+"pattern2" = $A "strung" $4 # comment
              sub(g,d) ;
 
 [state2]
+
