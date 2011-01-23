@@ -2,7 +2,7 @@
 
 "s" = "y";
 
-[state_1]
+[state_1] 
 
 "pattern1" =
 "string" 
@@ -15,3 +15,12 @@ sub(a,3)
 
 [state2]
 
+"par3" -> pippo;
+
+[state3]
+
+[state4]
+
+ "&{" -> $a
+ "&}" 
+# asd
