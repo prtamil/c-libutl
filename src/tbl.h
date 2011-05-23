@@ -43,14 +43,25 @@ char *val_Sfree(char *s);
 
 /********************************************/
 
+
+#define sltSLOT \
+  val_u  val;   \
+  char   info[sizeof(val_u)]
+
+typedef struct {
+  sltSLOT;
+} slt_slot_t;    
+
+typedef slt_slot_t *slt_t;
+
 /* A table slot.
 */ 
 
 typedef struct {
-  val_u  val;
+  sltSLOT;
   val_u  key;
-  char   info[sizeof(val_u)]; /* to ensure alignment */
 } tbl_slot_t;    
+
 
 typedef struct {
   long count;
@@ -188,8 +199,8 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
 #define tblGetSM(tb,k,d) valGetM(tbl_get(tb,'S',valS(k),'M',valM(d)))
 #define tblGetST(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'T',valT(d)))
-#define tblGetSV(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'V',valV(d)))
-#define tblGetSR(tb,k,d) valGetT(tbl_get(tb,'S',valS(k),'R',valR(d)))
+#define tblGetSV(tb,k,d) valGetV(tbl_get(tb,'S',valS(k),'V',valV(d)))
+#define tblGetSR(tb,k,d) valGetR(tbl_get(tb,'S',valS(k),'R',valR(d)))
 #define tblGetSP(tb,k,d) valGetP(tbl_get(tb,'S',valS(k),'P',valP(d)))
 #define tblGetSS(tb,k,d) valGetS(tbl_get(tb,'S',valS(k),'S',valS(d)))
 #define tblGetSN(tb,k,d) valGetN(tbl_get(tb,'S',valS(k),'N',valN(d)))
@@ -198,8 +209,8 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
 #define tblGetNM(tb,k,d) valGetM(tbl_get(tb,'N',valN(k),'M',valM(d)))
 #define tblGetNT(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'T',valT(d)))
-#define tblGetNV(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'V',valV(d)))
-#define tblGetNR(tb,k,d) valGetT(tbl_get(tb,'N',valN(k),'R',valR(d)))
+#define tblGetNV(tb,k,d) valGetV(tbl_get(tb,'N',valN(k),'V',valV(d)))
+#define tblGetNR(tb,k,d) valGetR(tbl_get(tb,'N',valN(k),'R',valR(d)))
 #define tblGetNP(tb,k,d) valGetP(tbl_get(tb,'N',valN(k),'P',valP(d)))
 #define tblGetNS(tb,k,d) valGetS(tbl_get(tb,'N',valN(k),'S',valS(d)))
 #define tblGetNN(tb,k,d) valGetN(tbl_get(tb,'N',valN(k),'N',valN(d)))
@@ -208,8 +219,8 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
 #define tblGetUM(tb,k,d) valGetM(tbl_get(tb,'U',valU(k),'M',valM(d)))
 #define tblGetUT(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'T',valT(d)))
-#define tblGetUV(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'V',valV(d)))
-#define tblGetUR(tb,k,d) valGetT(tbl_get(tb,'U',valU(k),'R',valR(d)))
+#define tblGetUV(tb,k,d) valGetV(tbl_get(tb,'U',valU(k),'V',valV(d)))
+#define tblGetUR(tb,k,d) valGetR(tbl_get(tb,'U',valU(k),'R',valR(d)))
 #define tblGetUP(tb,k,d) valGetP(tbl_get(tb,'U',valU(k),'P',valP(d)))
 #define tblGetUS(tb,k,d) valGetS(tbl_get(tb,'U',valU(k),'S',valS(d)))
 #define tblGetUN(tb,k,d) valGetN(tbl_get(tb,'U',valU(k),'N',valN(d)))
@@ -218,8 +229,8 @@ val_u tbl_get(tbl_t tb, char k_type, val_u key, char v_type, val_u def);
 
 #define tblGetFM(tb,k,d) valGetM(tbl_get(tb,'F',valF(k),'M',valM(d)))
 #define tblGetFT(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'T',valT(d)))
-#define tblGetFV(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'V',valV(d)))
-#define tblGetFR(tb,k,d) valGetT(tbl_get(tb,'F',valF(k),'R',valR(d)))
+#define tblGetFV(tb,k,d) valGetV(tbl_get(tb,'F',valF(k),'V',valV(d)))
+#define tblGetFR(tb,k,d) valGetR(tbl_get(tb,'F',valF(k),'R',valR(d)))
 #define tblGetFP(tb,k,d) valGetP(tbl_get(tb,'F',valF(k),'P',valP(d)))
 #define tblGetFS(tb,k,d) valGetS(tbl_get(tb,'F',valF(k),'S',valS(d)))
 #define tblGetFN(tb,k,d) valGetN(tbl_get(tb,'F',valF(k),'N',valN(d)))
@@ -291,8 +302,7 @@ void tbl_print(FILE *f, tbl_t tb);
 /******************/
 
 typedef struct {
-  val_u  val;
-  char   info[sizeof(val_u)]; /* to ensure alignment */
+  sltSLOT;
 } vec_slot_t;
 
 typedef struct {
