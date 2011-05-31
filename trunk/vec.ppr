@@ -40,7 +40,7 @@ vec
 			-cxrf
 				examples\cxrf\cxrf.pmx
 				examples\cxrf\makefile
-			-fsm
+			+fsm
 				examples\fsm\fsm.txt
 				examples\fsm\fsm.pmx
 				examples\fsm\makefile
@@ -78,8 +78,6 @@ vec
 			src\tbl.h
 			src\tbl.c
 			src\makefile
-			src\hif.h
-			src\hif.c
 		+test
 			+regress
 				test\regress\rgr_tbl.c
@@ -90,6 +88,7 @@ vec
 				test\regress\rgr_pmx.c
 				test\regress\rgr_pmx_nested.c
 				test\regress\rgr_tests.mk
+				test\regress\rgr_tbltbl.c
 			+stress
 				test\stress\sts_add.lua
 				test\stress\makefile
@@ -107,25 +106,29 @@ vec
 4=src\utl.h
 5=src\utl.c
 6=test\regress\rgr_tbl.c
-7=test\regress\rgr_fsm.c
-8=test\regress\makefile
-9=test\regress\rgr_tests.mk
-10=New1.mk
+7=examples\fsm\fsm.c
+8=src\tbl.h
+9=src\tbl.c
+10=dist\libutl.h
+11=test\regress\rgr_tbltbl.c
+12=src\chs.c
+13=src\chs.h
+14=test\regress\rr.c
 [Selected Project Files]
 Main=
-Selected=New1.mk
+Selected=examples\fsm\fsm.c
 [test\regress\rgr_pmx.c]
-TopLine=48
+TopLine=40
 Caret=29,76
 [test\regress\rgr_pmx_nested.c]
 TopLine=10
 Caret=15,26
 [src\pmx.h]
 TopLine=50
-Caret=1,50
+Caret=1,58
 [src\pmx.c]
 TopLine=381
-Caret=52,409
+Caret=38,419
 [src\utl.h]
 TopLine=523
 Caret=1,556
@@ -135,15 +138,27 @@ Caret=20,11
 [test\regress\rgr_tbl.c]
 TopLine=109
 Caret=1,147
-[test\regress\rgr_fsm.c]
-TopLine=17
-Caret=9,33
-[test\regress\makefile]
-TopLine=1
-Caret=1,22
-[test\regress\rgr_tests.mk]
-TopLine=1
-Caret=34,36
-[New1.mk]
-TopLine=1
+[examples\fsm\fsm.c]
+TopLine=94
+Caret=25,112
+[src\tbl.h]
+TopLine=273
+Caret=21,307
+[src\tbl.c]
+TopLine=622
+Caret=3,640
+[dist\libutl.h]
+TopLine=712
+Caret=22,716
+[test\regress\rgr_tbltbl.c]
+TopLine=52
+Caret=29,69
+[src\chs.c]
+TopLine=95
 Caret=1,1
+[src\chs.h]
+TopLine=161
+Caret=3,20
+[test\regress\rr.c]
+TopLine=2207
+Caret=1,2242
