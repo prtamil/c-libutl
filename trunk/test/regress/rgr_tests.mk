@@ -30,6 +30,9 @@ rgr_rec$(_EXE): $(CHKLIB) rgr_rec$(_OBJ)
 rgr_tbl$(_EXE): $(CHKLIB) rgr_tbl$(_OBJ)
 	$(LN)$@ rgr_tbl$(_OBJ) -lutl $(LNLIBS)
 
+rgr_tbltbl$(_EXE): $(CHKLIB) rgr_tbltbl$(_OBJ)
+	$(LN)$@ rgr_tbltbl$(_OBJ) -lutl $(LNLIBS)
+
 rgr_vec$(_EXE): $(CHKLIB) rgr_vec$(_OBJ)
 	$(LN)$@ rgr_vec$(_OBJ) -lutl $(LNLIBS)
 

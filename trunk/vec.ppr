@@ -133,7 +133,7 @@ Caret=1,556
 TopLine=11
 Caret=20,11
 [test\regress\rgr_tbl.c]
-TopLine=110
+TopLine=109
 Caret=1,147
 [test\regress\rgr_fsm.c]
 TopLine=17
