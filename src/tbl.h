@@ -274,7 +274,12 @@ char tblKeyType(tbl_t tb, tblptr_t ndx);
 char tblValType(tbl_t tb, tblptr_t ndx);
 
 val_u tbl_key(tbl_t tb, tblptr_t ndx);
+
+#if 0
 val_u tbl_val(tbl_t tb, tblptr_t ndx);
+#endif 
+
+#define tbl_val(tb,ndx) (tb->slot[ndx-1].val)
 
 #define tblKeyM(tb,n)  valGetM(tbl_key(tb,n))
 #define tblKeyT(tb,n)  valGetT(tbl_key(tb,n))

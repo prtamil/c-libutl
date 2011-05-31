@@ -624,11 +624,13 @@ val_u tbl_key(tbl_t tb, tblptr_t ndx)
   return (0 < ndx && ndx <= tb->size) ? slot_key(slot_ptr(tb,ndx-1)) : def;
 }
 
+#if 0
 val_u tbl_val(tbl_t tb, tblptr_t ndx)
 {
   val_u def; def.n = 0;
   return (0 < ndx && ndx <= tb->size) ? slot_val(slot_ptr(tb,ndx-1)) : def;
 }
+#endif
 
 tblptr_t tbl_find(tbl_t tb, char k_type, val_u key)
 {
@@ -637,7 +639,7 @@ tblptr_t tbl_find(tbl_t tb, char k_type, val_u key)
   unsigned char dist = 0;
   
   ndx = tbl_search(tb, k_type, key, &cand, &dist);
-  return (ndx < 0 || ndx != cand) ? 0 : ndx +1;  
+  return (ndx < 0) ? 0 : ndx +1;  
 }
 
 
