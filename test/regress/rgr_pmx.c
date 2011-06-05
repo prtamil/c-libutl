@@ -87,9 +87,9 @@ int main (void)
   TSTSECTION("pmx failall") {
     TSTGROUP("failall") {
       pmxScannerBegin("abcbdade")        
-        pmxTokSet("ab&!c", x81)
-        pmxTokSet("ade", x82)
-        pmxTokSet("bda", x83)
+        pmxTokSet(x81, "ab&!c")
+        pmxTokSet(x82, "ade")
+        pmxTokSet(x83, "bda")
       pmxScannerSwitch
       
         pmxTokCase(x81) : printf("ABC"); continue;

@@ -69,9 +69,9 @@ unsigned char pmxToken(pmx_t mtc);
 // tested with MS Visual C++ 2008 Express and 2010 Express
 #if defined(_MSC_VER)
 #define pmxTok_defstr_msvc(x,y) pmxTok_defstr(x##y)
-#define pmxTokSet(x,y) "&|" x pmxTok_defstr_msvc(&\,y)
+#define pmxTokSet(y,x) "&|" x pmxTok_defstr_msvc(&\,y)
 #else 
-#define pmxTokSet(x,y) "&|" x pmxTok_defstr(&\y)
+#define pmxTokSet(y,x) "&|" x pmxTok_defstr(&\y)
 #endif
 
 

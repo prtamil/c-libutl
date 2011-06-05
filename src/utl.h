@@ -77,6 +77,10 @@ extern char *utlEmptyString;
 extern const int utlZero;
 #endif
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 /* .% Messages Output
 ** ==================
 **
@@ -142,6 +146,8 @@ extern FILE *utl_stderr;
 
 extern char *utlErrInternal; 
 
+#define utlOnError atexit
+
 /* .% UnitTest
 ** ===========
 **
@@ -155,6 +161,7 @@ extern char *utlErrInternal;
 */
 
 #ifdef UTL_UNITTEST
+
 #ifndef DEBUG
 #define DEBUG
 #endif
@@ -170,7 +177,7 @@ extern char *utlErrInternal;
 #define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
                        TSTWRITE("#\n# * %d. %s (%s:%d)\n",TSTSEC, s,__FILE__, __LINE__)),!utlZero)
 
-/* to disable an intere test section, just prepend ''|_|' or ''|X|'*/
+/* to disable an entire test section, just prepend ''|_|' or ''|X|'*/
  
 #define _TSTSECTION(s) if (utlZero)  
 #define XTSTSECTION(s) if (utlZero)  
@@ -183,7 +190,7 @@ extern char *utlErrInternal;
                      TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
                      TSTGRP+1)
                      
-/* to disable an intere test group , just prepend ''|_|' */
+/* to disable an intere test group , just prepend ''|_|' or '|X|' */
 #define _TSTGROUP(s) if (utlZero)  
 #define XTSTGROUP(s) if (utlZero)  
 
@@ -197,6 +204,7 @@ extern char *utlErrInternal;
 **    ['|x|] an assertion that has to be true for the test to succeed.
 **   ..
 */
+#define XTST(s,x)
 
 #define TST(s,x)    (TST_DO(s,(TSTSKP != NULL? 1 : (x))),\
                      (TSTSKP != NULL? TSTWRITE(" # SKIP %s",TSTSKP):0),\
@@ -207,7 +215,9 @@ extern char *utlErrInternal;
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
                               TSTGTT, s, __LINE__))
 
-#define TSTTD(s,x,r) (TST_DO(s,x), TSTWRITE(" # TODO %s\n",r), TSTRES)
+#define TSTTODO(s,x,r) (TST_DO(s,x), TSTWRITE(" # TODO %s\n",r), TSTRES)
+
+#define TSTTD TSTTODO
 
 #define TSTFAILED  (!TSTRES)
 
@@ -221,6 +231,8 @@ extern char *utlErrInternal;
 #define TSTNOTE(...) (TSTWRITE("      "), TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
 
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
+
+#define TSTBAILOUT(x,r) (TSTRES? TSTRES = 1 : (TSTWRITE("Bail out! %s",r), exit(1)))
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
@@ -253,7 +265,42 @@ static char       *TSTSKP = NULL;
 static const char *TSTOK  = "ok    ";
 static const char *TSTKO  = "not ok";
 
-#endif
+#else /* UTL_UNITTEST */
+
+
+#define TSTWRITE(...) 
+
+#define TSTTITLE(s) 
+
+#define  TSTSECTION(s) if (utlZero)  
+#define _TSTSECTION(s) if (utlZero)  
+#define XTSTSECTION(s) if (utlZero)  
+
+#define  TSTGROUP(s) if (utlZero)  
+#define _TSTGROUP(s) if (utlZero)  
+#define XTSTGROUP(s) if (utlZero)  
+
+#define  TSTBLOCK if (utlZero) 
+#define _TSTBLOCK if (utlZero) 
+#define XTSTBLOCK if (utlZero) 
+                     
+#define TST(s,x) 
+#define TSTTODO(s,x,r)
+#define TSTFAILED  (1)
+#define TSTSKIP(x,r)
+#define TSTENDSKIP
+
+#define TSTNOTE(...)
+#define TSTONFAIL(...)
+
+#define TSTBAILOUT(x,r)
+
+#define TSTDONE() 
+
+#define TSTIF_OK  if (utlZero)
+#define TSTIF_NOTOK if (utlZero)
+
+#endif /* UTL_UNITTEST */
 
 /* .% Debugging
 ** ============
@@ -321,6 +368,7 @@ static const char *TSTKO  = "not ok";
 /* Logging functions are available only if the symbol '{=UTL_LOGGING}
 ** has been defined before including '|utl.h|.
 */
+
 #define UTL_LOGGING
 #ifdef UTL_LOGGING
 #include <time.h>
@@ -332,21 +380,22 @@ extern  char *log_abbrev[];
 ** ~~~~~~~~~~~~~~~~~~
 **
 **   Logging levels are hierarchical and structured as in log4j. The variable 
-** '{=logLevel} contains the current logging level.  Logging is off by default.
+** '{=log_level} contains the current logging level.  Logging is off by default.
 **
-**   Use '{=logSetLevel()} to set the desired level of logging.
+**   Use '{=logLevel()} to set the desired level of logging.
 */
 
-#define logALL    0
-#define logDEBUG  1
-#define logINFO   2
-#define logWARN   3
-#define logERROR  4
-#define logFATAL  5
-#define logOFF    6
+#define log_All    0
+#define log_Debug  1
+#define log_Info   2
+#define log_Warn   3
+#define log_Error  4
+#define log_Fatal  5
+#define log_Off    6
 
-extern int logLevel;
-#define logSetLevel(level)     (logLevel = (level))
+extern int log_level;
+
+#define logLevel(level)     (log_level = (log_##level))
 
 /*
 ** The table below shows whether a message of a certain level will be
@@ -394,18 +443,18 @@ extern FILE *log_file;
 #define logFile         (log_file? log_file: stderr) 
 
 /*    Log files can be opened in "write" or "append" mode as any normal file 
-** using the '{=logSetLogFile()} function.
+** using the '{=logOpen()} function.
 ** For example:
 ** .v  
-**   logSetLogFile("file1.log","w") // Delete old log file and create a new one
+**   logOpen("file1.log","w") // Delete old log file and create a new one
 **   ...
-**   logSetLogFile(NULL,NULL); // Close log file, send next messages to stderr
+**   logOpen(NULL,NULL); // Close log file, send next messages to stderr
 **   ... 
-**   logSetLogFile("file1.log","a") // Append to previous log file
+**   logOpen("file1.log","a") // Append to previous log file
 ** .. 
 */
 
-#define logSetFile(fname,mode) ((log_file? fclose(log_file) : 0),\
+#define logOpen(fname,mode) ((log_file? fclose(log_file) : 0),\
                                 (log_file = fname? fopen(fname,mode) : NULL))
 
 /*   To actually write a message on the log file, use the '{=logWrite()}
@@ -413,12 +462,12 @@ extern FILE *log_file;
 ** paratmeter is the level of the message.
 ** Example:
 ** .v
-**    logWrite(logINFO,"Something weird at %d is happening", counter);
+**    logWrite(log_Info,"Something weird at %d is happening", counter);
 ** ..
 */
 
 #define logWrite(lvl,...) \
-       (lvl >= logLevel  \
+       (lvl >= log_level  \
           ? (time(&log_time),\
              strftime(log_timestr,32,"%Y-%m-%d %X",localtime(&log_time)),\
              fprintf(logFile,"\n%s %s ",log_timestr, log_abbrev[lvl]),\
@@ -430,11 +479,11 @@ extern FILE *log_file;
 /* You can also use one of the following functions that won't require you 
 ** to pass the message level as parameter:
 */          
-#define logDebug(...)    logWrite(logDEBUG,__VA_ARGS__)
-#define logInfo(...)     logWrite(logINFO,__VA_ARGS__)
-#define logWarn(...)     logWrite(logWARN,__VA_ARGS__)
-#define logError(...)    logWrite(logERROR,__VA_ARGS__)
-#define logFatal(...)    logWrite(logFATAL,__VA_ARGS__)
+#define logDebug(...)    logWrite(log_Debug,__VA_ARGS__)
+#define logInfo(...)     logWrite(log_Info, __VA_ARGS__)
+#define logWarn(...)     logWrite(log_Warn, __VA_ARGS__)
+#define logError(...)    logWrite(log_Error,__VA_ARGS__)
+#define logFatal(...)    logWrite(log_Fatal,__VA_ARGS__)
 
 /* If you want to add something to the log file without creating a new entry
 ** in the log file, you can use the '{=logMessage()} function. 
@@ -460,9 +509,9 @@ extern FILE *log_file;
 
 #else
 
-#define logSetLevel(level)
+#define logLevel(level)
 #define logFile                 stderr 
-#define logSetFile(fname,mode)
+#define logOpen(fname,mode)
 #define logWrite(lvl,...)
 #define logDebug(...)
 #define logInfo(...)
@@ -542,6 +591,20 @@ extern FILE *log_file;
 /*  .% Traced memory check
 **  ======================
 */
+
+void *utl_malloc  (size_t size, char *file, int line );
+void *utl_calloc  (size_t num, size_t size, char *file, int line);
+void *utl_realloc (void *ptr, size_t size, char *file, int line);
+void  utl_free    (void *ptr, char *file, int line );
+void *utl_strdup  (void *ptr, char *file, int line);
+
+#define utlMemInvalid    -2
+#define utlMemOverflow   -1
+#define utlMemValid       0
+#define utlMemNull        1
+
+int utl_check(void *ptr,char *file, int line);
+
 #ifdef UTL_MEMCHECK
 
 #ifdef malloc
@@ -570,26 +633,12 @@ extern FILE *log_file;
 #define strdup(p) utl_strdup(p,__FILE__,__LINE__)
 
 #define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
-#else
-#define utlMemCheck(p) 
-#endif
 
-void *utl_malloc  (size_t size, char *file, int line );
-void *utl_calloc  (size_t num, size_t size, char *file, int line);
-void *utl_realloc (void *ptr, size_t size, char *file, int line);
-void  utl_free    (void *ptr, char *file, int line );
-void *utl_strdup  (void *ptr, char *file, int line);
+#else /* UTL_MEMCHECK */
 
-#define utlMemInvalid    -2
-#define utlMemOverflow   -1
-#define utlMemValid       0
-#define utlMemNull        1
+#define utlMemCheck(p) utlMemValid
 
-int utl_check(void *ptr,char *file, int line);
+#endif /* UTL_MEMCHECK */
 
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-
-#endif /*- UTL_H */
+#endif /* UTL_H */
 
