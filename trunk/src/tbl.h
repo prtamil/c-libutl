@@ -418,6 +418,15 @@ val_u vec_slot_get(vec_slot_t *slot, char v_type, val_u def);
 
 #define vecSlots(v) ((v)->slot)
 
+#define vecValM(vt,n)  valGetM(vecSlots(vt)[n])
+#define vecValT(vt,n)  valGetT(vecSlots(vt)[n])
+#define vecValV(vt,n)  valGetV(vecSlots(vt)[n])
+#define vecValR(vt,n)  valGetR(vecSlots(vt)[n])
+#define vecValP(vt,n)  valGetP(vecSlots(vt)[n])
+#define vecValS(vt,n)  valGetS(vecSlots(vt)[n])
+#define vecValN(vt,n)  valGetN(vecSlots(vt)[n])
+#define vecValU(vt,n)  valGetU(vecSlots(vt)[n])
+#define vecValF(vt,n)  valGetF(vecSlots(vt)[n])
 
 char vecType(vec_t vt, long ndx);
 char vecValType(vec_slot_t *slot);

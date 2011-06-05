@@ -304,6 +304,8 @@ static char *nullptrn="";
 
 char *setminmax(char *p, unsigned long *min, unsigned long *max)
 {
+  *min = 0;
+  *max = MAX_MAX;
   ++p;
   if (isdigit((int)*p)) {
     *min = atoi(p);
@@ -324,6 +326,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
   short failall = 0;
+  short goalset = 0;
   int ch,left,right;
   unsigned long min,max,cnt;
   char op;
@@ -430,7 +433,9 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  left = '\0'; right = '\0';
                  op = *++p;
                  switch (op) {
-                   case 'g' : capt[0][1] = pmxTell(text)-1;
+				   case 'G' : goalset = -1; goto goal;
+                   case 'g' : goalset = 1;
+                       goal : capt[0][1] = pmxTell(text)-1;
                               break;
 
                    case 'r' : if (!pmxBeginLine(text)) return mFALSE;
@@ -562,7 +567,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     capt[0][1] = pmxTell(text);
     if (ch != EOF) capt[0][1]--;
   }
-  else {
+  else { /* manage &g */
     pmxSeek(text, capt[0][1], SEEK_SET);
   }
 
@@ -588,7 +593,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
         case '&' : switch (*++p) {
                      case 'B' : if (*++p) p++;
                      case '!' : failall = 1; 
-                     case 'G' : 
+                     case 'g' : 
                      case 'F' :
                      case 'D' :
                      case 'N' :
