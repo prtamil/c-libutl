@@ -294,7 +294,7 @@ static int braced(void *text, int left, int right, char esc)
 
 static char *nullptrn="";
 
-#define FAIL  do {if (failall) *next=nullptrn; return NULL;} while(0)
+#define FAIL  goto failed
 
 /* {MAX_MAX} limits the number of repetitions that are allowed
 ** As a side effect this is an hard limit to the lenght of
@@ -563,16 +563,16 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     if (ch == READ_NEXT) ch = pmxGetc(text);
   }
 
-  if (capt[0][1] == capt[0][0]) {
-    capt[0][1] = pmxTell(text);
-    if (ch != EOF) capt[0][1]--;
-  }
-  else { /* manage &g */
+  if (goalset) { /* manage &g and &G */
     pmxSeek(text, capt[0][1], SEEK_SET);
   }
+  else {
+    capt[0][1] = pmxTell(text);
+    if (ch != EOF) capt[0][1]--;
+    /* refuse to match the empty string! */
+    if (capt[0][0] >= capt[0][1]) FAIL;
+  }
 
-  /* refuse to match the empty string! */
-  if (capt[0][0] >= capt[0][1]) FAIL;
 
   /*printf("*|* %s\n",p);*/
 /* {{ remove the optional elements at the end of the pattern */
@@ -632,7 +632,17 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   }
 /* }} ****/
 
-  return &capt;
+  if (goalset >= 0) return &capt;
+  goalset = 0;
+
+failed:  
+  if (goalset < 0) { /* manage &G */
+    pmxSeek(text, capt[0][1], SEEK_SET);
+    return &capt;
+  }
+  
+  if (failall) *next=nullptrn;
+  return NULL;
 }
 
 /* */
