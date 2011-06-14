@@ -104,6 +104,22 @@ int main (void)
     }
   }
   
+  TSTSECTION("pmx Goal") {
+    TSTGROUP("positive look ahead") {
+      ret = pmxMatchStr(lorem,"Lorem&g ipsum");
+      TST("matched",ret != NULL);
+      TST("look ahead", pmxLen(ret,0) == 5);
+      ret = pmxMatchStr(lorem,"Lorem&G ipsum");
+      TST("not matched",ret == NULL);
+      TST("look ahead", pmxLen(ret,0) == 0);
+      
+      ret = pmxMatchStr(lorem,"Lorem&Gzzz");
+      TST("matched",ret != NULL);
+      TST("look ahead", pmxLen(ret,0) == 5);
+      
+    }
+  }
+  
   TSTDONE();
   
   exit(0);
