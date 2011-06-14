@@ -27,7 +27,7 @@ FILE *utl_stderr = NULL;
 /*************************************/
 
 FILE *log_file = NULL;
-int logLevel = log_Off;
+int log_level = log_Off;
 /*
 ** These variables are used internally to compose and print log messages:
 **
