@@ -433,7 +433,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  left = '\0'; right = '\0';
                  op = *++p;
                  switch (op) {
-				   case 'G' : goalset = -1; goto goal;
+                   case 'G' : goalset = -1; goto goal;
                    case 'g' : goalset = 1;
                        goal : capt[0][1] = pmxTell(text)-1;
                               break;
@@ -631,7 +631,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     }
   }
 /* }} ****/
-
+  /* MATCHED !! */
   if (goalset >= 0) return &capt;
   goalset = 0;
 
@@ -723,10 +723,6 @@ int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)
   }
   return 0;
 }
-
-//char *pmx_tmpstr;
-//char *pmx_tmpptrn;
-//pmx_t pmx_tmpmtc;
 
 /*******************/
 

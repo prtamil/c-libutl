@@ -109,6 +109,7 @@ int main (void)
       ret = pmxMatchStr(lorem,"Lorem&g ipsum");
       TST("matched",ret != NULL);
       TST("look ahead", pmxLen(ret,0) == 5);
+      
       ret = pmxMatchStr(lorem,"Lorem&G ipsum");
       TST("not matched",ret == NULL);
       TST("look ahead", pmxLen(ret,0) == 0);
@@ -116,7 +117,18 @@ int main (void)
       ret = pmxMatchStr(lorem,"Lorem&Gzzz");
       TST("matched",ret != NULL);
       TST("look ahead", pmxLen(ret,0) == 5);
+      if (!TSTFAILED) 
+         TSTNOTE("[%.*s]", pmxLen(ret,0), pmxStartP(ret,0));
       
+      ret = pmxMatchStr(lorem,">&g.&k(M<+l>)");
+      TST("matched",ret != NULL);
+      TST("look ahead  (0 Len!)", pmxLen(ret,0) == 0);
+      TST("look ahead  (>0 Start!)", pmxStart(ret,0) > 0);
+      TST("look ahead  (Captured!)", pmxLen(ret,1) > 0);
+      TST("look ahead  (Captured)", pmxStart(ret,1) > 0);
+      if (!TSTFAILED) 
+         TSTNOTE("[%.*s]", pmxLen(ret,1), pmxStartP(ret,1));
+    
     }
   }
   
