@@ -132,6 +132,32 @@ int main (void)
     }
   }
   
+  TSTSECTION("Case sensitive") {
+    TSTGROUP("simple") {
+      ret = pmxMatchStr(lorem,"LOReM");
+      TST("Not ignore case",ret == NULL);
+      ret = pmxMatchStr(lorem,"&iLOReM");
+      TST("Ignorecase",ret != NULL && pmxLen(ret,0)==5);
+      ret = pmxMatchStr(lorem,"&iLO&IReM");
+      TST("Ignore then dont (1)",ret == NULL);
+      ret = pmxMatchStr(lorem,"&iLO&Irem");
+      TST("Ignore then dont (2)",ret != NULL && pmxLen(ret,0)==5);
+    }
+  }
+
+  TSTSECTION("escape") {
+    TSTGROUP("simple") {
+      ret = pmxMatchStr("'pippo'","&q");
+      TST("Quoted string",ret != NULL && pmxLen(ret,0) == 7);
+      ret = pmxMatchStr("'pip%'po'","&q");
+      TST("Quoted string (with embedded quote)",ret != NULL && pmxLen(ret,0) == 6);
+      ret = pmxMatchStr("'pip%'po'","&e%&q");
+      TST("Quoted string (with escaped embedded quote)",ret != NULL && pmxLen(ret,0) == 9);
+      ret = pmxMatchStr("'pip%'%'po'","&e%&q");
+      TST("Quoted string (with two escaped embedded quote)",ret != NULL && pmxLen(ret,0) == 11);
+    }
+  }
+
   TSTDONE();
   
   exit(0);
