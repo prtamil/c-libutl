@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <assert.h>
 #include "pmx.h"
 
 #define mTRUE  1
@@ -35,20 +35,10 @@ static short pmx_ch;
 static int pmxEscGetc(void *text,char esc)
 {
   int ch;
-/*
-  ch = pmxGetc(text);
-  while (ch == esc) {
+
+  while ((ch = pmxGetc(text)) == esc)
     ch = pmxGetc(text);
-    ch = pmxGetc(text);
-  }
-*/
-  for (;;) {
-    if ((ch = *SB(text)->text) == '\0') return EOF;
-    SB(text)->text++;
-    if (ch != esc) return ch;
-    if ((ch = *SB(text)->text) == '\0') return esc; 
-    SB(text)->text++;
-  }
+
   return ch;
 }
 
@@ -103,7 +93,7 @@ static int pmxBeginLine(sbuf *s)
     +=============================+=============================+
  10 | matched pattern             | token of matched pattern    |
     +-----------------------------+-----------------------------+
- 11 | start offset                |                             |
+ 11 | start offset                |          flags              |
     +-----------------------------+-----------------------------+
 ..
  
@@ -121,8 +111,6 @@ int pmx_capt_cur = 0;
 
 static pmxMatches capt_arr[pmxCaptStkSize];
 #define capt  capt_arr[pmx_capt_cur]
-
-static short icase = mFALSE;
 
 size_t pmxLen(pmx_t mtc, unsigned char n)
 {
@@ -161,8 +149,20 @@ unsigned char pmxToken(pmx_t mtc)
   return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0x00);
 }
 
+#define F_ICASE    0x01000000
+#define F_FAILALL  0x02000000
+#define F_GOAL     0x04000000
+#define F_NEGGOAL  0x08000000
+
+#define set_flag(f)  (capt[11][1] |=  (f))
+#define clr_flag(f)  (capt[11][1] &= ~(f))
+#define tst_flag(f)  (capt[11][1] &   (f))
+
+#define set_esc(x) (capt[11][1] = (capt[11][1] & ~0xFF) | ((x) & 0xFF))
+#define get_esc() (capt[11][1] & 0xFF)
+
 /* {{ Checks on characters **/
-#define ic(c) (icase?tolower((int)c):c)
+#define ic(c) (tst_flag(F_ICASE)?tolower((int)c):c)
 
 #define is_blank(x) (x == ' ' || x =='\t')
 #define is_ascii(x) (x < 0x7F)
@@ -325,8 +325,6 @@ char *setminmax(char *p, unsigned long *min, unsigned long *max)
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
-  short failall = 0;
-  short goalset = 0;
   int ch,left,right;
   unsigned long min,max,cnt;
   char op;
@@ -348,8 +346,8 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   capt[0][0] = pmxTell(text);
   capt[0][1] = capt[0][0];
   
-  esc = '\0';
-  icase = mFALSE;
+  set_esc('\0');
+  clr_flag(F_ICASE | F_FAILALL | F_GOAL |F_NEGGOAL);
   
   if (*p == '>') p++;
   *next = p;
@@ -357,6 +355,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
    *next = p;
     min = 1; max = 1;
     cnt = 0;
+    esc = get_esc();
     reverse = mFALSE;
     switch (*p) {
       case '<' : op = *++p;
@@ -373,6 +372,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    
                  reverse = (isupper((int)op) ? mTRUE : mFALSE);
                  op = tolower((int)op);
+                 
                  switch (op) {
                    #define xW(x,f) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
                                    { ch = f; cnt++; }
@@ -433,16 +433,16 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  left = '\0'; right = '\0';
                  op = *++p;
                  switch (op) {
-                   case 'G' : goalset = -1; goto goal;
-                   case 'g' : goalset = 1;
-                       goal : capt[0][1] = pmxTell(text)-1;
+                   case 'G' : set_flag(F_NEGGOAL);
+                   case 'g' : set_flag(F_GOAL);
+                              capt[0][1] = pmxTell(text)-1;
                               break;
 
                    case 'r' : if (!pmxBeginLine(text)) return mFALSE;
                               break;
 
-                   case 'I' : icase = mFALSE; break;
-                   case 'i' : icase = mTRUE; break;
+                   case 'I' : clr_flag(F_ICASE); break;
+                   case 'i' : set_flag(F_ICASE); break;
 
                    case 'L' : reverse = mTRUE;
                    case 'l' : while (ch && ch != EOF && ch != '\n'&& ch != '\r' ) {
@@ -484,14 +484,15 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               if (cnt == 0 && !reverse) FAIL;
                               break;
                               
-                   case '!' : failall = 1; break;
+                   case '!' : set_flag(F_FAILALL); break;
                    
                    case '|' : ch = ENDPATTERN; break;
                    
-                   case 'E' : esc = '\0'; break;
+                   case 'E' : set_esc('\0'); break;
                    
                    case 'e' : if ((esc=*++p)=='\0') FAIL;
                               if ((esc == '&') && ((esc=*++p)=='\0')) FAIL;
+                              set_esc(esc);
                               break;
                               
                    case 'Q' : reverse = mTRUE;
@@ -563,7 +564,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     if (ch == READ_NEXT) ch = pmxGetc(text);
   }
 
-  if (goalset) { /* manage &g and &G */
+  if (tst_flag(F_GOAL)) { /* manage &g and &G */
     pmxSeek(text, capt[0][1], SEEK_SET);
   }
   else {
@@ -592,7 +593,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
         
         case '&' : switch (*++p) {
                      case 'B' : if (*++p) p++;
-                     case '!' : failall = 1; 
+                     case '!' : set_flag(F_FAILALL); 
                      case 'g' : 
                      case 'G' : 
                      case 'F' :
@@ -633,16 +634,16 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   }
 /* }} ****/
   /* MATCHED !! */
-  if (goalset >= 0) return &capt;
-  goalset = 0;
+  if (!tst_flag(F_NEGGOAL)) return &capt;
+  clr_flag(F_GOAL | F_NEGGOAL);
 
 failed:  
-  if (goalset < 0) { /* manage &G */
+  if (tst_flag(F_NEGGOAL)) { /* manage &G */
     pmxSeek(text, capt[0][1], SEEK_SET);
     return &capt;
   }
   
-  if (failall) *next=nullptrn;
+  if (tst_flag(F_FAILALL)) *next=nullptrn;
   return NULL;
 }
 
@@ -659,6 +660,8 @@ pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
   long ptlen;
   sbuf sb;
   sbuf *text = &sb;
+  
+  assert(sizeof(size_t) >= 4);
   
   if (!txt || !ptrn || !*ptrn ) return NULL;
   
