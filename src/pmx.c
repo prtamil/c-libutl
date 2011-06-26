@@ -374,10 +374,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  reverse = (isupper((int)op) ? mTRUE : mFALSE);
                  op = tolower((int)op);
                  switch (op) {
-                   #define  W(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
-                                   { ch = pmxGetc(text); cnt++; }
-                   #define eW(x) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
-                                   { ch = pmxEscGetc(text,esc); cnt++; }
+                   #define xW(x,f) while(ch && ch != EOF && cnt < max && !(x) == reverse)\
+                                   { ch = f; cnt++; }
+                   #define  W(x) xW(x,pmxGetc(text))
+                   #define eW(x) xW(x,pmxEscGetc(text,esc))
                                                                 
                    case 'a' : W(isalpha(ch))  ; break;
                    case 'c' : W(iscntrl(ch))  ; break;
@@ -594,6 +594,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                      case 'B' : if (*++p) p++;
                      case '!' : failall = 1; 
                      case 'g' : 
+                     case 'G' : 
                      case 'F' :
                      case 'D' :
                      case 'N' :
