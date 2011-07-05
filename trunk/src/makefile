@@ -54,6 +54,11 @@ gdb_t2: t2$(_EXE) XXX
 t2$(_EXE): tbl2.c tbl2.h
 	gcc -g -o t2 tbl2.c
 
+pex$(_EXE): pex.c 
+	gcc -g -o pex pex.c
+
+
+
 XXX:
 
 include $(TOP)targets.mk

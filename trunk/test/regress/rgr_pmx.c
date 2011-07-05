@@ -63,6 +63,7 @@ int main (void)
     if (k)  k = (pmxStart(ret,1) == 0) && (pmxStart(ret,2) == 1) && (pmxStart(ret,3) == 4); 
     if (k)  k = (pmxLen(ret,1)   == 1) && (pmxLen(ret,2)   == 3) && (pmxLen(ret,3) == 1);     
     TST("match options (and captures)",k);
+    TSTNOTE("(%.*s)(%.*s)(%.*s)",pmxLen(ret,1),pmxStartP(ret,1),pmxLen(ret,2),pmxStartP(ret,2),pmxLen(ret,3),pmxStartP(ret,3));
     
     ret = pmxMatchStr("1abc4","(<?d>((<*D>)<?d>))");
     k = (ret != NULL);
@@ -155,6 +156,35 @@ int main (void)
       TST("Quoted string (with escaped embedded quote)",ret != NULL && pmxLen(ret,0) == 9);
       ret = pmxMatchStr("'pip%'%'po'","&e%&q");
       TST("Quoted string (with two escaped embedded quote)",ret != NULL && pmxLen(ret,0) == 11);
+    }
+  }
+
+  TSTSECTION("context") {
+    TSTGROUP("simple") {
+      ret = pmxMatchStr("5.3e-10xyz","&f<?[>e&f<]>x");
+      TST("float exp",ret != NULL && pmxLen(ret,0) == 8);
+      ret = pmxMatchStr("5.3x","&f<?[>e&f<]>x");
+      TST("float exp2",ret != NULL && pmxLen(ret,0) == 4);
+      if (TSTFAILED) { 
+        TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      }
+      
+      ret = pmxMatchStr("123945934","<+=0-8>9");
+      TST("plus",ret != NULL && pmxLen(ret,0) == 4);
+      TSTNOTE("plus0: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      
+      ret = pmxMatchStr("123945934","<+[><+=0-8>9<]>");
+      TST("plus",ret != NULL && pmxLen(ret,0) == 7);
+      TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      
+      ret = pmxMatchStr("123945934","<*[><+=0-8>9<]>");
+      TST("plus",ret != NULL && pmxLen(ret,0) == 7);
+      TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      
+      ret = pmxMatchStr("1234534","<*[><+=0-8>9<]><+d>");
+      TST("plus",ret != NULL && pmxLen(ret,0) == 7);
+      TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      
     }
   }
 
