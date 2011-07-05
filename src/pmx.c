@@ -18,6 +18,10 @@
 #define mTRUE  1
 #define mFALSE 0
 
+
+#define  DBGMSG(...) fprintf(stderr,__VA_ARGS__)
+#define xDBGMSG(...) 
+
 /* {{ * FILE-like access function to a string **/
 
 typedef struct {
@@ -49,6 +53,7 @@ static int pmxEscGetc(void *text,char esc)
 #define pmxTell(s)      (SB(s)->text - SB(s)->start)
 #define pmxSeek(s,o,w)  ((SB(s)->text = SB(s)->start + (o)), SB(s)->eof = 0) 
 #define pmxEof(s)       (SB(s)->eof)
+#define pmxBof(s)       (SB(s)->text == SB(s)->start)
 #define pmxChrAt(s,k)   ((pmx_ch = (SB(s)->start)[k]) ? pmx_ch : EOF)
 #define pmxCurChar(s)   ((pmx_ch = *SB(s)->text) ? pmx_ch : EOF)
 
@@ -149,20 +154,23 @@ unsigned char pmxToken(pmx_t mtc)
   return (unsigned char)(mtc ? (*mtc)[pmxCaptMax][1] : 0x00);
 }
 
-#define F_ICASE    0x01000000
-#define F_FAILALL  0x02000000
-#define F_GOAL     0x04000000
-#define F_NEGGOAL  0x08000000
+#define F_ALL      0xFFFF
+#define F_ICASE    0x0001
+#define F_FAILALL  0x0002
+#define F_GOAL     0x0004
+#define F_NEGGOAL  0x0008
+#define F_CONTEXT  0x0010
+#define F_CTFAIL   0x0020
+#define F_CTOPT    0x0040
+#define F_CTREPT   0x0080
+#define F_CTSKIP   0x0100
 
 #define set_flag(f)  (capt[11][1] |=  (f))
 #define clr_flag(f)  (capt[11][1] &= ~(f))
 #define tst_flag(f)  (capt[11][1] &   (f))
 
-#define set_esc(x) (capt[11][1] = (capt[11][1] & ~0xFF) | ((x) & 0xFF))
-#define get_esc() (capt[11][1] & 0xFF)
-
 /* {{ Checks on characters **/
-#define ic(c) (tst_flag(F_ICASE)?tolower((int)c):c)
+#define ic(c) (tst_flag(F_ICASE)?tolower((int)(c)):c)
 
 #define is_blank(x) (x == ' ' || x =='\t')
 #define is_ascii(x) (x < 0x7F)
@@ -294,7 +302,10 @@ static int braced(void *text, int left, int right, char esc)
 
 static char *nullptrn="";
 
-#define FAIL  goto failed
+#define FAIL    goto failed
+
+#define NOMATCH {if (tst_flag(F_CONTEXT)) {set_flag(F_CTFAIL); break;}\
+                else FAIL;}
 
 /* {MAX_MAX} limits the number of repetitions that are allowed
 ** As a side effect this is an hard limit to the lenght of
@@ -322,6 +333,8 @@ char *setminmax(char *p, unsigned long *min, unsigned long *max)
   return NULL;
 }
 
+#define chpos(t) (pmxTell(t)-(pmxEof(t) || pmxBof(t)?0:1))
+
 static pmx_t domatch(void *text, char *pattern, char **next)
 {
   short reverse;
@@ -330,6 +343,15 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   char op;
   char esc;
   char *p = pattern;
+  
+  size_t        ct_text = 0;
+  char        * ct_patt = 0;
+  char        * ct_endp = 0;
+  
+  unsigned long ct_min = 1;
+  unsigned long ct_max = 1;
+  unsigned long ct_cnt = 0;
+  size_t        ct_goal= 0;
    
   unsigned char capt_opn = 0;
   unsigned char capt_stk_cnt = 0;
@@ -342,21 +364,28 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   
   capt_opn = 0;
   capt_stk_cnt = 0;
-
-  capt[0][0] = pmxTell(text);
-  capt[0][1] = capt[0][0];
   
-  set_esc('\0');
-  clr_flag(F_ICASE | F_FAILALL | F_GOAL |F_NEGGOAL);
+  esc = '\0';
+  clr_flag(F_ALL);
+  
+  ct_min = 1;
+  ct_max = 1;
+  ct_cnt = 0;
   
   if (*p == '>') p++;
-  *next = p;
-  for (ch = pmxGetc(text); *p && ch != EOF; ++p) {
+  
+  ch = pmxGetc(text);
+  
+  capt[0][0] = chpos(text);
+  capt[0][1] = capt[0][0];
+  
+  for (*next = p; *p ; ++p) {
    *next = p;
     min = 1; max = 1;
     cnt = 0;
-    esc = get_esc();
+    
     reverse = mFALSE;
+    
     switch (*p) {
       case '<' : op = *++p;
                  switch (op) {
@@ -367,6 +396,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case '?' : min = 0; max = 1; 
                         rep : op = *++p;
                               break;
+                   case '@' : set_flag(F_CTSKIP); break;
                    case '\0': FAIL;
                  }
                    
@@ -415,16 +445,59 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               W(iscapt(text,op));     
                               break;
 
+                   case '[' : if (tst_flag(F_CONTEXT)) FAIL;
+                              if (p[1] != '>') FAIL;
+                              
+                              ct_patt = p+1;
+                              ct_endp = ct_patt;
+                              while (*ct_endp && (ct_endp[0] != '<' || ct_endp[1] != ']'))
+                                if (*ct_endp++ =='&' && *ct_endp) ct_endp++;
+                              while(*ct_endp && ct_endp[0] != '>')
+                                if (*ct_endp++ =='&' && *ct_endp) ct_endp++;
+                              if (*ct_endp != '>') FAIL;
+                              
+                              ct_text = chpos(text);
+                              ct_goal = capt[0][1];
+                              ct_min = min;
+                              ct_max = max;
+                              ct_cnt = 0;
+                              set_flag(F_CONTEXT);
+                              clr_flag(F_CTFAIL | F_CTREPT);
+                              if (ct_min == 0) set_flag(F_CTOPT);
+                              cnt = max;
+                              break;
+
+                   case ']' : if (!tst_flag(F_CONTEXT)) FAIL;
+                              xDBGMSG("] chk %c %d < %d %x\n",ch,ct_cnt,ct_max,tst_flag(F_CTFAIL));
+                              ct_cnt++;
+                              if (ct_cnt < ct_max) {
+                                set_flag(F_CTREPT);
+                              }
+                              else {
+                                p = ct_endp;
+                                clr_flag(F_CTFAIL|F_CONTEXT|F_CTOPT|F_CTSKIP|F_CTREPT);
+                              }
+                              cnt = min;
+                              xDBGMSG("] OK %s %c\n",p,ch);
+                              break;
+                              
                    case '\0': FAIL;
                    
                  }
+                  
+                 if (cnt < min) NOMATCH;
                  
-                 if (cnt < min) FAIL;
-                 
-                 while (*p && *p != '>')
-                   if (*p++ =='&' && *p) p++;
-                   
-                 if (*p != '>') FAIL;
+                 if (tst_flag(F_CTREPT)) {
+                   p = ct_patt;
+                   ct_text = chpos(text);
+                   clr_flag(F_CTREPT);
+                   ct_goal = capt[0][1];
+                 }
+                 else {
+                   while (*p && *p != '>')
+                     if (*p++ =='&' && *p) p++;
+                   if (*p != '>') FAIL;
+                 }
                  break;
 
       case '>' : FAIL;
@@ -435,10 +508,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  switch (op) {
                    case 'G' : set_flag(F_NEGGOAL);
                    case 'g' : set_flag(F_GOAL);
-                              capt[0][1] = pmxTell(text)-1;
+                              capt[0][1] = chpos(text);
                               break;
 
-                   case 'r' : if (!pmxBeginLine(text)) return mFALSE;
+                   case 'r' : if (!pmxBeginLine(text)) NOMATCH;
                               break;
 
                    case 'I' : clr_flag(F_ICASE); break;
@@ -456,24 +529,24 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                                 else ch = pmxGetc(text);
                                 cnt++;
                               }
-                              if (cnt == 0 && !reverse) FAIL;
+                              if (cnt == 0 && !reverse) NOMATCH;
                               break;
 
                    case 'N' : reverse = mTRUE;
                    case 'n' : if (ch == '\r') { ch = pmxGetc(text); cnt++;}
                               if (ch == '\n') { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) FAIL;
+                              if (cnt == 0 && !reverse) NOMATCH;
                               break;
                               
                    case 'D' : reverse = mTRUE;
                    case 'd' : if (ch == '-' || ch == '+') { ch = pmxGetc(text); }
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) FAIL;
+                              if (cnt == 0 && !reverse) NOMATCH;
                               break;
                               
                    case 'X' : reverse = mTRUE;
                    case 'x' : while (isxdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) FAIL;
+                              if (cnt == 0 && !reverse) NOMATCH;
                               break;
                               
                    case 'F' : reverse = mTRUE;
@@ -481,18 +554,19 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
                               if (ch == '.') { ch = pmxGetc(text); }
                               while (isdigit(ch)) { ch = pmxGetc(text); cnt++;}
-                              if (cnt == 0 && !reverse) FAIL;
+                              if (cnt == 0 && !reverse) NOMATCH;
+                              xDBGMSG("!!%c\n",ch);
                               break;
                               
                    case '!' : set_flag(F_FAILALL); break;
                    
-                   case '|' : ch = ENDPATTERN; break;
+                   case '|' : if (tst_flag(F_CONTEXT)) FAIL;
+                              ch = ENDPATTERN; break;
                    
-                   case 'E' : set_esc('\0'); break;
+                   case 'E' : esc = '\0'; break;
                    
                    case 'e' : if ((esc=*++p)=='\0') FAIL;
                               if ((esc == '&') && ((esc=*++p)=='\0')) FAIL;
-                              set_esc(esc);
                               break;
                               
                    case 'Q' : reverse = mTRUE;
@@ -502,7 +576,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                                 if (braced(text,left,right,esc)) break;
                               }
                               if (reverse) break;
-                              FAIL;
+                              NOMATCH;
                               
                    case 'B' : reverse = mTRUE;
                    case 'b' : if ((left  = *++p) == '\0') FAIL;
@@ -510,25 +584,25 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               ch = READ_NEXT;
                               if (braced(text,left,right,esc)) break;
                               if (reverse) break;
-                              FAIL;
+                              NOMATCH;
 
                    case 'K' : min = 0;
                    case 'k' : max = MAX_MAX;
                               W(is_blank(ch)) ; 
                               if (cnt >= min) break;
-                              FAIL;
+                              NOMATCH;
                               
                    case 'S' : min = 0;
                    case 's' : max = MAX_MAX;
                               W(isspace(ch)) ; 
                               if (cnt >= min) break;
-                              FAIL;
+                              NOMATCH;
                               
                    case 'W' : min = 0;
                    case 'w' : max = MAX_MAX;
                               W(is_word(ch)) ; 
                               if (cnt >= min) break;
-                              FAIL;
+                              NOMATCH;
                               
                    case '\0': FAIL;
                    
@@ -536,28 +610,44 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                                capt[pmxCaptMax][1] = *p;
                              }
                              else {
-                               if (ic(ch) != ic(*p)) FAIL;
+                               if (ic(ch) != ic(*p)) NOMATCH;
                                ch = READ_NEXT;
                              }
                              break;
                  }
                  break;
 
-      case '(' : if (capt_opn < pmxCaptMax-1) {
+      case '(' : if (tst_flag(F_CONTEXT)) FAIL;
+                 if (capt_opn < pmxCaptMax-1) {
                    capt_stk[capt_stk_cnt++] = ++capt_opn;
-                   capt[capt_opn][0] = pmxTell(text)-1;
+                   capt[capt_opn][0] = chpos(text);
                  }
                  break;
 
-      case ')' : if (capt_stk_cnt>0) {
+      case ')' : if (tst_flag(F_CONTEXT)) FAIL;
+                 if (capt_stk_cnt>0) {
                    capt_stk_cnt--;
-                   capt[capt_stk[capt_stk_cnt]][1] = pmxTell(text)-1;
+                   capt[capt_stk[capt_stk_cnt]][1] = chpos(text);
                  }
                  break;
 
-      default  : if (ic(ch) != ic(*p)) FAIL;
+      default  : if (ic(ch) != ic(*p)) NOMATCH;
                  ch = READ_NEXT;
                  break;
+    }
+    
+    if (tst_flag(F_CTFAIL)) {
+      
+      if (ct_cnt < ct_min) FAIL;
+
+      capt[0][1] = ct_goal;
+      pmxSeek(text,ct_text,SEEK_SET);
+      ch = READ_NEXT;      
+      
+      clr_flag(F_CTFAIL|F_CONTEXT|F_CTOPT|F_CTSKIP);
+      p = ct_endp;
+      
+      xDBGMSG("failed in the middle %ld %ld (%s) [%c]\n",ct_cnt, ct_min,p+1,ch);
     }
     
     if (ch == ENDPATTERN) break;
@@ -568,71 +658,13 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     pmxSeek(text, capt[0][1], SEEK_SET);
   }
   else {
-    capt[0][1] = pmxTell(text);
-    if (ch != EOF) capt[0][1]--;
+    capt[0][1] = chpos(text);
     /* refuse to match the empty string! */
     if (capt[0][0] >= capt[0][1]) FAIL;
   }
 
-
   /*printf("*|* %s\n",p);*/
-/* {{ remove the optional elements at the end of the pattern */
-  if (ch != ENDPATTERN) {
-    ch = *p;
-    while (ch) {
-       switch (ch) {
-        case '<' : if (*++p == '?' || *p == '*') {
-                     while(*p && *p != '>') if (*p++ =='&' && *p) p++;
-                     break;
-                   }
-                   FAIL;
-  
-        case '>' : if (!pmxEof(text)) FAIL;
-                   ch = '\0';
-                   break;
-        
-        case '&' : switch (*++p) {
-                     case 'B' : if (*++p) p++;
-                     case '!' : set_flag(F_FAILALL); 
-                     case 'g' : 
-                     case 'G' : 
-                     case 'F' :
-                     case 'D' :
-                     case 'N' :
-                     case 'L' :
-                     case 'Q' :
-                     case 'K' :
-                     case 'S' :
-                     case 'i' :
-                     case 'I' : break;
-                     case 'e' : if (*++p == '&' && *p) p++;
-                     case 'E' : break;
-                     case '|' : ch = '\0'; break;
-                     case '\0': if (pmxEof(text)) break;
-                     default  : if ((*p & 0x80) == 0) FAIL;
-                                capt[pmxCaptMax][1] = *p;
-                   }
-                   break;
-  
-        case '(' : if (capt_opn < pmxCaptMax-1) {
-                     capt_stk[capt_stk_cnt++] = ++capt_opn;
-                     capt[capt_opn][0] = capt[0][1];
-                   }
-                   break;
-  
-        case ')' : if (capt_stk_cnt > 0) {
-                     capt_stk_cnt--;
-                     capt[capt_stk[capt_stk_cnt]][1] = capt[0][1];
-                   }
-                   break;
-  
-        default  : FAIL;
-      }
-      if (ch) ch = *p;
-      if (ch) ch = *++p;
-    }
-  }
-/* }} ****/
+
   /* MATCHED !! */
   if (!tst_flag(F_NEGGOAL)) return &capt;
   clr_flag(F_GOAL | F_NEGGOAL);
