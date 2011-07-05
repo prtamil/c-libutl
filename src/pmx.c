@@ -651,7 +651,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     }
     
     if (ch == ENDPATTERN) break;
-    if (ch == READ_NEXT) ch = pmxGetc(text);
+    if (ch == READ_NEXT && ch != EOF) ch = pmxGetc(text);
   }
 
   if (tst_flag(F_GOAL)) { /* manage &g and &G */
