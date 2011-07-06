@@ -654,9 +654,10 @@ static pmx_t domatch(void *text, char *pattern, char **next)
         pmxSeek(text,ct_text,SEEK_SET);
         ch = READ_NEXT;      
         
-        clr_flag(F_CTFAIL|F_CONTEXT|F_CTSKIP);
+        clr_flag(F_CONTEXT|F_CTSKIP);
         p = ct_endp;
       }        
+      clr_flag(F_CTFAIL);
       xDBGMSG("failed in the middle %ld %ld (%s) [%c]\n",ct_cnt, ct_min,p+1,ch);
     }
     
