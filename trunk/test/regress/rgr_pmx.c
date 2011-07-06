@@ -191,6 +191,15 @@ int main (void)
       ret = pmxMatchStr("12349534","<@[>9<]>");
       TST("plus",ret != NULL && pmxLen(ret,0) == 5);
       TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+      
+      ret = pmxMatchStr("129349534","<@[>95<]>");
+      TST("plus",ret != NULL && pmxLen(ret,0) == 7);
+      TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
+
+      ret = pmxMatchStr("129349534","(<@[>95<]>)(<*d>)");
+      TST("plus",ret != NULL && pmxLen(ret,1) == 7);
+      TSTNOTE("exp2: %d %.*s %.*s\n",pmxLen(ret,0),pmxLen(ret,1),pmxStartP(ret,1),pmxLen(ret,2),pmxStartP(ret,2));
+
     }
   }
 
