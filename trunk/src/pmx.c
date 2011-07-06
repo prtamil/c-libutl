@@ -161,7 +161,6 @@ unsigned char pmxToken(pmx_t mtc)
 #define F_NEGGOAL  0x0008
 #define F_CONTEXT  0x0010
 #define F_CTFAIL   0x0020
-#define F_CTOPT    0x0040
 #define F_CTREPT   0x0080
 #define F_CTSKIP   0x0100
 
@@ -396,7 +395,6 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    case '?' : min = 0; max = 1; 
                         rep : op = *++p;
                               break;
-                   case '@' : set_flag(F_CTSKIP); break;
                    case '\0': FAIL;
                  }
                    
@@ -445,10 +443,13 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               W(iscapt(text,op));     
                               break;
 
+                   case '@' : set_flag(F_CTSKIP); 
+                              if (min != 1 || max != 1) FAIL;
+                              if (*++p != '[') FAIL;
                    case '[' : if (tst_flag(F_CONTEXT)) FAIL;
-                              if (p[1] != '>') FAIL;
+                              if (*++p != '>') FAIL;
                               
-                              ct_patt = p+1;
+                              ct_patt = p;
                               ct_endp = ct_patt;
                               while (*ct_endp && (ct_endp[0] != '<' || ct_endp[1] != ']'))
                                 if (*ct_endp++ =='&' && *ct_endp) ct_endp++;
@@ -463,22 +464,21 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               ct_cnt = 0;
                               set_flag(F_CONTEXT);
                               clr_flag(F_CTFAIL | F_CTREPT);
-                              if (ct_min == 0) set_flag(F_CTOPT);
                               cnt = max;
                               break;
-
+                              
                    case ']' : if (!tst_flag(F_CONTEXT)) FAIL;
-                              xDBGMSG("] chk %c %d < %d %x\n",ch,ct_cnt,ct_max,tst_flag(F_CTFAIL));
+                              DBGMSG("] chk %c %d < %d %x\n",ch,ct_cnt,ct_max,tst_flag(F_CTFAIL));
                               ct_cnt++;
                               if (ct_cnt < ct_max) {
                                 set_flag(F_CTREPT);
                               }
                               else {
                                 p = ct_endp;
-                                clr_flag(F_CTFAIL|F_CONTEXT|F_CTOPT|F_CTSKIP|F_CTREPT);
+                                clr_flag(F_CTFAIL|F_CONTEXT|F_CTSKIP|F_CTREPT);
                               }
                               cnt = min;
-                              xDBGMSG("] OK %s %c\n",p,ch);
+                              DBGMSG("] OK %s %c\n",p,ch);
                               break;
                               
                    case '\0': FAIL;
@@ -637,16 +637,26 @@ static pmx_t domatch(void *text, char *pattern, char **next)
     }
     
     if (tst_flag(F_CTFAIL)) {
+      if (tst_flag(F_CTSKIP)) {
+        if (ch == EOF) FAIL;
+        else {
+          ch = READ_NEXT;
+          capt[0][1] = ct_goal;
+          p = ct_patt;
+          ct_text = chpos(text);   
+        }
+      }
+      else {
       
-      if (ct_cnt < ct_min) FAIL;
-
-      capt[0][1] = ct_goal;
-      pmxSeek(text,ct_text,SEEK_SET);
-      ch = READ_NEXT;      
-      
-      clr_flag(F_CTFAIL|F_CONTEXT|F_CTOPT|F_CTSKIP);
-      p = ct_endp;
-      
+        if (ct_cnt < ct_min) FAIL;
+  
+        capt[0][1] = ct_goal;
+        pmxSeek(text,ct_text,SEEK_SET);
+        ch = READ_NEXT;      
+        
+        clr_flag(F_CTFAIL|F_CONTEXT|F_CTSKIP);
+        p = ct_endp;
+      }        
       xDBGMSG("failed in the middle %ld %ld (%s) [%c]\n",ct_cnt, ct_min,p+1,ch);
     }
     
