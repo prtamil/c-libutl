@@ -71,9 +71,11 @@ int main (void)
     if (k)  k = (pmxLen(ret,1)   == 5) && (pmxLen(ret,2)   == 4) && (pmxLen(ret,3) == 3);     
     TST("match options (and nested captures)",k);
 
+/*
     ret = pmxMatchStr("xxxx","(<?d>((<*A>)<?d>))");
     TST("Don't match emptiness",ret == NULL);
-    
+*/    
+
     ret = pmxMatchStr("01AfEX","<+x>");
     TST("Hex digits",ret && strncmp(pmxStartP(ret,0), "01AfE" ,pmxLen(ret,0))==0);
     
@@ -196,8 +198,12 @@ int main (void)
       TST("plus",ret != NULL && pmxLen(ret,0) == 7);
       TSTNOTE("exp2: %d %.*s\n",pmxLen(ret,0),pmxLen(ret,0),pmxStartP(ret,0));
 
-      ret = pmxMatchStr("129349534","(<@[>95<]>)(<*d>)");
+      ret = pmxMatchStr("129349534","(<@[>95<]>)(&l)");
       TST("plus",ret != NULL && pmxLen(ret,1) == 7);
+      TSTNOTE("exp2: %d %.*s %.*s\n",pmxLen(ret,0),pmxLen(ret,1),pmxStartP(ret,1),pmxLen(ret,2),pmxStartP(ret,2));
+
+      ret = pmxMatchStr("129349534","(<#[>95<]>)(&l)");
+      TST("plus",ret != NULL && pmxLen(ret,1) == 5);
       TSTNOTE("exp2: %d %.*s %.*s\n",pmxLen(ret,0),pmxLen(ret,1),pmxStartP(ret,1),pmxLen(ret,2),pmxStartP(ret,2));
 
     }
