@@ -161,7 +161,8 @@ unsigned char pmxToken(pmx_t mtc)
 #define F_NEGGOAL  0x0008
 #define F_CONTEXT  0x0010
 #define F_CTFAIL   0x0020
-#define F_CTREPT   0x0080
+#define F_CTREPT   0x0040
+#define F_CTSKIPTO 0x0080
 #define F_CTSKIP   0x0100
 
 #define set_flag(f)  (capt[11][1] |=  (f))
@@ -443,6 +444,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               W(iscapt(text,op));     
                               break;
 
+                   case '#' : set_flag(F_CTSKIPTO); 
                    case '@' : set_flag(F_CTSKIP); 
                               if (min != 1 || max != 1) FAIL;
                               if (*++p != '[') FAIL;
@@ -468,17 +470,21 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               break;
                               
                    case ']' : if (!tst_flag(F_CONTEXT)) FAIL;
-                              DBGMSG("] chk %c %d < %d %x\n",ch,ct_cnt,ct_max,tst_flag(F_CTFAIL));
+                              xDBGMSG("] chk %c %ld < %ld %x\n",ch,ct_cnt,ct_max,tst_flag(F_CTFAIL));
                               ct_cnt++;
                               if (ct_cnt < ct_max) {
                                 set_flag(F_CTREPT);
                               }
                               else {
                                 p = ct_endp;
-                                clr_flag(F_CTFAIL|F_CONTEXT|F_CTSKIP|F_CTREPT);
+                                if (tst_flag(F_CTSKIPTO)) {
+                                  pmxSeek(text,ct_text+1,SEEK_SET);
+                                  ch = READ_NEXT;      
+                                }
+                                clr_flag(F_CTFAIL|F_CONTEXT|F_CTSKIPTO|F_CTSKIP|F_CTREPT);
                               }
                               cnt = min;
-                              DBGMSG("] OK %s %c\n",p,ch);
+                              xDBGMSG("] OK %s %c\n",p,ch);
                               break;
                               
                    case '\0': FAIL;
@@ -654,7 +660,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
         pmxSeek(text,ct_text,SEEK_SET);
         ch = READ_NEXT;      
         
-        clr_flag(F_CONTEXT|F_CTSKIP);
+        clr_flag(F_CONTEXT|F_CTSKIP|F_CTSKIPTO);
         p = ct_endp;
       }        
       clr_flag(F_CTFAIL);
@@ -671,7 +677,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   else {
     capt[0][1] = chpos(text);
     /* refuse to match the empty string! */
-    if (capt[0][0] >= capt[0][1]) FAIL;
+    /*if (capt[0][0] >= capt[0][1]) FAIL;*/
   }
 
   /*printf("*|* %s\n",p);*/
