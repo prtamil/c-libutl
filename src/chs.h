@@ -256,21 +256,21 @@ chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
  do {                                           \
   char chs_buf[chs_buf_size];                   \
   snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  chsCpy(d,chs_buf);                            \
+  d=chsCpy(d,chs_buf);                          \
  } while (utlZero) 
  
 #define chsAddFmt(d,f,...)                      \
  do {                                           \
   char chs_buf[chs_buf_size];                   \
   snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  chsAddStr(d,chs_buf);                         \
+  d=chsAddStr(d,chs_buf);                       \
  } while (utlZero) 
  
 #define chsInsFmt(d,n,f,...)                    \
  do {                                           \
   char chs_buf[chs_buf_size];                   \
   snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  chsInsStr(d,n,chs_buf);                       \
+  d = chsInsStr(d,n,chs_buf);                   \
  } while (utlZero) 
  
 chs_t chs_Del (chs_t dst, long from, long to) ;
