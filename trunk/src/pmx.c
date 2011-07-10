@@ -308,8 +308,6 @@ static char *nullptrn="";
                 else FAIL;}
 
 /* {MAX_MAX} limits the number of repetitions that are allowed
-** As a side effect this is an hard limit to the lenght of
-** text that can be matched.
 */
 #define MAX_MAX 0xFFFFFFFE
 
@@ -345,8 +343,9 @@ static pmx_t domatch(void *text, char *pattern, char **next)
   char *p = pattern;
   
   size_t        ct_text = 0;
-  char        * ct_patt = 0;
-  char        * ct_endp = 0;
+  char         *ct_patt = NULL;
+  char         *ct_endp = NULL;
+  //char         *ct_alt  = NULL;
   
   unsigned long ct_min = 1;
   unsigned long ct_max = 1;
@@ -466,7 +465,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                               ct_cnt = 0;
                               set_flag(F_CONTEXT);
                               clr_flag(F_CTFAIL | F_CTREPT);
-                              cnt = max;
+                              cnt = min;
                               break;
                               
                    case ']' : if (!tst_flag(F_CONTEXT)) FAIL;
@@ -491,7 +490,7 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                    
                  }
                   
-                 if (cnt < min) NOMATCH;
+                 if (cnt < min) NOMATCH; /* NOTE: this may never happen if in CONTEXT! */
                  
                  if (tst_flag(F_CTREPT)) {
                    p = ct_patt;
@@ -506,7 +505,8 @@ static pmx_t domatch(void *text, char *pattern, char **next)
                  }
                  break;
 
-      case '>' : FAIL;
+      case '>' : if (ch != EOF || p[1] != '\0') FAIL;
+                 break;
       
       case '&' : cnt = 0;  
                  left = '\0'; right = '\0';
@@ -696,10 +696,8 @@ failed:
   return NULL;
 }
 
-/* */
 
-
-pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
+static pmx_t match_multi(void *text, char *ptrn)
 {
   pmx_t ret = NULL;
   size_t cnt;
@@ -707,16 +705,6 @@ pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
   char *next;
   int ptnum = 0;
   long ptlen;
-  sbuf sb;
-  sbuf *text = &sb;
-  
-  assert(sizeof(size_t) >= 4);
-  
-  if (!txt || !ptrn || !*ptrn ) return NULL;
-  
-  sb.start = txt;
-  sb.text  = txt+offset;
-  sb.eof   = 0;
 
   start = pmxTell(text);
   
@@ -730,14 +718,15 @@ pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
     }
     else ptlen = 0;
     ptnum++;
+    
     while (!(ret = domatch(text, ptrn, &next)) && (*ptrn == '>') && !pmxEof(text)) {
       pmxSeek(text, ++cnt, SEEK_SET);
     }    
     if (ret) {
       (*ret)[pmxCaptMax][0] = ptnum;
-      (*ret)[pmxCaptMax+1][0] = txt - (char *)0;
       break;
     }
+    
     if (ptlen) ptrn += ptlen;
     else ptrn = next;
     if (*ptrn) {
@@ -750,6 +739,29 @@ pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
   }
   
   return ret;
+}
+
+/* */
+
+pmx_t pmx_matchstr(char *txt, char *ptrn, size_t offset)
+{
+  sbuf sb;
+  pmx_t ret;
+    
+  assert(sizeof(size_t) >= 4);
+  
+  if (!txt || !ptrn || !*ptrn ) return NULL;
+  
+  sb.start = txt;
+  sb.text  = txt+offset;
+  sb.eof   = 0;
+  
+  ret = match_multi(&sb,ptrn);
+  if (ret) {
+    (*ret)[pmxCaptMax+1][0] = txt - (char *)0;
+  }
+
+  return ret;  
 }
 
 int pmxScanStr(char *text, char *ptrn, pmxScanFun_t f)

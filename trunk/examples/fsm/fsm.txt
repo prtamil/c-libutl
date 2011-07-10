@@ -73,7 +73,7 @@ op = "=" | "<" | ">" | "<=" | ">=" | "!="
 
 string = "'" echr* "'" | '"' echr* '"'
 
-echr = !\\"' | '\\\'' | CHAR 
+echr = '\\"' | '\\\'' | CHAR 
 
 
 
@@ -87,20 +87,8 @@ echr = !\\"' | '\\\'' | CHAR
   S |    |     z |    |
     +----+       +----+
 
-DIGIT
 
-JMP
-IFZ
 
-STO
-ADD
-SUB
-MUL
-DIV
-MOD
-CAT
-MID
-LEN
 
-OUT
+
 
