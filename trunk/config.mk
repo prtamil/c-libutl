@@ -62,14 +62,14 @@ WFLAGS = -Wall -Wextra
 CFLAGS=-I. -I$(DIST) $(WFLAGS) $(CCOPTS) $(NO_ASM)
 LNFLAGS=-L. -L$(DIST) $(LNOPTS)
 
-.SUFFIXES: .c .h .o .pmx
+.SUFFIXES: .c .h $(_OBJ) .pmx
 
 .c.o:
-	$(CC) $(CFLAGS) -c -o $*.o $*.c
+	$(CC) $(CFLAGS) -c -o $*$(_OBJ) $*.c
 	
 .pmx.o:
 	$(DIST)/pmx2c $*.pmx $*.c
-	-$(CC) $(CFLAGS) -c -o $*.o $*.c
+	-$(CC) $(CFLAGS) -c -o $*$(_OBJ) $*.c
 	$(RM) $*.c
 	
 ###########
