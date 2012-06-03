@@ -20,11 +20,11 @@ vec
 		build\msys_mingw.sh
 		build\win_build.bat
 	+vec
-		+doc
+		-doc
 			doc\stk.gif
 			doc\pmx.txt
 			doc\usersguide.txt
-		+examples
+		-examples
 			-mpad
 				examples\mpad\mpad.c
 				examples\mpad\mm.txt
@@ -78,7 +78,7 @@ vec
 			src\tbl.h
 			src\tbl.c
 			src\makefile
-		+test
+		-test
 			+regress
 				test\regress\rgr_tbl.c
 				test\regress\rgr_chs.c
@@ -102,15 +102,23 @@ vec
 0=test\regress\rgr_pmx.c
 1=src\pmx.c
 2=src\pmx.h
+3=src\utl.c
+4=src\utl.h
 [Selected Project Files]
 Main=
-Selected=src\pmx.c
+Selected=test\regress\rgr_pmx.c
 [test\regress\rgr_pmx.c]
-TopLine=161
-Caret=38,84
+TopLine=163
+Caret=58,207
 [src\pmx.c]
-TopLine=377
-Caret=37,654
+TopLine=604
+Caret=8,654
 [src\pmx.h]
-TopLine=92
+TopLine=77
 Caret=1,77
+[src\utl.c]
+TopLine=141
+Caret=36,176
+[src\utl.h]
+TopLine=553
+Caret=1,491
