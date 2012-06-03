@@ -302,57 +302,6 @@ static const char *TSTKO  = "not ok";
 
 #endif /* UTL_UNITTEST */
 
-/* .% Debugging
-** ============
-** 
-**   Sometimes it's useful to insert tracing '|printf()| to understand what's
-** going on in a program. Those '|printf()| statements are normally guarded
-** with an |#ifdef DEBUG| so that they disappear in the final version of the
-** software.  The downsides of this approach is that they visually clutter the
-** source and selectively disable the messages is not easy.
-**
-**   The macro here helps inserting debug messages that can be turned on/off
-** and that will be completely disappear from the program if the source is
-** compiled without the '|DEBUG| symbol defined.
-*/
-
-/* Let's give precedence to '{NDEBUG} over '{DEBUG} */
-
-#ifdef NDEBUG
-#ifdef DEBUG
-#undef DEBUG
-#endif
-#endif
-
-#ifdef DEBUG
-/*  You can use '{=dbgmsg()} as if it was a '|printf()| with the only
-** difference that the output will be directed to '{utlStderr}.
-*/
-#define dbgmsg(...) ((stdout?fflush(stdout):0),\
-                     fprintf(utlStderr,"# "),\
-                     fprintf(utlStderr,__VA_ARGS__), fflush(utlStderr))
-
-/* Note that to ensure that dbg messages are correctly interleaved with other
-** messages that might have been printed on the screen, '|stdout| is
-** flushed before printing and '{utlStderr} is flushed right after.
-*/
-
-#else
-#define dbgmsg(...)
-#endif /* DEBUG */
-
-/*   To disable just one call to '{dbgmsg()}, you can place an underscore
-** before its name as '{=_dbgmsg()} is a macro that always expand to nothing.
-** 
-**   If you are worried about the fact that identifiers beginning with an
-** underscore may be reserved (as per ISO Stanadard 7.1.3) you can replace
-** it with '|Xdbgmsg()|.  So far I've not find any
-** reason to do it and using an underscore seems more natural to me. 
-*/
-#define _dbgmsg(...)
-#define Xdbgmsg(...)
-
-
 /* .% Logging
 ** ==========
 **
@@ -369,12 +318,21 @@ static const char *TSTKO  = "not ok";
 ** has been defined before including '|utl.h|.
 */
 
-#define UTL_LOGGING
-#ifdef UTL_LOGGING
+#define log_All    0
+#define log_Debug  1
+#define log_Info   2
+#define log_Warn   3
+#define log_Error  4
+#define log_Fatal  5
+#define log_Msg    6
+#define log_Off    7
+
+#ifndef UTL_NOLOGGING
 #include <time.h>
+#include <ctype.h>
 extern char log_timestr[32];
 extern time_t log_time;
-extern  char *log_abbrev[];
+extern char const *log_abbrev[];
 
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
@@ -385,17 +343,13 @@ extern  char *log_abbrev[];
 **   Use '{=logLevel()} to set the desired level of logging.
 */
 
-#define log_All    0
-#define log_Debug  1
-#define log_Info   2
-#define log_Warn   3
-#define log_Error  4
-#define log_Fatal  5
-#define log_Off    6
 
 extern int log_level;
 
 #define logLevel(level)     (log_level = (log_##level))
+#define logLevelEnv(var,level)  (log_level = log_levelenv(var,log_##level))
+
+int log_levelenv(const char *var, int level);
 
 /*
 ** The table below shows whether a message of a certain level will be
@@ -457,6 +411,8 @@ extern FILE *log_file;
 #define logOpen(fname,mode) ((log_file? fclose(log_file) : 0),\
                                 (log_file = fname? fopen(fname,mode) : NULL))
 
+#define logClose() logOpen(NULL,NULL)
+
 /*   To actually write a message on the log file, use the '{=logWrite()}
 ** function as if it was a '|printf()| with the exception that the first
 ** paratmeter is the level of the message.
@@ -479,19 +435,20 @@ extern FILE *log_file;
 /* You can also use one of the following functions that won't require you 
 ** to pass the message level as parameter:
 */          
-#define logDebug(...)    logWrite(log_Debug,__VA_ARGS__)
-#define logInfo(...)     logWrite(log_Info, __VA_ARGS__)
-#define logWarn(...)     logWrite(log_Warn, __VA_ARGS__)
-#define logError(...)    logWrite(log_Error,__VA_ARGS__)
-#define logFatal(...)    logWrite(log_Fatal,__VA_ARGS__)
+#define logDebug(...)    logWrite(log_Debug, __VA_ARGS__)
+#define logInfo(...)     logWrite(log_Info,  __VA_ARGS__)
+#define logWarn(...)     logWrite(log_Warn,  __VA_ARGS__)
+#define logError(...)    logWrite(log_Error, __VA_ARGS__)
+#define logFatal(...)    logWrite(log_Fatal, __VA_ARGS__)
+#define logMessage(...)  logWrite(log_Msg,   __VA_ARGS__)
 
 /* If you want to add something to the log file without creating a new entry
 ** in the log file, you can use the '{=logMessage()} function. 
 */
-#define logMessage(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
+#define logNote(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
 
 #define logIndent     "\n                        "    
-#define logContinue(...)  (fputs(logIndent,logFile),logMessage(__VA_ARGS__))                       
+#define logContinue(...)  (fputs(logIndent,logFile),logNote(__VA_ARGS__))                       
 
 /*   To ease text alignment in the log, the string '{=logIndent} contains 
 ** the spaces needed to pass the date, time and type field.
@@ -507,11 +464,15 @@ extern FILE *log_file;
 ** ..
 */
 
+#define logIf(lvl) if (log_level >= log_##lvl)
+
 #else
 
 #define logLevel(level)
-#define logFile                 stderr 
+#define logLevelEnv(v,l)
+#define logFile stderr 
 #define logOpen(fname,mode)
+#define logClose()
 #define logWrite(lvl,...)
 #define logDebug(...)
 #define logInfo(...)
@@ -519,9 +480,20 @@ extern FILE *log_file;
 #define logError(...)
 #define logFatal(...)
 #define logMessage(...)
+#define logIf(x) if (utlZero)
 
 #endif /*- UTL_LOGGING */
 
+#ifdef NDEBUG
+#undef logDebug
+#define logDebug(...)
+#endif
+
+#define _logDebug(...)
+
+/* dbgmsg shouldn't be used */
+#define  dbgmsg  logDebug
+#define _dbgmsg _logDebug
 
 /*  .% Finite state machine
 **  =======================
@@ -585,12 +557,18 @@ extern FILE *log_file;
 
 #define fsmExit(x) goto fsm_##x##_e 
 
-#define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; break;} break;} 
+#define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; utl_fsmrets[0]+=0; break;} break;} 
 
 
 /*  .% Traced memory check
 **  ======================
 */
+
+#ifdef UTL_NOMEMCHECK
+#ifdef UTL_MEMCHECK
+#undef UTL_MEMCHECK
+#endif
+#endif
 
 void *utl_malloc  (size_t size, char *file, int line );
 void *utl_calloc  (size_t num, size_t size, char *file, int line);
