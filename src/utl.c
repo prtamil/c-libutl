@@ -20,9 +20,6 @@ const int utlZero = 0 ;
 void utlEmptyFun(void) {}
 char *utlEmptyString = "";
 
-char *utlErrInternal = "Internal error" ;
-
-FILE *utl_stderr = NULL;
 
 /*************************************/
 
@@ -176,3 +173,36 @@ void *utl_strdup(void *ptr, char *file, int line)
   logInfo("strdup %p [%d] -> %p (%u %s %d)",ptr, size, dest, allocated, file, line);
   return dest;
 }
+
+/*************************************/
+
+
+/* % Error handlers
+** ================ 
+*/
+
+char *utlErrInternal = "Internal error" ;
+int   utlErrNum = 0;
+
+utlErrHandler utl_errhandlers[10];
+
+FILE *utl_stderr = NULL;
+
+int utlOnError(int errnum, utlErrHandler hnd)
+{
+  static int k=0;
+  
+  if (errnum > 10) errnum /= 1000;  
+  utl_errhandlers[errnum] = hnd;
+}
+
+
+int utlError(int errnum, char *errstr)
+{
+  if (utl_errhndnum > 0) {
+  }
+   
+  fprintf(utlStdErr,"%s\n",errstr);
+  exit(errnum);
+}
+ 

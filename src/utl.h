@@ -11,10 +11,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
+
+#include <setjmp.h>
 
 /* .% Overview
 ** ===========
@@ -117,36 +120,62 @@ extern FILE *utl_stderr;
 
 /* .% Errors Handling
 ** ==================
+**  Functions to handle serious errors.  
+**  The error number is used to differentiate between errors:
 **
-**   Support for error handling is very minimal. Current version only allows
-** you to exit on error. Future versions will allow you to  set a longjump.
-**
-**   The first parameter of the '{=err()} function is the error code (an
-** integer) that will be used with '|exit()|. The rest of parameters are 
-** the same that you would have used for a '|printf()|. 
-**   To properly release resources you should register a cleanup function
-** with |atexit()|
-**
-**   See previous section for a discussion of where the error message will 
-** be printed.
+**   Error codes are decimal numbers between 0 and 9999. The most significant
+**  dgit determines which handler is invoked. 
 */
 
-#define utlError(errnum,...)  do { \
-                                if (stdout) fflush(stdout);\
-                                if (utlStderr) {\
-                                  fprintf(utlStderr,"ERR%d - ",errnum);\
-                                  fprintf(utlStderr,__VA_ARGS__);\
-                                }\
-                                exit(errnum);\
-                              } while (0)
+int utlError(int errnum, char *msg);
 
 /* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */
 
 extern char *utlErrInternal; 
+extern int   utlErrNum;
 
-#define utlOnError atexit
+typedef void(*)(int, char *) utlErrHandler;
+
+int utlOnError(int errnum, utlErrHandler handler);
+
+/* .%% Exceptions handlers
+** Simple implementation of try/catch. 
+**
+**   utlTry {
+**      ... code ...
+**      if (failed_something) utlThrow(execption_num)  // must be > 0 
+**      ... code ...
+**   }  
+**   utlCatch(3) {
+**      ... code ...
+**   }
+**   utlCatch(4) {
+**      ... code ...
+**   }
+**   utlCatch(default) {  // consider it as a switch!
+**      ... code ...
+**   }
+**   utlTryEnd ;
+** 
+** See http://www.di.unipi.it/~nids/docs/longjump_try_trow_catch.html
+** by Francesco Nidito  for a more complete implementation.
+*/
+
+#define utlTry      do{                          \
+                      jmp_buf utl_ex;            \
+                      switch (setjmp(utl_ex)) {  \
+                        case 0: 
+                        
+#define utlCatch(e)             break;           \
+                        case e:
+                        
+#define utlTryEnd     }                          \
+                    } while (utlZero)
+                      
+#define utlTrow(e)    longjmp(utl_ex, e)
+
 
 /* .% UnitTest
 ** ===========
@@ -617,6 +646,7 @@ int utl_check(void *ptr,char *file, int line);
 #define utlMemCheck(p) utlMemValid
 
 #endif /* UTL_MEMCHECK */
+
 
 #endif /* UTL_H */
 
