@@ -136,7 +136,7 @@ int utlError(int errnum, char *msg);
 extern char *utlErrInternal; 
 extern int   utlErrNum;
 
-typedef void(*)(int, char *) utlErrHandler;
+typedef void(*utlErrHandler)(int, char *)  ;
 
 int utlOnError(int errnum, utlErrHandler handler);
 
