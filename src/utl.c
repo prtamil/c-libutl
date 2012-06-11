@@ -190,19 +190,14 @@ FILE *utl_stderr = NULL;
 
 int utlOnError(int errnum, utlErrHandler hnd)
 {
-  static int k=0;
   
-  if (errnum > 10) errnum /= 1000;  
-  utl_errhandlers[errnum] = hnd;
+  return 1;  
 }
 
 
 int utlError(int errnum, char *errstr)
 {
-  if (utl_errhndnum > 0) {
-  }
-   
-  fprintf(utlStdErr,"%s\n",errstr);
+  fprintf(utlStderr,"%s\n",errstr);
   exit(errnum);
 }
  

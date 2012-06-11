@@ -267,7 +267,7 @@ chs_t chs_read(chs_t dst, FILE *f, char how, char what)
         chsAddStrL(dst, chs_buf,k+1);
         break;
       }
-      utlError(8313,"%s",utlErrInternal);
+      utlError(8313,utlErrInternal);
     }
     if (what == 'L' && chsChrAt(dst,-1) != '\n')
       chsAddChr(dst, '\n');
