@@ -36,7 +36,7 @@
      lenght of a strings costs O(n))
   ..
 
- This functions help handling variable lenght string. 
+ This functions help handling variable length string. 
 
  
    .% Naming Conventions
@@ -59,10 +59,10 @@ objects reserved for internal use, the following convention is used:
     __ this is the start of memory block
    |   allocated for each chs string
    |
-   |                __  internal cursor
-   v               | 
+   |                __ used when a chs is stored
+   v               |   in a container
   +------+------+--v---+----------------------------
-  | size | len  | cur  |  <--- string ... ---> \0
+  | size | len  |  up  |  <--- string ... ---> \0
   +--A---+--A---+------+----------------------------
      |      |           A
      |      |           |__ this is the "string" pointer that is
@@ -82,8 +82,9 @@ as implemented by the '{=chs_blk_t} structure below.
 #define chs_blk_inc 16
 
 typedef struct {
-  long size;
-  long len;
+  long   size;
+  long   len;
+  void   **up;
   char chs[chs_blk_inc];
 } chs_blk_t;
 
@@ -166,7 +167,7 @@ long chsSize(chs_t s);
 
 char   chsChrAt  (chs_t s, long ndx);
 
-chs_t  chs_SetChr (chs_t s, long ndx, char c) ;
+chs_t chs_Set(chs_t s, long ndx, char c);
 #define chsSetChr(s, n, c) (s = chs_Set(s,n,c))
 
 /*  .%% Modifying strings
@@ -250,28 +251,12 @@ chs_t chs_InsStrL(chs_t dst, long ndx, char *src, long len) ;
 chs_t chs_InsStr(chs_t dst, long ndx, char *src) ;
 #define chsInsStr(d, n, s) (d = chs_InsStr(d,n,s))
 
-#define chs_buf_size 1024
-
-#define chsCpyFmt(d,f,...)                      \
- do {                                           \
-  char chs_buf[chs_buf_size];                   \
-  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  d=chsCpy(d,chs_buf);                          \
- } while (utlZero) 
- 
-#define chsAddFmt(d,f,...)                      \
- do {                                           \
-  char chs_buf[chs_buf_size];                   \
-  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  d=chsAddStr(d,chs_buf);                       \
- } while (utlZero) 
- 
-#define chsInsFmt(d,n,f,...)                    \
- do {                                           \
-  char chs_buf[chs_buf_size];                   \
-  snprintf(chs_buf,chs_buf_size,f,__VA_ARGS__); \
-  d = chsInsStr(d,n,chs_buf);                   \
- } while (utlZero) 
+#define chsPrintf(d,f,...)      \
+  do {                          \
+    long n = snprintf(NULL, 0, f, __VA_ARGS__ );\
+    chsSetChr(d,n,'\0');        \
+    sprintf(d,f,__VA_ARGS__);   \
+  } while (utlZero)
  
 chs_t chs_Del (chs_t dst, long from, long to) ;
 #define chsDel(d, f, t) (d = chs_Del(d,f,t))
@@ -388,6 +373,8 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
 #define chssetchr  chsChrSet         
 #define chscatchr  chsAddChar        
 #define chsinschr  chsInsChar        
+
+#define chsprintf chsPrintf
                                      
 #define chsdel     chsDel            
 #define chstrim    chsTrim           
@@ -397,11 +384,6 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
 #define chsnupper  chsUpper          
 #define chsnlower  chsLower          
 #define chsreverse chsReverse        
-                                     
-#define chsprintf  chsCpyFmt         
-#define chscpyf    chsCpyFmt         
-#define chscatf    chsAddFmt         
-#define chsinsf    chsInsFmt         
                                      
 #define chsgetline chsCpyLine        
 #define chsgetfile chsCpyFile        
@@ -416,19 +398,6 @@ chs_t chs_Trim(chs_t st,char *left, char *right) ;
 #define chssubfun_t chsSubF_t
                                      
 #define chschrat   chsChrAt          
-
-
-chs_t chs_SetByte(chs_t s, long ndx, char c);
-
-#define chb_t            chs_t
-#define chbNew           chsNew
-#define chbFree          chsFree
-#define chbSet(b,n,c)    (b=chs_SetByte(n,n,c))
-#define chbDel           chsDel
-#define chbIns           chsIns
-#define chbGet           chsChrAt
-#define chbSize          chsSize
-#define chbLen           chsLen
 
 
 #endif  /* CHS_H */
