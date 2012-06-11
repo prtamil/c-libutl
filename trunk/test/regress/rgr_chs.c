@@ -50,6 +50,7 @@ int main(void)
       chsCpy(buf, uppers);
       k = chsLen(buf);
       TST("CHS length is correct", k == (int)strlen(uppers));
+      TST("Identical strings", strcmp(uppers,buf) == 0);
       TSTWRITE("# Next two lines should be identical\n");
       TSTWRITE("# >>  \"%s\"\n",uppers);
       TSTWRITE("# >>  \"%s\"\n",buf);
@@ -277,26 +278,17 @@ int main(void)
       TST("trim xy right and left", k == chslen(buf)+6);
       TSTWRITE("# >> [%2ld]  \"%s\"\n",chslen(buf),buf);
     }
-    
+     
     TSTGROUP ("Formatting") {
-      chscpyf(buf,"x:%d, y:%d, d:%c",3,4,'N');
+      chsPrintf(buf,"x:%d, y:%d, d:%c",3,4,'N');
       TST("Format 1",strcmp(buf,"x:3, y:4, d:N")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
 
-      chscpyf(buf,"x:%02d, y:%05.2f, d:%s",3,4.3,"NE");
+      chsPrintf(buf,"x:%02d, y:%05.2f, d:%s",3,4.3,"NE");
       TST("Format 2",strcmp(buf,"x:03, y:04.30, d:NE")==0);
       TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
-      
-      chsCpy(buf,"[[]]");
-      chsInsFmt(buf,2,"%04X",23147);
-      TST("Format 3",strcmp(buf,"[[5A6B]]")==0);
-      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
-      
-      chsAddFmt(buf,"%04X",23147);
-      TST("Format 4",strcmp(buf,"[[5A6B]]5A6B")==0);
-      TSTWRITE("# >> [%ld]  \"%s\"\n",chsLen(buf),buf);
+           
     }
-    
   }  
   
   chsFree(buf);
