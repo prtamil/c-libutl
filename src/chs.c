@@ -10,6 +10,7 @@
 #include "libutl.h"
 #include <ctype.h>
 
+#define chs_buf_size 1024
 
 long chsLen(chs_t s)
 {
@@ -48,22 +49,33 @@ static long fixndx(chs_t s, long n)
 
 chs_t chs_setsize(chs_t s, long ndx)
 {
-  long sz;
-  chs_blk_t *cb;
+  long sz = 0;
+  chs_blk_t *cb = NULL;
+  void **up = NULL;
   
-  cb = s?  chs_blk(s) : NULL;
-  sz = cb? cb->size   : 0;
-    
-  if (ndx >= sz) {
-    sz = (ndx / chs_blk_inc) * chs_blk_inc;
-    cb = realloc(cb, sizeof(chs_blk_t) + sz);
-    if (!cb) utlError(8911,"%s",utlErrInternal);
-    cb->size = sz + chs_blk_inc;
+  if (s) cb = chs_blk(s);
+  
+  if (cb) {
+    sz = cb->size;
+    up = cb->up;
   }
-  if (s == NULL) {  /* created a fresh string */
+  
+  if (ndx < sz) return s; /* enough room already */
+ 
+  sz = (ndx / chs_blk_inc) * chs_blk_inc; /* round to the next block size */
+  cb = realloc(cb, sizeof(chs_blk_t) + sz);
+  if (!cb) return NULL;
+  
+  /* if the chs was in a container, update the parent pointer */
+  if (up) *up = cb->chs;
+  
+  cb->size = sz + chs_blk_inc; /* chs_blk_inc are in the chs_blk_t struct already */
+
+  if (!s) {  /* created a fresh string */
     cb->len    = 0;
     cb->chs[0] = '\0';
   }
+  cb->up = up;
   return cb->chs;  
 }
 
@@ -71,7 +83,7 @@ chs_t chs_Set(chs_t s, long ndx, char c)
 {
   chs_blk_t *cb;
   
-  if (ndx >= chsLen(s)) s = chs_setsize(s,ndx+1);
+  s = chs_setsize(s,ndx+1);
 
   s[ndx] = c;
   cb = chs_blk(s);
@@ -83,22 +95,6 @@ chs_t chs_Set(chs_t s, long ndx, char c)
     
   s[ndx+1] = '\0';
   _dbgmsg("chs_Set: [%d] = %d\n",ndx,c);
-  return s;
-}
-
-chs_t chs_SetByte(chs_t s, long ndx, char c)
-{
-  chs_blk_t *cb;
-  
-  if (ndx >= chsLen(s)) s = chs_setsize(s,ndx+1);
-
-  s[ndx] = c;
-  cb = chs_blk(s);
-  
-  if (ndx >= cb->len) {
-    cb->len = ndx+1;
-    s[ndx+1] = '\0';
-  }
   return s;
 }
 
