@@ -78,7 +78,7 @@ vec
 			src\tbl.h
 			src\tbl.c
 			src\makefile
-		-test
+		+test
 			+regress
 				test\regress\rgr_tbl.c
 				test\regress\rgr_chs.c
@@ -99,26 +99,14 @@ vec
 		config.mk
 		mk.bat
 [Open project files]
-0=test\regress\rgr_pmx.c
-1=src\pmx.c
-2=src\pmx.h
-3=src\utl.c
-4=src\utl.h
+0=src\utl.c
+1=src\utl.h
 [Selected Project Files]
 Main=
-Selected=test\regress\rgr_pmx.c
-[test\regress\rgr_pmx.c]
-TopLine=163
-Caret=58,207
-[src\pmx.c]
-TopLine=604
-Caret=8,654
-[src\pmx.h]
-TopLine=77
-Caret=1,77
+Selected=src\utl.c
 [src\utl.c]
-TopLine=141
-Caret=36,176
+TopLine=178
+Caret=17,193
 [src\utl.h]
-TopLine=553
-Caret=1,491
+TopLine=113
+Caret=1,129
