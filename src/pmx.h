@@ -48,14 +48,11 @@ size_t        pmxEnd     (pmx_t mtc, unsigned char n);
 char *        pmxStartP  (pmx_t mtc, unsigned char n);
 char *        pmxEndP    (pmx_t mtc, unsigned char n);
 
-
 unsigned char pmxToken(pmx_t mtc);
 
 #define pmxTokStart(x) (pmx_tmpstr+pmxStart(pmx_tmpmtc,x))
 #define pmxTokEnd(x)   (pmx_tmpstr+pmxEnd(pmx_tmpmtc,x))
 #define pmxTokLen(x)   pmxLen(pmx_tmpmtc,x)
-
-
 
 #define pmxTokNONE    x00
 #define pmxTokEOF     x7F
