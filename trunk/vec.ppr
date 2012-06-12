@@ -101,12 +101,32 @@ vec
 [Open project files]
 0=src\utl.c
 1=src\utl.h
+2=src\chs.c
+3=..\abcp\README.txt
+4=..\abcp\src\abcpscan.pmx
+5=..\abcp\src\abcpchords.pmx
+6=..\abcp\examples\abcdump\abcdump.c
 [Selected Project Files]
 Main=
-Selected=src\utl.c
+Selected=..\abcp\src\abcpscan.pmx
 [src\utl.c]
-TopLine=178
-Caret=17,193
+TopLine=157
+Caret=12,194
 [src\utl.h]
-TopLine=113
-Caret=1,129
+TopLine=567
+Caret=16,575
+[src\chs.c]
+TopLine=165
+Caret=15,268
+[..\abcp\README.txt]
+TopLine=9
+Caret=21,24
+[..\abcp\src\abcpscan.pmx]
+TopLine=108
+Caret=24,1077
+[..\abcp\src\abcpchords.pmx]
+TopLine=12
+Caret=40,355
+[..\abcp\examples\abcdump\abcdump.c]
+TopLine=28
+Caret=21,325
