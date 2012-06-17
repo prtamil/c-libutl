@@ -5,12 +5,16 @@ rgr_rec$(_EXE)\
 rgr_tbl$(_EXE)\
 rgr_vec$(_EXE)\
 rgr_fsm$(_EXE)\
+rgr_exceptions$(_EXE)\
 #rgr_mem$(_EXE)\
 
 allall: $(RGR_TESTS)
 
 allcov:
 	make LNLIBS="-lgcov" CCOPTS="-fprofile-arcs -ftest-coverage"
+
+rgr_exceptions$(_EXE): $(CHKLIB) rgr_exceptions$(_OBJ)
+	$(LN)$@ rgr_exceptions$(_OBJ) -lutl $(LNLIBS)
 
 rgr_mem$(_EXE): $(CHKLIB) rgr_mem$(_OBJ)
 	$(LN)$@ rgr_mem$(_OBJ) -lutl $(LNLIBS)
@@ -39,5 +43,5 @@ rgr_vec$(_EXE): $(CHKLIB) rgr_vec$(_OBJ)
 rgr_fsm$(_EXE): $(CHKLIB) rgr_fsm$(_OBJ)
 	$(LN)$@ rgr_fsm$(_OBJ) -lutl  $(LNLIBS)
 
-RGR_OBJS= rgr_chs$(_OBJ) rgr_pmx$(_OBJ) rgr_pmx_nested$(_OBJ) rgr_rec$(_OBJ) rgr_tbl$(_OBJ) rgr_vec$(_OBJ)
+RGR_OBJS= rgr_exceptions$(_OBJ) rgr_chs$(_OBJ) rgr_pmx$(_OBJ) rgr_pmx_nested$(_OBJ) rgr_rec$(_OBJ) rgr_tbl$(_OBJ) rgr_vec$(_OBJ)
 

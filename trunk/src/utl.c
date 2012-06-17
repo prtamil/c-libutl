@@ -21,6 +21,18 @@ void utlEmptyFun(void) {}
 char *utlEmptyString = "";
 
 
+
+/*************************************/
+/* % Error handlers
+** ================ 
+*/
+
+char *utlErrInternal = "Internal error" ;
+FILE *utl_stderr = NULL;
+jmp_buf utl_jmp_lst[utl_MAXTRY];
+int     utl_jmp_cnt = 0;
+int     utlErr = 0;
+
 /*************************************/
 
 FILE *log_file = NULL;
@@ -175,29 +187,4 @@ void *utl_strdup(void *ptr, char *file, int line)
 }
 
 /*************************************/
-
-
-/* % Error handlers
-** ================ 
-*/
-
-char *utlErrInternal = "Internal error" ;
-int   utlErrNum = 0;
-
-utlErrHandler utl_errhandlers[10];
-
-FILE *utl_stderr = NULL;
-
-int utlOnError(int errnum, utlErrHandler hnd)
-{
-  
-  return 1;  
-}
-
-
-int utlError(int errnum, char *errstr)
-{
-  fprintf(utlStderr,"%s\n",errstr);
-  exit(errnum);
-}
  

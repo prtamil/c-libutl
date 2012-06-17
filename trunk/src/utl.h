@@ -32,7 +32,6 @@
 **
 **   This file ('|utl.h|) provide the following basic elements:
 **
-** .[Debugging]    To print debug tracing during development.
 **  [Logging]      To print logging traces during program execution.
 **                 It offers multilevel logging similar to '|log4j| 
 **  [Unit Testing] A simple framework to create unit tests. Tests output
@@ -87,7 +86,7 @@ extern const int utlZero;
 /* .% Messages Output
 ** ==================
 **
-** Debug messages and unit tests output normally go on '{stderr}.
+** Log messages and unit tests output normally go on '{stderr}.
 ** This could be not suitable for applications that are not attached to 
 ** a console (e.g. background servers, GUI applications).
 ** 
@@ -127,25 +126,27 @@ extern FILE *utl_stderr;
 **  dgit determines which handler is invoked. 
 */
 
-int utlError(int errnum, char *msg);
-
 /* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */
 
 extern char *utlErrInternal; 
-extern int   utlErrNum;
 
-typedef void(*utlErrHandler)(int, char *)  ;
+#define utl_MAXTRY 8
+extern jmp_buf utl_jmp_lst[utl_MAXTRY];
+extern int     utl_jmp_cnt;
+extern int     utlErr;
 
-int utlOnError(int errnum, utlErrHandler handler);
-
-/* .%% Exceptions handlers
-** Simple implementation of try/catch. 
+/* .%% Try/Catch
+** ~~~~~~~~~~~~~~~~~~~~~~~
+**  Simple implementation of try/catch. Up to utl_MAXTRY (8) level of nested
+** try/catch are allowed but if you use so many level you have have most
+** probably big problems. Try to stay simple!
 **
 **   utlTry {
 **      ... code ...
-**      if (failed_something) utlThrow(execption_num)  // must be > 0 
+**      if (something_failed) utlThrow(execption_num)  // must be > 0 
+**      some_other_func(); // you can trhow exceptions from other functions 
 **      ... code ...
 **   }  
 **   utlCatch(3) {
@@ -154,27 +155,48 @@ int utlOnError(int errnum, utlErrHandler handler);
 **   utlCatch(4) {
 **      ... code ...
 **   }
-**   utlCatch(default) {  // consider it as a switch!
+**   utlCatchAny {  // None of the above! If not present the exception
+**                  // will be thrown again at the upper level
+**                  // if no handler is found the program exits
 **      ... code ...
 **   }
 **   utlTryEnd ;
 ** 
-** See http://www.di.unipi.it/~nids/docs/longjump_try_trow_catch.html
-** by Francesco Nidito  for a more complete implementation.
-*/
+*/ 
 
-#define utlTry      do{                          \
-                      jmp_buf utl_ex;            \
-                      switch (setjmp(utl_ex)) {  \
-                        case 0: 
+#define utl_jmp_next ((utl_jmp_cnt < utl_MAXTRY)? utl_jmp_cnt++ : utl_jmp_cnt)
+#define utl_jmp_prev ((utl_jmp_cnt > 0)         ? utl_jmp_cnt-- : utl_jmp_cnt)
+
+#define utlTry      do{ int caught = 0; \
+                        switch (setjmp(utl_jmp_lst[utl_jmp_cnt])) {  \
+                          case 0: if (utl_jmp_cnt<utl_MAXTRY)        \
+                                    utl_jmp_cnt++;}                  \
+                                  utlErr = 0; caught = 0;
+                                  
+                              
+#define utlCatch(e)               break;                         \
+                          case e: caught = 1;
                         
-#define utlCatch(e)             break;           \
-                        case e:
+#define utlCatchAny                break;                        \
+                          default: caught = 1;
                         
-#define utlTryEnd     }                          \
+#define utlTryEnd     }                                          \
+                      if (caught) utlErr = 0;                    \
+                      else if (utlErr) utlThrow(utlErr);         \
+                      else if (utl_jmp_cnt > 0) utl_jmp_cnt--;   \
                     } while (utlZero)
                       
-#define utlTrow(e)    longjmp(utl_ex, e)
+
+/* 
+**  The function '{utlError} jumps out of the current function
+** and executes the error handler function. If no handler has 
+** been defined, it exits
+**
+*/
+
+#define utlThrow(e) (utlErr=e, (utl_jmp_cnt && utlErr? longjmp(utl_jmp_lst[--utl_jmp_cnt], utlErr) : exit(utlErr)))
+
+#define utlError(e,m)  (logError("ERR: %d %s",e,m), utlThrow(e))
 
 
 /* .% UnitTest
@@ -356,6 +378,8 @@ static const char *TSTKO  = "not ok";
 #define log_Msg    6
 #define log_Off    7
 
+extern int log_level;
+
 #ifndef UTL_NOLOGGING
 #include <time.h>
 #include <ctype.h>
@@ -371,9 +395,6 @@ extern char const *log_abbrev[];
 **
 **   Use '{=logLevel()} to set the desired level of logging.
 */
-
-
-extern int log_level;
 
 #define logLevel(level)     (log_level = (log_##level))
 #define logLevelEnv(var,level)  (log_level = log_levelenv(var,log_##level))
@@ -497,18 +518,19 @@ extern FILE *log_file;
 
 #else
 
-#define logLevel(level)
-#define logLevelEnv(v,l)
-#define logFile stderr 
-#define logOpen(fname,mode)
-#define logClose()
-#define logWrite(lvl,...)
-#define logDebug(...)
-#define logInfo(...)
-#define logWarn(...)
-#define logError(...)
-#define logFatal(...)
-#define logMessage(...)
+#define logLevel(level)         (log_level=log_Off)
+#define logLevelEnv(v,l)        (log_level=log_Off)
+#define logFile stderr          (log_level=log_Off)
+#define logOpen(fname,mode)     (log_level=log_Off)
+#define logClose()              (log_level=log_Off)
+#define logWrite(lvl,...)       (log_level=log_Off)
+#define logDebug(...)           (log_level=log_Off)
+#define logInfo(...)            (log_level=log_Off)
+#define logWarn(...)            (log_level=log_Off)
+#define logError(...)           (log_level=log_Off)
+#define logFatal(...)           (log_level=log_Off)
+#define logMessage(...)         (log_level=log_Off)
+
 #define logIf(x) if (utlZero)
 
 #endif /*- UTL_LOGGING */
@@ -530,24 +552,25 @@ extern FILE *log_file;
 **  Macros to embed Finite state machine into C programs.
 **
 ** .v
-**      FSM {
-**        STATE(x) { ...
-**                   if (c == 0) GOTO(z);
-**                   GOTO(y);
+**      fsmStart(FSM_NAME) {
+**        fsmState(x) { ...
+**                   if (c == 0) fsmGoto(z);
+**                   fsmGoto(y);
 **        }
 **
-**        STATE(y) { ...
-**                   BREAK;  // exit from the FSM
+**        fsmState(y) { ...
+**                   fsmExit(FSM_NAME);  // exit from the FSM
 **        }
 *
-**        STATE(z) { ...
-**                   GOSUB(t);
+**        fsmState(z) { ...
+**                   fsmGosub(t);
 **        }
 **
-**        STATE(t) { ...
-**                   GOBACK;  // Go back to the caller state
+**        fsmState(t) { ...
+**                   fsmReturn;  // Go back to the caller state
 **        }
 **      }
+**      fsmEnd(FSM_NAME);
 ** ..
 **
 **   It's a good practice to include a graphic of the FSM in the technical

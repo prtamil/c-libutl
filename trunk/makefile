@@ -39,11 +39,7 @@ dist: FORCE
 	cd src ; make release
 	cd examples/pmx2c ; make release
 	cd examples/pmxshell ; make release
-	cd examples/uncomment ; make release
 	strip dist/pmx2c$(_EXE)
 	strip dist/pmxshell$(_EXE)
-	mv dist/libutl.h dist/l.h
-	examples/uncomment/unc < dist/l.h >dist/libutl.h
-	$(RM) dist/l.h
 
 FORCE: 
