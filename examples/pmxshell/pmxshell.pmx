@@ -107,7 +107,7 @@ void addx(char *arg, char *name, vec_t *list)
        case "&S(&e\\&q)&S" :
           if (pmx(Len,1)>2) {
             pmx(End,1)[-1] = '\0';
-            *list = vecAddS(*list,pmx(Start,1)+1);
+            vecAddS(*list,pmx(Start,1)+1);
           }            
           break;
        default :
@@ -133,13 +133,13 @@ void delx(char *arg, char *name, vec_t *list)
   long n;
   switch pmx(arg) {
      case "&Sall&S" :
-        *list = vecDel(*list,0,-1);
+        vecDel(*list,0,-1);
         arg = "";
         break;
      case ">&S(<+d>)&S" :
         n = atoi(pmx(Start,1))-1;
         if (n>=0 && n<vecCount(*list)) 
-          *list = vecDel(*list,n,n);
+          vecDel(*list,n,n);
         break;
      default :
         prterr(93,"Syntax: del s|p  all|n");

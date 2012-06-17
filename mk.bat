@@ -1,7 +1,7 @@
 :: mk.bat
 :: by Remo Dentato - 2011
 ::
-:: Script to compile using MSys from Geany
+:: Script to compile using MSys from PSPad
 ::
 :: Configure your project "make" commands with:
 ::            %p\mk.bat %d 
