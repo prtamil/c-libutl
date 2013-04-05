@@ -32,15 +32,15 @@
 **
 **   This file ('|utl.h|) provide the following basic elements:
 **
-**  [Logging]      To print logging traces during program execution.
-**                 It offers multilevel logging similar to '|log4j| 
-**  [Unit Testing] A simple framework to create unit tests. Tests output
-**                 is compliant with the TAP '(Test Anything Protocol) standard.
-**  [Error handling] Simple handling for serious errors.
-** ..   
-**   It is part of the '|libutl| toolset but it can also be used on its own 
-** by simply including it, with no need to link to other code. See next section
-** for the details.
+**  .[Logging]        To print logging traces during program execution.
+**                    It offers multilevel logging similar to '|log4j|
+**
+**   [Unit Testing]   A simple framework to create unit tests. Tests output
+**                    is compliant with the TAP '(Test Anything Protocol)
+**                    standard.
+**
+**   [Error handling] Simple handling for serious errors.
+**  ..   
 */
 
 /* .% Variables
@@ -194,7 +194,9 @@ extern int     utlErr;
 **
 */
 
-#define utlThrow(e) (utlErr=e, (utl_jmp_cnt && utlErr? longjmp(utl_jmp_lst[--utl_jmp_cnt], utlErr) : exit(utlErr)))
+#define utlThrow(e) (utlErr=e, (utl_jmp_cnt && utlErr? \
+                                  longjmp(utl_jmp_lst[--utl_jmp_cnt], utlErr):\
+                                  exit(utlErr)))
 
 #define utlError(e,m)  (logError("ERR: %d %s",e,m), utlThrow(e))
 
@@ -226,7 +228,8 @@ extern int     utlErr;
 */
 
 #define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
-                       TSTWRITE("#\n# * %d. %s (%s:%d)\n",TSTSEC, s,__FILE__, __LINE__)),!utlZero)
+                       TSTWRITE("#\n# * %d. %s (%s:%d)\n", \
+                                TSTSEC, s,__FILE__, __LINE__)),!utlZero)
 
 /* to disable an entire test section, just prepend ''|_|' or ''|X|'*/
  
@@ -264,7 +267,7 @@ extern int     utlErr;
 #define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
                      TSTWRITE("%s %4d - %s (:%d)",\
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
-                              TSTGTT, s, __LINE__))
+                               TSTGTT, s, __LINE__))
 
 #define TSTTODO(s,x,r) (TST_DO(s,x), TSTWRITE(" # TODO %s\n",r), TSTRES)
 
@@ -393,10 +396,12 @@ extern char const *log_abbrev[];
 **   Logging levels are hierarchical and structured as in log4j. The variable 
 ** '{=log_level} contains the current logging level.  Logging is off by default.
 **
-**   Use '{=logLevel()} to set the desired level of logging.
+**   Use '{=logLevel()}    to set the desired level of logging.
+**   Use '{=logLevelEnv()} to set the desired level of logging based on an
+**                         enviroment variable.
 */
 
-#define logLevel(level)     (log_level = (log_##level))
+#define logLevel(level)         (log_level = (log_##level))
 #define logLevelEnv(var,level)  (log_level = log_levelenv(var,log_##level))
 
 int log_levelenv(const char *var, int level);
