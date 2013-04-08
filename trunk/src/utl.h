@@ -40,6 +40,16 @@
 **                    standard.
 **
 **   [Error handling] Simple handling for serious errors.
+**
+**   [Finite State Machine]
+**                    Macros to use FSM as if they were a native C control
+**                    structure (similar to switch).
+**
+**   [Exceptions]     A simple implementation of try/catch. Similar to C++.
+**
+**   [Guarded memory allocation]
+**                    Replacement for malloc(), calloc(), realloc() and free()
+**                    that account and report about misuse of memory.
 **  ..   
 */
 
