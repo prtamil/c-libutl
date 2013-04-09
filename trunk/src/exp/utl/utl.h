@@ -260,7 +260,7 @@ extern int     utlErr;
 
 #define TSTWRITE(...) (fprintf(utlOut,__VA_ARGS__),fflush(utlOut))
 
-#define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s\n# *- %s\n",s,__FILE__)
+#define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s - (%s)\n",s,__FILE__)
 
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
@@ -325,7 +325,7 @@ extern int     utlErr;
 
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
-#define TSTBAILOUT(x,r) (TSTRES? TSTRES = 1 : (TSTWRITE("Bail out! %s",r), exit(1)))
+#define TSTBAILOUT(x,r) ((x)? 0 : (TSTWRITE("Bail out! %s",r), exit(1)))
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
@@ -655,24 +655,158 @@ extern FILE *log_file;
 #define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; utl_fsmrets[0]+=0; break;} break;} 
 
 
+
+
 /*  .% Traced memory check
 **  ======================
 */
+#define utlMemInvalid    -2
+#define utlMemOverflow   -1
+#define utlMemValid       0
+#define utlMemNull        1
 
+#ifdef UTL_MEMCHECK
 void *utl_malloc  (size_t size, char *file, int line );
 void *utl_calloc  (size_t num, size_t size, char *file, int line);
 void *utl_realloc (void *ptr, size_t size, char *file, int line);
 void  utl_free    (void *ptr, char *file, int line );
 void *utl_strdup  (void *ptr, char *file, int line);
 
-#define utlMemInvalid    -2
-#define utlMemOverflow   -1
-#define utlMemValid       0
-#define utlMemNull        1
-
 int utl_check(void *ptr,char *file, int line);
 
-#ifdef UTL_MEMCHECK
+#ifdef UTL_C
+/*************************************/
+
+static char *BEG_CHK = "\xBE\xEF\xF0\x0D";
+static char *END_CHK = "\xDE\xAD\xC0\xDA";
+static char *CLR_CHK = "\xDE\xFA\xCE\xD0";
+
+static size_t utl_mem_allocated = 0;
+
+typedef struct {
+   size_t size;
+   char   chk[4];
+   char   data[4];
+} utl_mem_t;
+
+#define utl_mem(x) ((utl_mem_t *)((char *)(x) -  offsetof(utl_mem_t, data)))
+
+int utl_check(void *ptr,char *file, int line)
+{
+  utl_mem_t *p;
+  
+  if (ptr == NULL) return utlMemNull;
+  p = utl_mem(ptr);
+  if (memcmp(p->chk,BEG_CHK,4)) { 
+    logError("Invalid or double freed %p (%u %s %d)",p->data,utl_mem_allocated, file, line);     
+    return utlMemInvalid; 
+  }
+  if (memcmp(p->data+p->size,END_CHK,4)) {
+    logError("Boundary overflow detected %p [%d] (%u %s %d)",p->data, p->size, utl_mem_allocated, file, line); 
+    return utlMemOverflow;
+  }
+  logInfo("Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
+  return utlMemValid; 
+}
+
+void *utl_malloc(size_t size, char *file, int line )
+{
+  utl_mem_t *p;
+  
+  if (size == 0) logWarn("Shouldn't allocate 0 bytes (%u %s %d)",utl_mem_allocated, file, line);
+  p = malloc(sizeof(utl_mem_t) +size);
+  if (p == NULL) {
+    logError("Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
+    return NULL;
+  }
+  p->size = size;
+  memcpy(p->chk,BEG_CHK,4);
+  memcpy(p->data+p->size,END_CHK,4);
+  utl_mem_allocated += size;
+  logInfo("alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated, file, line);
+  return p->data;
+};
+
+void *utl_calloc(size_t num, size_t size, char *file, int line)
+{
+  void *ptr;
+  
+  size = num * size;
+  ptr = utl_malloc(size,file,line);
+  if (ptr)  memset(ptr,0x00,size);
+  return ptr;
+};
+
+void utl_free(void *ptr, char *file, int line)
+{
+  utl_mem_t *p=NULL;
+  
+  switch (utl_check(ptr,file,line)) {
+    case utlMemNull  :    logInfo("free NULL (%u %s %d)", utl_mem_allocated, file, line);
+                          break;
+                          
+    case utlMemValid :    p = utl_mem(ptr); 
+                          memcpy(p->chk,CLR_CHK,4);
+    case utlMemOverflow : utl_mem_allocated -= p->size;
+                          free(p);
+                          logInfo("free %p [%d] (%u %s %d)",ptr,p?p->size:0,utl_mem_allocated, file, line);
+                          break;
+  }
+}
+
+void *utl_realloc(void *ptr, size_t size, char *file, int line)
+{
+  utl_mem_t *p;
+  
+  if (size == 0) {
+    logInfo("realloc %p -> [0] (%u %s %d)",ptr,utl_mem_allocated, file, line);
+    utl_free(ptr,file,line); 
+  } 
+  else {
+    switch (utl_check(ptr,file,line)) {
+      case utlMemNull     : logInfo("realloc NULL (%u %s %d)",utl_mem_allocated, file, line);
+                            return utl_malloc(size,file,line);
+                          
+      case utlMemValid    : p = utl_mem(ptr); 
+                            p = realloc(p,sizeof(utl_mem_t) + size); 
+                            if (p == NULL) {
+                              logError("Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
+                              return NULL;
+                            }
+                            utl_mem_allocated -= p->size;
+                            utl_mem_allocated += size; 
+                            logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)",ptr, p->size, p->data, size, utl_mem_allocated, file, line);
+                            p->size = size;
+                            memcpy(p->chk,BEG_CHK,4);
+                            memcpy(p->data+p->size,END_CHK,4);
+                            ptr = p->data;
+                            break;
+    }
+  }
+  return ptr;
+}
+
+
+void *utl_strdup(void *ptr, char *file, int line)
+{
+  char *dest;
+  size_t size;
+  
+  if (ptr == NULL) {
+    logWarn("strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
+    return NULL;
+  }
+  size = strlen(ptr)+1;
+
+  dest = utl_malloc(size,file,line);
+  if (dest) memcpy(dest,ptr,size);
+  logInfo("strdup %p [%d] -> %p (%u %s %d)",ptr, size, dest, utl_mem_allocated, file, line);
+  return dest;
+}
+#undef utl_mem
+
+/*************************************/
+#endif
 
 #define malloc(n)     utl_malloc(n,__FILE__,__LINE__)
 #define calloc(n,s)   utl_calloc(n,s,__FILE__,__LINE__)
@@ -692,15 +826,8 @@ int utl_check(void *ptr,char *file, int line);
 #endif /* UTL_H */
 
 /**************************************************************************/
-#ifdef UTL_TEST
-#define UTL_C
-#endif
 
 #ifdef UTL_C
-/*
-** utl.c
-*/
- 
 
 #ifndef __GNUC__
 const int utlZero = 0 ;
@@ -709,7 +836,6 @@ const int utlZero = 0 ;
 int utlEmptyFun(void) {return 0;}
 char *utlEmptyString = "";
 
-/*************************************/
 /* % Error handlers
 ** ================ 
 */
@@ -742,156 +868,7 @@ char const *log_abbrev[] = {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"};
 
 char log_timestr[32];
 time_t log_time = 0 ;
-#endif
-/*************************************/
-
-#ifdef UTL_MEMCHECK
-#undef malloc
-#undef calloc
-#undef realloc
-#undef free
-#undef strdup
-#endif
-
-static char *BEG_CHK = "\xBE\xEF\xF0\x0D";
-static char *END_CHK = "\xDE\xAD\xC0\xDA";
-static char *CLR_CHK = "\xDE\xFA\xCE\xD0";
-
-static size_t allocated = 0;
-
-typedef struct {
-   size_t size;
-   char   chk[4];
-   char   data[4];
-} utl_mem_t;
-
-
-#define utl_mem(x) ((utl_mem_t *)((char *)(x) -  offsetof(utl_mem_t, data)))
-
-int utl_check(void *ptr,char *file, int line)
-{
-  utl_mem_t *p;
-  
-  if (ptr == NULL) return utlMemNull;
-  p = utl_mem(ptr);
-  if (memcmp(p->chk,BEG_CHK,4)) { 
-    logError("Invalid or double freed %p (%u %s %d)",p->data,allocated, file, line);     
-    return utlMemInvalid; 
-  }
-  if (memcmp(p->data+p->size,END_CHK,4)) {
-    logError("Boundary overflow detected %p [%d] (%u %s %d)",p->data, p->size, allocated, file, line); 
-    return utlMemOverflow;
-  }
-  logInfo("Valid pointer %p (%u %s %d)",ptr, allocated, file, line); 
-  return utlMemValid; 
-}
-
-void *utl_malloc(size_t size, char *file, int line )
-{
-  utl_mem_t *p;
-  
-  if (size == 0) logWarn("Shouldn't allocate 0 bytes (%u %s %d)",allocated, file, line);
-  p = malloc(sizeof(utl_mem_t) +size);
-  if (p == NULL) {
-    logError("Out of Memory (%u %s %d)",allocated, file, line);
-    return NULL;
-  }
-  p->size = size;
-  memcpy(p->chk,BEG_CHK,4);
-  memcpy(p->data+p->size,END_CHK,4);
-  allocated += size;
-  logInfo("alloc %p [%d] (%u %s %d)",p->data,size,allocated, file, line);
-  return p->data;
-};
-
-void *utl_calloc(size_t num, size_t size, char *file, int line)
-{
-  void *ptr;
-  
-  size = num * size;
-  ptr = utl_malloc(size,file,line);
-  if (ptr)  memset(ptr,0x00,size);
-  return ptr;
-};
-
-void utl_free(void *ptr, char *file, int line)
-{
-  utl_mem_t *p=NULL;
-  
-  switch (utl_check(ptr,file,line)) {
-    case utlMemNull  :    logInfo("free NULL (%u %s %d)", allocated, file, line);
-                          break;
-                          
-    case utlMemValid :    p = utl_mem(ptr); 
-                          memcpy(p->chk,CLR_CHK,4);
-    case utlMemOverflow : allocated -= p->size;
-                          free(p);
-                          logInfo("free %p [%d] (%u %s %d)",ptr,p?p->size:0,allocated, file, line);
-                          break;
-  }
-}
-
-void *utl_realloc(void *ptr, size_t size, char *file, int line)
-{
-  utl_mem_t *p;
-  
-  if (size == 0) {
-    logInfo("realloc %p -> [0] (%u %s %d)",ptr,allocated, file, line);
-    utl_free(ptr,file,line); 
-  } 
-  else {
-    switch (utl_check(ptr,file,line)) {
-      case utlMemNull     : logInfo("realloc NULL (%u %s %d)",allocated, file, line);
-                            return utl_malloc(size,file,line);
-                          
-      case utlMemValid    : p = utl_mem(ptr); 
-                            p = realloc(p,sizeof(utl_mem_t) + size); 
-                            if (p == NULL) {
-                              logError("Out of Memory (%u %s %d)",allocated, file, line);
-                              return NULL;
-                            }
-                            allocated -= p->size;
-                            allocated += size; 
-                            logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)",ptr, p->size, p->data, size, allocated, file, line);
-                            p->size = size;
-                            memcpy(p->chk,BEG_CHK,4);
-                            memcpy(p->data+p->size,END_CHK,4);
-                            ptr = p->data;
-                            break;
-    }
-  }
-  return ptr;
-}
-
-
-void *utl_strdup(void *ptr, char *file, int line)
-{
-  char *dest;
-  size_t size;
-  
-  if (ptr == NULL) {
-    logWarn("strdup NULL (%u %s %d)", allocated, file, line);
-    return NULL;
-  }
-  size = strlen(ptr)+1;
-
-  dest = utl_malloc(size,file,line);
-  if (dest) memcpy(dest,ptr,size);
-  logInfo("strdup %p [%d] -> %p (%u %s %d)",ptr, size, dest, allocated, file, line);
-  return dest;
-}
-
-/*************************************/
-
-#ifdef UTL_MEMCHECK
-#define malloc(n)     utl_malloc(n,__FILE__,__LINE__)
-#define calloc(n,s)   utl_calloc(n,s,__FILE__,__LINE__)
-#define realloc(p,n)  utl_realloc(p,n,__FILE__,__LINE__)
-#define free(p)       utl_free(p,__FILE__,__LINE__)
-#define strdup(p)     utl_strdup(p,__FILE__,__LINE__)
-#endif
+#endif /* UTL_NOLOGGING */
 
 #endif
-
-
 
