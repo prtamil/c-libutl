@@ -26,8 +26,7 @@ int main (int argc, char *argv[])
       #ifdef UTL_NOLOGGING
         enabled = 0;
       #endif
-      TST("Logging enabled", enabled);
-      TSTBAILOUT(TSTRES,"Logging is not enabled.");
+      TSTBAILOUT(TST("Logging enabled", enabled), "Logging is not enabled.");
     }
   }
   
