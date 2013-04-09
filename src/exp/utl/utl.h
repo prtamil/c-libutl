@@ -299,27 +299,28 @@ extern int     utlErr;
 */
 #define XTST(s,x)
 
-#define TST(s,x)    (TST_DO(s,(TSTSKP != NULL? 1 : (x))),\
-                     (TSTSKP != NULL? TSTWRITE(" # SKIP %s",TSTSKP):0),\
-                     TSTWRITE("\n"),TSTRES)
+#define TST(s,x) (TST_DO(s,(TSTSKP? 1 : (x))), TST_WRDIR, TSTWRITE("\n"), TSTRES)
 
 #define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
+                     TSTPASSED = (TSTPASSED && (TSTRES || TSTTD)),\
                      TSTWRITE("%s %4d - %s (:%d)",\
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
                                TSTGTT, s, __LINE__))
 
-#define TSTTODO(s,x,r) (TST_DO(s,x), TSTWRITE("# TODO %s\n",r), TSTRES)
+#define TST_WRDIR (TSTSKP ? (TSTNSK++, TSTWRITE(" # SKIP %s",TSTSKP)) \
+                          : (TSTTD ? (TSTNTD++, (TSTWRITE(" # TODO %s%s",TSTTD,\
+                                                (TSTRES?TSTWRN:utlEmptyString)))) \
+                                   : 0) )
 
-#define TSTTD TSTTODO
 
 #define TSTFAILED  (!TSTRES)
 
-/* You can skip a set of tests if a condition is not met.
+/* You can skip a set of tests giving a reason.
 ** Nested skips are not supported!
 */
-#define TSTSKIP(x,r) (TSTSKP = ((x)? r : NULL))
+#define TSTSKIP(r) for (TSTSKP = (r) ; TSTSKP; TSTSKP = NULL)
 
-#define TSTENDSKIP  (TSTSKP = NULL)
+#define TSTTODO(r) for (TSTTD = (r) ; TSTTD; TSTTD = NULL)
 
 #define TSTNOTE(...) (TSTWRITE("#      "), TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
 
@@ -330,13 +331,14 @@ extern int     utlErr;
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
           (TSTTOT == 0 ? 0 : (\
-           TSTWRITE("#\n# SECTION %d PASSED: %d/%d\n",TSTSEC,TSTPASS,TSTTOT),\
+           TSTWRITE("#\n# SECTION %d OK: %d/%d\n",TSTSEC,TSTPASS,TSTTOT),\
            TSTTOT = 0))
 
 /* At the end of all the tests, the accumulated stats can be printed out */
 #define TSTDONE() if (TSTGTT > 0) { TSTSTAT(); \
-                    TSTWRITE("#\n# TOTAL PASSED: %d/%d\n",TSTGPAS,TSTGTT);\
-                    TSTWRITE("#\n# END OF TESTS\n1..%d\n",TSTGTT),fflush(utlOut);\
+                    TSTWRITE("#\n# TOTAL OK: %d/%d\n",TSTGPAS,TSTGTT);\
+                    TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED");\
+                    TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut);\
                   }
 
 /* Execute a statement if a test succeeded */
@@ -345,18 +347,24 @@ extern int     utlErr;
 /* Execute a statement if a test failed */
 #define TSTIF_NOTOK if (!TSTRES)
 
-static int TSTRES  = 0;  /* Result of the last performed '|TST()| */
-static int TSTNUM  = 0;  /* Last test number */
-static int TSTGRP  = 0;  /* Current test group */
-static int TSTSEC  = 0;  /* Current test SECTION*/
-static int TSTTOT  = 0;  /* Number of tests executed */
-static int TSTGTT  = 0;  /* Number of tests executed (Grand Total) */
-static int TSTGPAS = 0;  /* Number of tests passed (Grand Total) */
-static int TSTPASS = 0;  /* Number of passed tests */
+static int TSTRES   = 0;  /* Result of the last performed '|TST()| */
+static int TSTNUM   = 0;  /* Last test number */
+static int TSTGRP   = 0;  /* Current test group */
+static int TSTSEC   = 0;  /* Current test SECTION*/
+static int TSTTOT   = 0;  /* Number of tests executed */
+static int TSTGTT   = 0;  /* Number of tests executed (Grand Total) */
+static int TSTGPAS  = 0;  /* Number of tests passed (Grand Total) */
+static int TSTPASS  = 0;  
+static int TSTBAIL  = 0;  
+static int TSTPASSED  = 1;  
+static int TSTNSK   = 0;  
+static int TSTNTD   = 0;  
 
 static char       *TSTSKP = NULL;
+static char       *TSTTD  = NULL;
 static const char *TSTOK  = "ok    ";
 static const char *TSTKO  = "not ok";
+static const char *TSTWRN = " (passed unexpectedly!)";
 
 #else /* UTL_UNITTEST */
 
@@ -391,6 +399,7 @@ static const char *TSTKO  = "not ok";
 
 #define TSTIF_OK  if (utlZero)
 #define TSTIF_NOTOK if (utlZero)
+
 
 #endif /* UTL_UNITTEST */
 
