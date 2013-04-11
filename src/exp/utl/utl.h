@@ -258,34 +258,27 @@ extern int     utlErr;
 
 #ifdef UTL_UNITTEST
 
-static uint16_t TSTFLG = 0x0000;
-
-#define TSTF_SET   0x0001
-#define TSTF_SEC   0x0002
-#define TSTF_GRP   0x0004
-#define TSTF_BLK   0x0008
-#define TSTF_NULL  0x8000
-
-#define TST_X    (TSTFLG |= TSTF_NULL)
-
 #define TSTWRITE(...) (fprintf(utlOut,__VA_ARGS__),fflush(utlOut))
 
 #define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s - (%s)\n",s,__FILE__)
 
-#define TSTSET(s) for (TSTFLG = TSTF_SET, TSTTITLE(s); \
-                             TSTFLG & TSTF_SET; TSTFLG &= ~TSTF_SET, TSTDONE())
+#define TST_INIT0 (TSTRES=TSTNUM=TSTGRP=TSTSEC=TSTTOT= \
+                               TSTGTT=TSTGPAS=TSTPASS=TSTNSK=TSTNTD=0)
+                                 
+#define TSTSET(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
+                        TSTPASSED; TSTDONE(),TSTPASSED=0)
 
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
-#define TSTSECTION(s)  if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, \                    
-                             TSTWRITE("#\n# * %d. %s (%s:%d)\n", \                 
-                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) \         
-                         TST_X; else                                               
+#define TSTSECTION(s)  if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, \
+                             TSTWRITE("#\n# * %d. %s (%s:%d)\n", \
+                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) \
+                         0; else                                               
 
 /* to disable an entire test section, just prepend '|_| or '|X|*/
  
-#define XTSTSECTION(s) if (!utlZero) TST_X; else 
+#define XTSTSECTION(s) if (!utlZero) 0; else 
 #define _TSTSECTION(s) XTSTSECTION(s)
 
 /* In each section, tests can be logically grouped so that different aspects
@@ -293,15 +286,15 @@ static uint16_t TSTFLG = 0x0000;
 */
 #define TSTGROUP(s) \
       if ((TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s), TSTNUM=0)) \
-        TST_X; else
+        0; else
                      
 /* to disable a n intere test group , just prepend '|_| or '|X| */
-#define XTSTGROUP(s) if (!utlZero) TST_X; else  
+#define XTSTGROUP(s) if (!utlZero) 0; else  
 #define _TSTGROUP(s) XTSTGROUP(s)
 
 /* You may want to disable just a block of instructions */
-#define TSTBLOCK   if (utlZero) TST_X; else  
-#define XTSTBLOCK  if (!utlZero) TST_X; else
+#define TSTBLOCK   if (utlZero) 0; else  
+#define XTSTBLOCK  if (!utlZero) 0; else
 #define _TSTBLOCK  XTSTBLOCK
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
@@ -329,15 +322,15 @@ static uint16_t TSTFLG = 0x0000;
 /* You can skip a set of tests giving a reason.
 ** Nested skips are not supported!
 */
-#define TSTSKIP(r) for (TSTSKP = (r) ; TSTSKP; TSTSKP = NULL)
+#define TSTSKIP(x,r) if (!(x)) 0; else for (TSTTD=r; TSTTD; TSTTD=NULL)
 
-#define TSTTODO(r) if (!(TSTTD = (r))) TST_X; else
+#define TSTTODO(r) for (TSTTD=r; TSTTD; TSTTD=NULL)
 
 #define TSTNOTE(...) (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__),TSTWRITE("\n"))
 
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
-#define TSTBAILOUT(r) if (r) {TSTWRITE("Bail out! %s",r); TSTDONE();exit(1);}
+#define TSTBAILOUT(r) if (!(r)) 0; else {TSTWRITE("Bail out! %s",r); TSTDONE(); exit(1);}
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
@@ -358,21 +351,20 @@ static uint16_t TSTFLG = 0x0000;
 /* Execute a statement if a test failed */
 #define TSTIF_NOTOK if (!TSTRES)
 
-static int TSTRES   = 0;  /* Result of the last performed '|TST()| */
-static int TSTNUM   = 0;  /* Last test number */
-static int TSTGRP   = 0;  /* Current test group */
-static int TSTSEC   = 0;  /* Current test SECTION*/
-static int TSTTOT   = 0;  /* Number of tests executed */
-static int TSTGTT   = 0;  /* Number of tests executed (Grand Total) */
-static int TSTGPAS  = 0;  /* Number of tests passed (Grand Total) */
-static int TSTPASS  = 0;  
-static int TSTBAIL  = 0;  
-static int TSTPASSED  = 1;  
-static int TSTNSK   = 0;  
-static int TSTNTD   = 0;
- 
-static char       *TSTSKP = NULL;
-static char       *TSTTD  = NULL;
+static int    TSTRES    = 0;  /* Result of the last performed '|TST()| */
+static int    TSTNUM    = 0;  /* Last test number */
+static int    TSTGRP    = 0;  /* Current test group */
+static int    TSTSEC    = 0;  /* Current test SECTION*/
+static int    TSTTOT    = 0;  /* Number of tests executed */
+static int    TSTGTT    = 0;  /* Number of tests executed (Grand Total) */
+static int    TSTGPAS   = 0;  /* Number of tests passed (Grand Total) */
+static int    TSTPASS   = 0;  
+static int    TSTPASSED = 1;  
+static int    TSTNSK    = 0;  
+static int    TSTNTD    = 0;  
+static char  *TSTSKP    = NULL;
+static char  *TSTTD     = NULL;
+
 static const char *TSTOK  = "ok    ";
 static const char *TSTKO  = "not ok";
 static const char *TSTWRN = " (passed unexpectedly!)";
