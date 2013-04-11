@@ -258,39 +258,51 @@ extern int     utlErr;
 
 #ifdef UTL_UNITTEST
 
+static uint16_t TSTFLG = 0x0000;
+
+#define TSTF_SET   0x0001
+#define TSTF_SEC   0x0002
+#define TSTF_GRP   0x0004
+#define TSTF_BLK   0x0008
+#define TSTF_NULL  0x8000
+
+#define TST_X    (TSTFLG |= TSTF_NULL)
+
 #define TSTWRITE(...) (fprintf(utlOut,__VA_ARGS__),fflush(utlOut))
 
 #define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s - (%s)\n",s,__FILE__)
 
+#define TSTSET(s) for (TSTFLG = TSTF_SET, TSTTITLE(s); \
+                             TSTFLG & TSTF_SET; TSTFLG &= ~TSTF_SET, TSTDONE())
+
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
+#define TSTSECTION(s)  if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, \                    
+                             TSTWRITE("#\n# * %d. %s (%s:%d)\n", \                 
+                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) \         
+                         TST_X; else                                               
 
-#define TSTSECTION(s) if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, TSTPASS=0, \
-                       TSTWRITE("#\n# * %d. %s (%s:%d)\n", \
-                                TSTSEC, s,__FILE__, __LINE__)),!utlZero)
-
-/* to disable an entire test section, just prepend ''|_|' or ''|X|'*/
+/* to disable an entire test section, just prepend '|_| or '|X|*/
  
-#define _TSTSECTION(s) if (utlZero)  
-#define XTSTSECTION(s) if (utlZero)  
+#define XTSTSECTION(s) if (!utlZero) TST_X; else 
+#define _TSTSECTION(s) XTSTSECTION(s)
 
 /* In each section, tests can be logically grouped so that different aspects
 ** of related functions can be tested.
 */
-
-#define TSTGROUP(s) if ( TSTNUM=0, \
-                     TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s),\
-                     TSTGRP+1)
+#define TSTGROUP(s) \
+      if ((TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s), TSTNUM=0)) \
+        TST_X; else
                      
-/* to disable an intere test group , just prepend ''|_|' or '|X|' */
-#define _TSTGROUP(s) if (utlZero)  
-#define XTSTGROUP(s) if (utlZero)  
+/* to disable a n intere test group , just prepend '|_| or '|X| */
+#define XTSTGROUP(s) if (!utlZero) TST_X; else  
+#define _TSTGROUP(s) XTSTGROUP(s)
 
 /* You may want to disable just a block of instructions */
-#define TSTBLOCK if (!utlZero) 
-#define _TSTBLOCK if (utlZero) 
-#define XTSTBLOCK if (utlZero) 
+#define TSTBLOCK   if (utlZero) TST_X; else  
+#define XTSTBLOCK  if (!utlZero) TST_X; else
+#define _TSTBLOCK  XTSTBLOCK
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
 **   .['|s|] is a short string that identifies the test
@@ -299,19 +311,18 @@ extern int     utlErr;
 */
 #define XTST(s,x)
 
-#define TST(s,x) (TST_DO(s,(TSTSKP? 1 : (x))), TST_WRDIR, TSTWRITE("\n"), TSTRES)
+#define TST(s,x) (TST_DO(s,(TSTSKP?1:(x))),TST_WRDIR, TSTWRITE("\n"), TSTRES)
 
-#define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,\
-                     TSTPASSED = (TSTPASSED && (TSTRES || TSTTD)),\
-                     TSTWRITE("%s %4d - %s (:%d)",\
-                              (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO),\
+#define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,   \
+                     TSTPASSED = (TSTPASSED && (TSTRES || TSTTD)), \
+                     TSTWRITE("%s %4d - %s (:%d)", \
+                              (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO), \
                                TSTGTT, s, __LINE__))
 
-#define TST_WRDIR (TSTSKP ? (TSTNSK++, TSTWRITE(" # SKIP %s",TSTSKP)) \
-                          : (TSTTD ? (TSTNTD++, (TSTWRITE(" # TODO %s%s",TSTTD,\
-                                                (TSTRES?TSTWRN:utlEmptyString)))) \
-                                   : 0) )
-
+#define TST_WRDIR \
+           (TSTSKP ? (TSTNSK++, TSTWRITE(" # SKIP %s",TSTSKP)) \
+                   : (TSTTD ? (TSTNTD++, (TSTWRITE(" # TODO %s%s",TSTTD, \
+                                        (TSTRES?TSTWRN:utlEmptyString)))) : 0))
 
 #define TSTFAILED  (!TSTRES)
 
@@ -320,13 +331,13 @@ extern int     utlErr;
 */
 #define TSTSKIP(r) for (TSTSKP = (r) ; TSTSKP; TSTSKP = NULL)
 
-#define TSTTODO(r) for (TSTTD = (r) ; TSTTD; TSTTD = NULL)
+#define TSTTODO(r) if (!(TSTTD = (r))) TST_X; else
 
-#define TSTNOTE(...) (TSTWRITE("#      "), TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
+#define TSTNOTE(...) (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__),TSTWRITE("\n"))
 
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
-#define TSTBAILOUT(x,r) ((x)? 0 : (TSTWRITE("Bail out! %s",r), exit(1)))
+#define TSTBAILOUT(r) if (r) {TSTWRITE("Bail out! %s",r); TSTDONE();exit(1);}
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
@@ -335,11 +346,11 @@ extern int     utlErr;
            TSTTOT = 0))
 
 /* At the end of all the tests, the accumulated stats can be printed out */
-#define TSTDONE() if (TSTGTT > 0) { TSTSTAT(); \
-                    TSTWRITE("#\n# TOTAL OK: %d/%d\n",TSTGPAS,TSTGTT);\
-                    TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED");\
-                    TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut);\
-                  }
+#define TSTDONE() \
+          (TSTGTT <= 0 ? 0 : ( TSTSTAT(), \
+          TSTWRITE("#\n# TOTAL OK: %d/%d\n",TSTGPAS,TSTGTT),\
+          TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED"),\
+          TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut)) )
 
 /* Execute a statement if a test succeeded */
 #define TSTIF_OK  if (TSTRES)
@@ -358,47 +369,13 @@ static int TSTPASS  = 0;
 static int TSTBAIL  = 0;  
 static int TSTPASSED  = 1;  
 static int TSTNSK   = 0;  
-static int TSTNTD   = 0;  
-
+static int TSTNTD   = 0;
+ 
 static char       *TSTSKP = NULL;
 static char       *TSTTD  = NULL;
 static const char *TSTOK  = "ok    ";
 static const char *TSTKO  = "not ok";
 static const char *TSTWRN = " (passed unexpectedly!)";
-
-#else /* UTL_UNITTEST */
-
-#define TSTWRITE(...) 
-
-#define TSTTITLE(s) 
-
-#define  TSTSECTION(s) if (utlZero)  
-#define _TSTSECTION(s) if (utlZero)  
-#define XTSTSECTION(s) if (utlZero)  
-
-#define  TSTGROUP(s) if (utlZero)  
-#define _TSTGROUP(s) if (utlZero)  
-#define XTSTGROUP(s) if (utlZero)  
-
-#define  TSTBLOCK if (utlZero) 
-#define _TSTBLOCK if (utlZero) 
-#define XTSTBLOCK if (utlZero) 
-                     
-#define TST(s,x) 
-#define TSTTODO(s,x,r)
-#define TSTFAILED  (1)
-#define TSTSKIP(x,r)
-#define TSTENDSKIP
-
-#define TSTNOTE(...)
-#define TSTONFAIL(...)
-
-#define TSTBAILOUT(x,r)
-
-#define TSTDONE() 
-
-#define TSTIF_OK  if (utlZero)
-#define TSTIF_NOTOK if (utlZero)
 
 
 #endif /* UTL_UNITTEST */
