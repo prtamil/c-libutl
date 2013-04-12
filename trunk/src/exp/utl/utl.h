@@ -46,7 +46,6 @@
 ** .% How to add utl.h to your project
 ** ===================================
 **
-**
 **  
 */
 
@@ -59,7 +58,6 @@
 #include <stddef.h>
 
 #include <setjmp.h>
-
 
 #ifdef UTL_NOMEMCHECK
 #ifdef UTL_MEMCHECK
@@ -159,7 +157,6 @@ extern FILE *utl_output;
 #define utlSetOutput(fname) ((utl_output ? fclose(utl_output) : 0),\
                              (utl_output = (fname? fopen(fname,"w"): NULL)))
 
-
 /* .% Errors Handling
 ** ==================
 **  Functions to handle serious errors.  
@@ -172,7 +169,6 @@ extern FILE *utl_output;
 /* '{=utlErrInternal} is provided to avoid repeating the string over
 ** and over again in the code.
 */
-
 extern char *utlErrInternal; 
 
 #define utl_MAXTRY 8
@@ -210,30 +206,28 @@ extern int     utlErr;
 #define utl_jmp_next ((utl_jmp_cnt < utl_MAXTRY)? utl_jmp_cnt++ : utl_jmp_cnt)
 #define utl_jmp_prev ((utl_jmp_cnt > 0)         ? utl_jmp_cnt-- : utl_jmp_cnt)
 
-#define utlTry      do{ int caught = 0; \
-                        switch (setjmp(utl_jmp_lst[utl_jmp_cnt])) {  \
-                          case 0: if (utl_jmp_cnt<utl_MAXTRY)        \
-                                    utl_jmp_cnt++;}                  \
-                                  utlErr = 0; caught = 0;
+#define utlTry      do{ int utl_caught = 0; \
+                        switch (setjmp(utl_jmp_lst[utl_jmp_cnt])) { \
+                          case 0: if (utl_jmp_cnt<utl_MAXTRY) \
+                                    utl_jmp_cnt++;} \
+                                  utlErr = 0; utl_caught = 0;
                                   
-                              
-#define utlCatch(e)               break;                         \
-                          case e: caught = 1;
+#define utlCatch(e)               break; \
+                          case e: utl_caught = 1;
                         
-#define utlCatchAny                break;                        \
-                          default: caught = 1;
+#define utlCatchAny                break; \
+                          default: utl_caught = 1;
                         
-#define utlTryEnd     }                                          \
-                      if (caught) utlErr = 0;                    \
-                      else if (utlErr) utlThrow(utlErr);         \
-                      else if (utl_jmp_cnt > 0) utl_jmp_cnt--;   \
+#define utlTryEnd     } \
+                      if (utl_caught) utlErr = 0; \
+                      else if (utlErr) utlThrow(utlErr); \
+                      else if (utl_jmp_cnt > 0) utl_jmp_cnt--;  \
                     } while (utlZero)
-                      
 
 /* 
 **  The function '{utlError} jumps out of the current function
 ** and executes the error handler function. If no handler has 
-** been defined, it exits
+** been defined, it exits.
 **
 */
 
@@ -241,8 +235,7 @@ extern int     utlErr;
                                   longjmp(utl_jmp_lst[--utl_jmp_cnt], utlErr):\
                                   exit(utlErr)))
 
-#define utlError(e,m)  (logError("ERR: %d %s",e,m), utlThrow(e))
-
+#define utlError(e,m) (logError("ERR: %d %s",e,(m||utlEmptyString),utlThrow(e))
 
 /* .% UnitTest
 ** ===========
@@ -266,15 +259,15 @@ extern int     utlErr;
                                TSTGTT=TSTGPAS=TSTPASS=TSTNSK=TSTNTD=0)
                                  
 #define TSTSET(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
-                        TSTPASSED; TSTDONE(),TSTPASSED=0)
+                                             TSTPASSED; TSTDONE(),TSTPASSED=0)
 
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
 #define TSTSECTION(s)  if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, \
                              TSTWRITE("#\n# * %d. %s (%s:%d)\n", \
-                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) \
-                         0; else                                               
+                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) 0; \
+                       else                                               
 
 /* to disable an entire test section, just prepend '|_| or '|X|*/
  
@@ -285,15 +278,15 @@ extern int     utlErr;
 ** of related functions can be tested.
 */
 #define TSTGROUP(s) \
-      if ((TSTWRITE("#\n# *   %d.%d %s\n", TSTSEC, ++TSTGRP, s), TSTNUM=0)) \
-        0; else
+    if ((TSTWRITE("#\n# *   %d.%d %s\n",TSTSEC,++TSTGRP,s),TSTNUM=0)) 0; \
+    else
                      
 /* to disable a n intere test group , just prepend '|_| or '|X| */
 #define XTSTGROUP(s) if (!utlZero) 0; else  
 #define _TSTGROUP(s) XTSTGROUP(s)
 
 /* You may want to disable just a block of instructions */
-#define TSTBLOCK   if (utlZero) 0; else  
+#define TSTBLOCK   if (utlZero)  0; else  
 #define XTSTBLOCK  if (!utlZero) 0; else
 #define _TSTBLOCK  XTSTBLOCK
                      
@@ -306,7 +299,7 @@ extern int     utlErr;
 
 #define TST(s,x) (TST_DO(s,(TSTSKP?1:(x))),TST_WRDIR, TSTWRITE("\n"), TSTRES)
 
-#define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++,   \
+#define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++, \
                      TSTPASSED = (TSTPASSED && (TSTRES || TSTTD)), \
                      TSTWRITE("%s %4d - %s (:%d)", \
                               (TSTRES? (TSTGPAS++,TSTPASS++,TSTOK) : TSTKO), \
@@ -322,28 +315,31 @@ extern int     utlErr;
 /* You can skip a set of tests giving a reason.
 ** Nested skips are not supported!
 */
-#define TSTSKIP(x,r) if (!(x)) 0; else for (TSTTD=r; TSTTD; TSTTD=NULL)
+#define TSTSKIP(x,r) if (!(x)) 0; else for (TSTSKP=r; TSTSKP; TSTSKP=NULL)
 
-#define TSTTODO(r) for (TSTTD=r; TSTTD; TSTTD=NULL)
+#define TSTTODO(r)   for (TSTTD=r; TSTTD; TSTTD=NULL)
 
-#define TSTNOTE(...) (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__),TSTWRITE("\n"))
-
+#define TSTNOTE(...)   (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__), \
+                                            TSTWRITE("\n"))
+                                            
 #define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
-#define TSTBAILOUT(r) if (!(r)) 0; else {TSTWRITE("Bail out! %s",r); TSTDONE(); exit(1);}
+#define TSTBAILOUT(r) \
+          if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
-          (TSTTOT == 0 ? 0 : (\
-           TSTWRITE("#\n# SECTION %d OK: %d/%d\n",TSTSEC,TSTPASS,TSTTOT),\
+          (TSTTOT == 0 ? 0 : ( \
+           TSTWRITE("#\n# SECTION %d OK: %d/%d\n",TSTSEC,TSTPASS,TSTTOT), \
            TSTTOT = 0))
 
 /* At the end of all the tests, the accumulated stats can be printed out */
 #define TSTDONE() \
-          (TSTGTT <= 0 ? 0 : ( TSTSTAT(), \
-          TSTWRITE("#\n# TOTAL OK: %d/%d\n",TSTGPAS,TSTGTT),\
-          TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED"),\
-          TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut)) )
+  (TSTGTT <= 0 ? 0 : ( TSTSTAT(),  \
+  TSTWRITE("#\n# TOTAL OK: %d/%d SKIP: %d TODO: %d\n",TSTGPAS,TSTGTT, \
+                                                              TSTNSK,TSTNTD), \
+  TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED"), \
+  TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut)) )
 
 /* Execute a statement if a test succeeded */
 #define TSTIF_OK  if (TSTRES)
@@ -598,40 +594,40 @@ extern FILE *log_file;
 ** documentation (e.g including the GraphViz description in comments).
 */
 
-#define fsmStart(x) for(;;){\
-          int utl_fsmcur; \
-          int utl_fsmcnt; \
-          int utl_fsmret; \
-          int utl_fsmrets[16]; \
-          for(utl_fsmcnt=0;utl_fsmcnt<16;utl_fsmcnt++) \
-            utl_fsmrets[utl_fsmcnt] = 0;\
-          for(utl_fsmret=0,utl_fsmcnt=0;;) { \
-            goto fsm_##x##_s;\
-            fsm_##x##_s : utl_fsmcur = __LINE__ ;  \
-                 if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
-                               
-
+#define fsmStart(x)  \
+   for (;;) { \
+     int utl_fsmcur; \
+     int utl_fsmcnt; \
+     int utl_fsmret; \
+     int utl_fsmrets[16];  \
+     for(utl_fsmcnt=0;utl_fsmcnt<16;utl_fsmcnt++)  \
+       utl_fsmrets[utl_fsmcnt] = 0;  \
+     for(utl_fsmret=0,utl_fsmcnt=0;;) {  \
+       goto fsm_##x##_s; \
+       fsm_##x##_s : utl_fsmcur = __LINE__ ; \
+            if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
 
 #define fsmState(x) \
-   fsm_##x##_s : utl_fsmcur = __LINE__ ;  \
-                 if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
+   fsm_##x##_s : utl_fsmcur = __LINE__ ; \
+                 if (!utl_fsmret || \
+                     (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
                                
 #define fsmGoto(x)  goto fsm_##x##_s
+
 #define fsmGosub(x) do { \
                       if (utl_fsmcnt < utl_fsmmax) \
                         utl_fsmrets[utl_fsmcnt++] = utl_fsmcur; \
                       goto fsm_##x##_s; \
                     } while (utlZero) 
                   
-#define fsmReturn do { \
-                    utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0);\
-                    continue; \
-                  } while (utlZero) 
+#define fsmReturn \
+           do { utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0); \
+                continue; \
+              } while (utlZero) 
 
 #define fsmExit(x) goto fsm_##x##_e 
 
 #define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; utl_fsmrets[0]+=0; break;} break;} 
-
 
 
 
@@ -676,11 +672,13 @@ int utl_check(void *ptr,char *file, int line)
   if (ptr == NULL) return utlMemNull;
   p = utl_mem(ptr);
   if (memcmp(p->chk,BEG_CHK,4)) { 
-    logError("Invalid or double freed %p (%u %s %d)",p->data,utl_mem_allocated, file, line);     
+    logError("Invalid or double freed %p (%u %s %d)",p->data, \
+                                               utl_mem_allocated, file, line);     
     return utlMemInvalid; 
   }
   if (memcmp(p->data+p->size,END_CHK,4)) {
-    logError("Boundary overflow detected %p [%d] (%u %s %d)",p->data, p->size, utl_mem_allocated, file, line); 
+    logError("Boundary overflow detected %p [%d] (%u %s %d)", \
+                              p->data, p->size, utl_mem_allocated, file, line); 
     return utlMemOverflow;
   }
   logInfo("Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
@@ -691,7 +689,8 @@ void *utl_malloc(size_t size, char *file, int line )
 {
   utl_mem_t *p;
   
-  if (size == 0) logWarn("Shouldn't allocate 0 bytes (%u %s %d)",utl_mem_allocated, file, line);
+  if (size == 0) logWarn("Shouldn't allocate 0 bytes (%u %s %d)", \
+                                                utl_mem_allocated, file, line);
   p = malloc(sizeof(utl_mem_t) +size);
   if (p == NULL) {
     logError("Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
@@ -701,7 +700,7 @@ void *utl_malloc(size_t size, char *file, int line )
   memcpy(p->chk,BEG_CHK,4);
   memcpy(p->data+p->size,END_CHK,4);
   utl_mem_allocated += size;
-  logInfo("alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated, file, line);
+  logInfo("alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated,file,line);
   return p->data;
 };
 
@@ -720,14 +719,16 @@ void utl_free(void *ptr, char *file, int line)
   utl_mem_t *p=NULL;
   
   switch (utl_check(ptr,file,line)) {
-    case utlMemNull  :    logInfo("free NULL (%u %s %d)", utl_mem_allocated, file, line);
+    case utlMemNull  :    logInfo("free NULL (%u %s %d)", \
+                                                utl_mem_allocated, file, line);
                           break;
                           
     case utlMemValid :    p = utl_mem(ptr); 
                           memcpy(p->chk,CLR_CHK,4);
     case utlMemOverflow : utl_mem_allocated -= p->size;
                           free(p);
-                          logInfo("free %p [%d] (%u %s %d)",ptr,p?p->size:0,utl_mem_allocated, file, line);
+                          logInfo("free %p [%d] (%u %s %d)", ptr, \
+                                    p?p->size:0,utl_mem_allocated, file, line);
                           break;
   }
 }
@@ -742,18 +743,22 @@ void *utl_realloc(void *ptr, size_t size, char *file, int line)
   } 
   else {
     switch (utl_check(ptr,file,line)) {
-      case utlMemNull     : logInfo("realloc NULL (%u %s %d)",utl_mem_allocated, file, line);
+      case utlMemNull     : logInfo("realloc NULL (%u %s %d)", \
+                                               utl_mem_allocated, file, line);
                             return utl_malloc(size,file,line);
                           
       case utlMemValid    : p = utl_mem(ptr); 
                             p = realloc(p,sizeof(utl_mem_t) + size); 
                             if (p == NULL) {
-                              logError("Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
+                              logError("Out of Memory (%u %s %d)", \
+                                               utl_mem_allocated, file, line);
                               return NULL;
                             }
                             utl_mem_allocated -= p->size;
                             utl_mem_allocated += size; 
-                            logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)",ptr, p->size, p->data, size, utl_mem_allocated, file, line);
+                            logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)", \
+                                            ptr, p->size, p->data, size, \
+                                            utl_mem_allocated, file, line);
                             p->size = size;
                             memcpy(p->chk,BEG_CHK,4);
                             memcpy(p->data+p->size,END_CHK,4);
@@ -778,7 +783,8 @@ void *utl_strdup(void *ptr, char *file, int line)
 
   dest = utl_malloc(size,file,line);
   if (dest) memcpy(dest,ptr,size);
-  logInfo("strdup %p [%d] -> %p (%u %s %d)",ptr, size, dest, utl_mem_allocated, file, line);
+  logInfo("strdup %p [%d] -> %p (%u %s %d)", ptr, size, dest, \
+                                                utl_mem_allocated, file, line);
   return dest;
 }
 #undef utl_mem
