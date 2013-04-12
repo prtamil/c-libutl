@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
       logError("%d - That's too important!",k++);
       TST("Log level respected",k == 12);
       logClose();
-      TST("Log file closed",logFile == stderr);
+      TST("Log file closed",logFile == stderr && log_file == NULL);
 
       TSTBLOCK { /* Log file has 5 lines */
         k = 0;
