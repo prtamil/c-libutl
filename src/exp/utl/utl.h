@@ -139,7 +139,7 @@ extern const int utlZero;
 ** directly, use the macro '{=utlOut} instead if you need to refer to 
 ** the file.
 **
-**   Actually I see no reason why you should need it, nut just in case ... 
+**   Actually I see no reason why you should need it, but just in case ... 
 */
 
 extern FILE *utl_output;
@@ -171,16 +171,10 @@ extern FILE *utl_output;
 */
 extern char *utlErrInternal; 
 
-#define utl_MAXTRY 8
-extern jmp_buf utl_jmp_lst[utl_MAXTRY];
-extern int     utl_jmp_cnt;
-extern int     utlErr;
 
 /* .%% Try/Catch
 ** ~~~~~~~~~~~~~~~~~~~~~~~
-**  Simple implementation of try/catch. Up to utl_MAXTRY (8) level of nested
-** try/catch are allowed but if you use so many level you have have most
-** probably big problems. Try to stay simple!
+**   Simple implementation of try/catch.
 **
 **   utlTry {
 **      ... code ...
@@ -199,42 +193,59 @@ extern int     utlErr;
 **                  // if no handler is found the program exits
 **      ... code ...
 **   }
-**   utlTryEnd ;
+**   utlFinally {  // Optional code to be execute at the end 
+**      ... code ...
+**   }
 ** 
+**  This comes useful when you throw an exception form a called function.
+**  The example below, handles the "out of mem" condition in the same place
+**  regardless of where the exception was raised.
+** 
+**   #define ERR_OUTOFMEM 0xF0CA
+**   char *f1(int x)   { ... utlThrow(ERR_OUTOFMEM} ... }
+**   void *f2(char *x) { ... utlThrow(ERR_OUTOFMEM} ... }
+**   utlTry {
+**      ... code ...
+**      f1(3); 
+**      ... code ...
+**      .... utlThrow(ERR_OUTFOMEM)...
+**      ... code ...
+**      f2("Hello"); 
+**      ... code ...
+**   }  
+**   utlCatch(ERR_OUTOFMEM) {
+**      ... code ... // Handle all your cleanup here!
+**   }
+**   utlTryEnd;
 */ 
 
-#define utl_jmp_next ((utl_jmp_cnt < utl_MAXTRY)? utl_jmp_cnt++ : utl_jmp_cnt)
-#define utl_jmp_prev ((utl_jmp_cnt > 0)         ? utl_jmp_cnt-- : utl_jmp_cnt)
+#define utl_TRYMAX 16
+extern int      utlErr;
+extern int      utl_jbn;
+extern jmp_buf  utl_jbv[utl_TRYMAX];  
 
-#define utlTry      do{ int utl_caught = 0; \
-                        switch (setjmp(utl_jmp_lst[utl_jmp_cnt])) { \
-                          case 0: if (utl_jmp_cnt<utl_MAXTRY) \
-                                    utl_jmp_cnt++;} \
-                                  utlErr = 0; utl_caught = 0;
-                                  
-#define utlCatch(e)               break; \
-                          case e: utl_caught = 1;
-                        
-#define utlCatchAny                break; \
-                          default: utl_caught = 1;
-                        
-#define utlTryEnd     } \
-                      if (utl_caught) utlErr = 0; \
-                      else if (utlErr) utlThrow(utlErr); \
-                      else if (utl_jmp_cnt > 0) utl_jmp_cnt--;  \
-                    } while (utlZero)
+#define utlTry      for (  utlErr=-1  \
+                         ; utlErr == -1 && utl_jbn < utl_TRYMAX; \
+                         ; (utl_jbn> 0 ? utl_jbn-- : 0 ) , \
+                           (utlErr > 0)?utlThrow(utlErr):0, \
+                           (utlErr = 0) ) \
+                       if ((utlErr = setjmp(utl_jbv[utl_jbn++])) == 0 )
+
+#define utlCatch(e)    else if ((utlErr == (e)) && ((utlErr = 0) == 0))
+
+#define utlCatchAny    else for ( ;utlErr > 0; utlErr = 0)
+
+              
+#define utlThrow(e) (utlErr=e, (utl_jbn>0 && utlErr? \
+                                  longjmp(utl_jbv[utl_jbn-1], utlErr):\
+                                  exit(utlErr)))
 
 /* 
-**  The function '{utlError} jumps out of the current function
+**  The function '{utlError} jumps out of the current try
 ** and executes the error handler function. If no handler has 
 ** been defined, it exits.
 **
 */
-
-#define utlThrow(e) (utlErr=e, (utl_jmp_cnt && utlErr? \
-                                  longjmp(utl_jmp_lst[--utl_jmp_cnt], utlErr):\
-                                  exit(utlErr)))
-
 #define utlError(e,m) (logError("ERR: %d %s",e,(m||utlEmptyString),utlThrow(e))
 
 /* .% UnitTest
@@ -251,6 +262,9 @@ extern int     utlErr;
 
 #ifdef UTL_UNITTEST
 
+/* Output is flushed every time to avoid we lose a message in case of
+** abnormal exit. 
+*/
 #define TSTWRITE(...) (fprintf(utlOut,__VA_ARGS__),fflush(utlOut))
 
 #define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s - (%s)\n",s,__FILE__)
@@ -258,7 +272,7 @@ extern int     utlErr;
 #define TST_INIT0 (TSTRES=TSTNUM=TSTGRP=TSTSEC=TSTTOT= \
                                TSTGTT=TSTGPAS=TSTPASS=TSTNSK=TSTNTD=0)
                                  
-#define TSTSET(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
+#define TSTPLAN(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
                                              TSTPASSED; TSTDONE(),TSTPASSED=0)
 
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
@@ -281,14 +295,14 @@ extern int     utlErr;
     if ((TSTWRITE("#\n# *   %d.%d %s\n",TSTSEC,++TSTGRP,s),TSTNUM=0)) 0; \
     else
                      
-/* to disable a n intere test group , just prepend '|_| or '|X| */
+/* to disable a n entire test group , just prepend '|_| or '|X| */
 #define XTSTGROUP(s) if (!utlZero) 0; else  
 #define _TSTGROUP(s) XTSTGROUP(s)
 
-/* You may want to disable just a block of instructions */
-#define TSTBLOCK   if (utlZero)  0; else  
-#define XTSTBLOCK  if (!utlZero) 0; else
-#define _TSTBLOCK  XTSTBLOCK
+/* Test code will be skipped if needed */
+#define TSTCODE   if (TSTSKP)   0; else  
+#define XTSTCODE  if (!utlZero) 0; else
+#define _TSTCODE  XTSTCODE
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
 **   .['|s|] is a short string that identifies the test
@@ -319,10 +333,10 @@ extern int     utlErr;
 
 #define TSTTODO(r)   for (TSTTD=r; TSTTD; TSTTD=NULL)
 
-#define TSTNOTE(...)   (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__), \
-                                            TSTWRITE("\n"))
+#define TSTNOTE(...) \
+                 (TSTWRITE("#      "),TSTWRITE(__VA_ARGS__), TSTWRITE("\n"))
                                             
-#define TSTONFAIL(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
+#define TSTFAILNOTE(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
 #define TSTBAILOUT(r) \
           if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
@@ -338,7 +352,7 @@ extern int     utlErr;
   (TSTGTT <= 0 ? 0 : ( TSTSTAT(),  \
   TSTWRITE("#\n# TOTAL OK: %d/%d SKIP: %d TODO: %d\n",TSTGPAS,TSTGTT, \
                                                               TSTNSK,TSTNTD), \
-  TSTWRITE("#\n# TEST SET: %s \n",TSTPASSED ? "PASSED" : "FAILED"), \
+  TSTWRITE("#\n# TEST PLAN: %s \n",TSTPASSED ? "PASSED" : "FAILED"), \
   TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut)) )
 
 /* Execute a statement if a test succeeded */
@@ -826,9 +840,11 @@ char *utlEmptyString = "";
 
 char *utlErrInternal = "Internal error" ;
 FILE *utl_output = NULL;
-jmp_buf utl_jmp_lst[utl_MAXTRY];
-int     utl_jmp_cnt = 0;
+
 int     utlErr = 0;
+int     utl_jbn = 0;
+jmp_buf utl_jbv[utl_TRYMAX];  
+jmp_buf *utl_jb;  
 
 /*************************************/
 #ifndef UTL_NOLOGGING

@@ -19,7 +19,7 @@ int c=0;
 int main (int argc, char *argv[])
 {
 
-  TSTSET("utl unit test: general") {
+  TSTPLAN("utl unit test: general") {
   
     TSTSECTION("General use constants") {
       TSTGROUP("utlEmptyFun()") {
@@ -56,16 +56,14 @@ int main (int argc, char *argv[])
         TST("utlOut equals utl_output", utlOut == utl_output);
         
         utlSetOutput(NULL);
-        TSTBLOCK {
-          TSTNOTE("Read them back!");
+        TSTCODE {
           f = fopen("TSTOUT.tmp","r");
-          if (f) {
-            while (fgets(buf,512,f))
-              fputs(buf,utlOut);
-          }
-          TST("Able to read it back",f != NULL);
+        } TST("Able to read it back",f != NULL);
+        if (!TSTFAILED) {
+          TSTNOTE("Check the number order!");
+          while (fgets(buf,512,f)) fputs(buf,utlOut);
+          fclose(f); f = NULL;
         }
-        if (f) {fclose(f); f = NULL;}
         TST("Back to default (NULL)", utl_output == NULL);
         TST("Back to default (stderr)", utlOut == stderr);
         
@@ -73,5 +71,4 @@ int main (int argc, char *argv[])
     }
   }
    
-  //TSTDONE();
 }
