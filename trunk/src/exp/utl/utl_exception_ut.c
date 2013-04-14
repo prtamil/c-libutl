@@ -32,8 +32,7 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          utlTry      { 
-          utlThrow(1); }
+          utlTry      { utlThrow(1); }
           utlCatch(1) { k = 1; }
           utlCatch(2) { k = 2; }
           utlCatchAny { k = 9; }
@@ -153,6 +152,22 @@ int main (int argc, char *argv[])
           utlCatch(2) {k += 2;}
         }
         TST("Exception 2 caught", k==2);
+      }
+      
+      TSTGROUP("Visibility") {
+        TSTCODE {
+          k = 0;
+          utlTry {
+            utlTry      { functhrow(2); }
+            utlCatch(10) {k += 10;}
+            utlCatch(20) {k += 20;}
+          }
+          utlCatch(1) {k += 1;}
+          utlCatch(2) {k += 2; functhrow(10);}
+          utlCatchAny {k += 100;}
+        }
+        TST("Inner try are invisible", k==102);
+        TSTEXPECTED("%d",102,"%d",k);
       }
 
     }
