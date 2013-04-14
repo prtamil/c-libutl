@@ -193,9 +193,6 @@ extern char *utlErrInternal;
 **                  // if no handler is found the program exits
 **      ... code ...
 **   }
-**   utlFinally {  // Optional code to be execute at the end 
-**      ... code ...
-**   }
 ** 
 **  This comes useful when you throw an exception form a called function.
 **  The example below, handles the "out of mem" condition in the same place
@@ -216,7 +213,6 @@ extern char *utlErrInternal;
 **   utlCatch(ERR_OUTOFMEM) {
 **      ... code ... // Handle all your cleanup here!
 **   }
-**   utlTryEnd;
 */ 
 
 #define utl_TRYMAX 16
@@ -224,17 +220,16 @@ extern int      utlErr;
 extern int      utl_jbn;
 extern jmp_buf  utl_jbv[utl_TRYMAX];  
 
-#define utlTry      for (  utlErr=-1  \
-                         ; utlErr == -1 && utl_jbn < utl_TRYMAX; \
+#define utlTry      for (  utlErr = -1  \
+                         ; utlErr == -1 && utl_jbn < utl_TRYMAX \
                          ; (utl_jbn> 0 ? utl_jbn-- : 0 ) , \
-                           (utlErr > 0)?utlThrow(utlErr):0, \
+                           ((utlErr > 0)? utlThrow(utlErr) : 0), \
                            (utlErr = 0) ) \
                        if ((utlErr = setjmp(utl_jbv[utl_jbn++])) == 0 )
 
 #define utlCatch(e)    else if ((utlErr == (e)) && ((utlErr = 0) == 0))
 
 #define utlCatchAny    else for ( ;utlErr > 0; utlErr = 0)
-
               
 #define utlThrow(e) (utlErr=e, (utl_jbn>0 && utlErr? \
                                   longjmp(utl_jbv[utl_jbn-1], utlErr):\
@@ -338,6 +333,9 @@ extern jmp_buf  utl_jbv[utl_TRYMAX];
                                             
 #define TSTFAILNOTE(...) (TSTRES? 0 : (TSTNOTE(__VA_ARGS__)))
 
+#define TSTEXPECTED(f1,v1,f2,v2) \
+                             (TSTRES? 0 : (TSTNOTE("Expected "f1" got "f2,v1,v2)))
+
 #define TSTBAILOUT(r) \
           if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
 
@@ -406,7 +404,6 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #define log_Fatal  5
 #define log_Msg    6
 #define log_Off    7
-
 #ifndef UTL_NOLOGGING
 #include <time.h>
 #include <ctype.h>
@@ -652,6 +649,7 @@ extern FILE *log_file;
 #define utlMemOverflow   -1
 #define utlMemValid       0
 #define utlMemNull        1
+#define utlMemFreed       2
 
 #ifdef UTL_MEMCHECK
 void *utl_malloc  (size_t size, char *file, int line );
@@ -813,10 +811,12 @@ void *utl_strdup(void *ptr, char *file, int line)
 #define strdup(p)     utl_strdup(p,__FILE__,__LINE__)
 
 #define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
+#define utlMemAllocated utl_mem_allocated
 
 #else /* UTL_MEMCHECK */
 
 #define utlMemCheck(p) utlMemValid
+#define utlMemAllocated 0
 
 #endif /* UTL_MEMCHECK */
 
