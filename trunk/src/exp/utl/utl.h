@@ -205,7 +205,7 @@ extern char *utlErrInternal;
 **      ... code ...
 **      f1(3); 
 **      ... code ...
-**      .... utlThrow(ERR_OUTFOMEM)...
+**      if ... utlThrow(ERR_OUTFOMEM) 
 **      ... code ...
 **      f2("Hello"); 
 **      ... code ...
@@ -735,12 +735,21 @@ void utl_free(void *ptr, char *file, int line)
                                                 utl_mem_allocated, file, line);
                           break;
                           
+    case utlMemOverflow :
     case utlMemValid :    p = utl_mem(ptr); 
                           memcpy(p->chk,CLR_CHK,4);
-    case utlMemOverflow : utl_mem_allocated -= p->size;
+                          utl_mem_allocated -= p->size;
                           free(p);
                           logInfo("free %p [%d] (%u %s %d)", ptr, \
                                     p?p->size:0,utl_mem_allocated, file, line);
+                          break;
+                          
+    case utlMemFreed :    logInfo("free an already free block! (%u %s %d)", \
+                                                utl_mem_allocated, file, line);
+                          break;
+                          
+    case utlMemInvalid :  logInfo("free an invalid pointer! (%u %s %d)", \
+                                                utl_mem_allocated, file, line);
                           break;
   }
 }
@@ -812,11 +821,13 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
 #define utlMemAllocated utl_mem_allocated
+#define utlMemValidate(p) utl_mem_validate(p)
 
 #else /* UTL_MEMCHECK */
 
 #define utlMemCheck(p) utlMemValid
 #define utlMemAllocated 0
+#define utlMemValidate(p) (p)
 
 #endif /* UTL_MEMCHECK */
 
