@@ -83,6 +83,13 @@
 #endif
 #endif
 
+#ifdef UTL_C
+#define UTL_EXTERN(n,v) n v
+#else
+#define UTL_EXTERN(n,v) extern n
+#endif
+
+#define UTL_NOINIT ;
 
 /* .% Variables
 ** ============
@@ -99,13 +106,16 @@
 */
 
 int utlEmptyFun(void); 
+#ifdef UTL_C
+int   utlEmptyFun(void) {return 0;}
+#endif
 
 /*  .[utlEmptyString]  A pointer to the empty string "" that provides unique
 **                     representation for the empty string.  
 **  ..
 */
 
-extern char *utlEmptyString;
+UTL_EXTERN(char *utlEmptyString, = "");
 
 /*   .[utlZero]  Is a constant whose value is 0 and that is to be used in
 **               idioms like '|do { ... } while (utlZero)|.
@@ -113,11 +123,12 @@ extern char *utlEmptyString;
 **               constant values.
 **   ..
 */
+
   
 #ifdef __GNUC__
 #define utlZero 0
 #else
-extern const int utlZero;
+UTL_EXTERN(const int utlZero, = 0);
 #endif
 
 #ifdef _MSC_VER
@@ -142,7 +153,8 @@ extern const int utlZero;
 **   Actually I see no reason why you should need it, but just in case ... 
 */
 
-extern FILE *utl_output;
+UTL_EXTERN(FILE *utl_output, = NULL);
+
 #define utlOut (utl_output? utl_output: stderr)
 
 /*   The '/public/ function to set the output file, is '{=utlSetOutput()}
@@ -157,22 +169,9 @@ extern FILE *utl_output;
 #define utlSetOutput(fname) ((utl_output ? fclose(utl_output) : 0),\
                              (utl_output = (fname? fopen(fname,"w"): NULL)))
 
-/* .% Errors Handling
-** ==================
-**  Functions to handle serious errors.  
-**  The error number is used to differentiate between errors:
-**
-**   Error codes are decimal numbers between 0 and 9999. The most significant
-**  dgit determines which handler is invoked. 
-*/
+#ifndef UTL_NOTRYCATCH
 
-/* '{=utlErrInternal} is provided to avoid repeating the string over
-** and over again in the code.
-*/
-extern char *utlErrInternal; 
-
-
-/* .%% Try/Catch
+/* .% Try/Catch
 ** ~~~~~~~~~~~~~~~~~~~~~~~
 **   Simple implementation of try/catch.
 **
@@ -216,9 +215,10 @@ extern char *utlErrInternal;
 */ 
 
 #define utl_TRYMAX 16
-extern int      utlErr;
-extern int      utl_jbn;
-extern jmp_buf  utl_jbv[utl_TRYMAX];  
+
+UTL_EXTERN( int     utlErr , = 0);
+UTL_EXTERN( int     utl_jbn , = 0);
+UTL_EXTERN( jmp_buf utl_jbv[utl_TRYMAX], UTL_NOINIT );  
 
 #define utlTry      for (  utlErr = -1  \
                          ; utlErr == -1 && utl_jbn < utl_TRYMAX \
@@ -235,12 +235,17 @@ extern jmp_buf  utl_jbv[utl_TRYMAX];
                                   longjmp(utl_jbv[utl_jbn-1], utlErr):\
                                   exit(utlErr)))
 
-/* 
-**  The function '{utlError} writes a message in the log file and raise
-**  the exception that caused the error.
+/* .%% Errors Handling
+** ==================
+**  Functions to handle serious errors.  
 **
 */
-#define utlError(e,m) (logError("%d %s",e,(m||utlEmptyString),utlThrow(e))
+#define utlError(e,m) (logError("%04d %s",e,(m?m:utlEmptyString),\
+                       (e>0)? utlThrow(e) : exit(-e))
+                       
+#define utlFatal(e)  (logFatal("%04d %s",e,(m?m:utlEmptyString),exit(e))
+
+#endif
 
 /* .% UnitTest
 ** ===========
@@ -404,14 +409,19 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #define log_Fatal  5
 #define log_Msg    6
 #define log_Off    7
+
 #ifndef UTL_NOLOGGING
+
 #include <time.h>
 #include <ctype.h>
+                           /* 0     1     2     3     4     5     6     7 */
+#define UTL_ABBREV         {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"}
+UTL_EXTERN( char const *log_abbrev[] , = UTL_ABBREV);
 
-extern int         log_level;
-extern char        log_timestr[32];
-extern time_t      log_time;
-extern char const *log_abbrev[];
+UTL_EXTERN( FILE       *log_file , = NULL);
+UTL_EXTERN( int         log_level, = log_Off);
+UTL_EXTERN( char        log_timestr[32], UTL_NOINIT);
+UTL_EXTERN( time_t      log_time , = 0 );
 
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
@@ -471,7 +481,6 @@ int log_levelenv(const char *var, int level);
 ** you should use the '{=logFile} macro.
 */
 
-extern FILE *log_file;
 #define logFile         (log_file? log_file: stderr) 
 
 /*    Log files can be opened in "write" or "append" mode as any normal file 
@@ -561,7 +570,7 @@ extern FILE *log_file;
 
 #ifdef NDEBUG
 #undef logDebug
-#define logDebug(...)
+#define logDebug(...) (utl_output = utl_output)
 #endif
 
 #define _logDebug(...)
@@ -760,27 +769,27 @@ void *utl_realloc(void *ptr, size_t size, char *file, int line)
   } 
   else {
     switch (utl_check(ptr,file,line)) {
-      case utlMemNull     : logInfo("realloc NULL (%u %s %d)", \
-                                               utl_mem_allocated, file, line);
-                            return utl_malloc(size,file,line);
-                          
-      case utlMemValid    : p = utl_mem(ptr); 
-                            p = realloc(p,sizeof(utl_mem_t) + size); 
-                            if (p == NULL) {
-                              logError("Out of Memory (%u %s %d)", \
-                                               utl_mem_allocated, file, line);
-                              return NULL;
-                            }
-                            utl_mem_allocated -= p->size;
-                            utl_mem_allocated += size; 
-                            logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)", \
-                                            ptr, p->size, p->data, size, \
-                                            utl_mem_allocated, file, line);
-                            p->size = size;
-                            memcpy(p->chk,BEG_CHK,4);
-                            memcpy(p->data+p->size,END_CHK,4);
-                            ptr = p->data;
-                            break;
+      case utlMemNull   : logInfo("realloc NULL (%u %s %d)", \
+                                             utl_mem_allocated, file, line);
+                          return utl_malloc(size,file,line);
+                        
+      case utlMemValid  : p = utl_mem(ptr); 
+                          p = realloc(p,sizeof(utl_mem_t) + size); 
+                          if (p == NULL) {
+                            logError("Out of Memory (%u %s %d)", \
+                                             utl_mem_allocated, file, line);
+                            return NULL;
+                          }
+                          utl_mem_allocated -= p->size;
+                          utl_mem_allocated += size; 
+                          logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)", \
+                                          ptr, p->size, p->data, size, \
+                                          utl_mem_allocated, file, line);
+                          p->size = size;
+                          memcpy(p->chk,BEG_CHK,4);
+                          memcpy(p->data+p->size,END_CHK,4);
+                          ptr = p->data;
+                          break;
     }
   }
   return ptr;
@@ -832,50 +841,4 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 /**************************************************************************/
 
-#ifdef UTL_C
-
-#ifndef __GNUC__
-const int utlZero = 0 ;
-#endif
-
-int utlEmptyFun(void) {return 0;}
-char *utlEmptyString = "";
-
-/* % Error handlers
-** ================ 
-*/
-
-char *utlErrInternal = "Internal error" ;
-FILE *utl_output = NULL;
-
-int     utlErr = 0;
-int     utl_jbn = 0;
-jmp_buf utl_jbv[utl_TRYMAX];  
-jmp_buf *utl_jb;  
-
-/*************************************/
-#ifndef UTL_NOLOGGING
-FILE *log_file = NULL;
-int log_level = log_Off;
-/*
-** These variables are used internally to compose and print log messages:
-**
-**  .['{=log_abbrev}] The string abbreviations for the levels. 
-**  ..
-*/
-
-                           /* 0     1     2     3     4     5     6     7 */
-char const *log_abbrev[] = {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"};
-
-/* 
-**  .['{=log_timestr}]  A buffer to compose current time.
-**   ['{=log_time}]     A '|time_t| structure to compose current time. 
-**  .. 
-*/
-
-char log_timestr[32];
-time_t log_time = 0 ;
-#endif /* UTL_NOLOGGING */
-
-#endif
 
