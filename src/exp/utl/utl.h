@@ -87,7 +87,7 @@
 /* .% Variables
 ** ============
 **
-**  A set of variable for generic use provided by for convenience.
+**  A set of constants for generic use. Provided by for convenience.
 **
 **  .[utlEmptyFun]  A pointer to a do-nothing function that can be used
 **                  as a generic placeholder (or NULL indicator) for
@@ -236,18 +236,18 @@ extern jmp_buf  utl_jbv[utl_TRYMAX];
                                   exit(utlErr)))
 
 /* 
-**  The function '{utlError} jumps out of the current try
-** and executes the error handler function. If no handler has 
-** been defined, it exits.
+**  The function '{utlError} writes a message in the log file and raise
+**  the exception that caused the error.
 **
 */
-#define utlError(e,m) (logError("ERR: %d %s",e,(m||utlEmptyString),utlThrow(e))
+#define utlError(e,m) (logError("%d %s",e,(m||utlEmptyString),utlThrow(e))
 
 /* .% UnitTest
 ** ===========
 **
 **   These macros will help you writing unit tests.  The log produced
-** is '<TAP 1.3=http://testanything.org> compatible.
+** is '<TAP 1.3=http://testanything.org> compatible and also contains
+** all the information about passing/failing.
 **
 **   They are available only if the symbol '|UTL_UNITTEST| is defined before
 ** including the '|utl.h| header.
@@ -435,12 +435,12 @@ int log_levelenv(const char *var, int level);
 ** .v
 **                       message level 
 **                    DBG INF WRN ERR FTL
+**               ALL   Y   Y   Y   Y   Y
 **               DBG   Y   Y   Y   Y   Y
 **               INF   N   Y   Y   Y   Y
 **      current  WRN   N   N   Y   Y   Y
 **      logging  ERR   N   N   N   Y   Y
 **       level   FTL   N   N   N   N   Y
-**               ALL   Y   Y   Y   Y   Y
 **               OFF   N   N   N   N   N
 ** ..
 */
@@ -491,16 +491,16 @@ extern FILE *log_file;
 
 #define logClose() logOpen(NULL,NULL)
 
-/*   To actually write a message on the log file, use the '{=logWrite()}
+/*   To actually write a message on the log file, use the '{=log_write()}
 ** function as if it was a '|printf()| with the exception that the first
 ** paratmeter is the level of the message.
 ** Example:
 ** .v
-**    logWrite(log_Info,"Something weird at %d is happening", counter);
+**    log_write(log_Info,"Something weird at %d is happening", counter);
 ** ..
 */
 
-#define logWrite(lvl,...) \
+#define log_write(lvl,...) \
        (lvl >= log_level  \
           ? (time(&log_time),\
              strftime(log_timestr,32,"%Y-%m-%d %X",localtime(&log_time)),\
@@ -513,27 +513,21 @@ extern FILE *log_file;
 /* You can also use one of the following functions that won't require you 
 ** to pass the message level as parameter:
 */          
-#define logDebug(...)    logWrite(log_Debug, __VA_ARGS__)
-#define logInfo(...)     logWrite(log_Info,  __VA_ARGS__)
-#define logWarn(...)     logWrite(log_Warn,  __VA_ARGS__)
-#define logError(...)    logWrite(log_Error, __VA_ARGS__)
-#define logFatal(...)    logWrite(log_Fatal, __VA_ARGS__)
-#define logMessage(...)  logWrite(log_Msg,   __VA_ARGS__)
+#define logDebug(...)    log_write(log_Debug, __VA_ARGS__)
+#define logInfo(...)     log_write(log_Info,  __VA_ARGS__)
+#define logWarn(...)     log_write(log_Warn,  __VA_ARGS__)
+#define logError(...)    log_write(log_Error, __VA_ARGS__)
+#define logFatal(...)    log_write(log_Fatal, __VA_ARGS__)
+#define logMessage(...)  log_write(log_Msg,   __VA_ARGS__)
 
 /* If you want to add something to the log file without creating a new entry
 ** in the log file, you can use the '{=logMessage()} function. 
 */
-#define logNote(...)  (fprintf(logFile,__VA_ARGS__), fflush(logFile))
 
-#define logIndent     "\n                        "    
-#define logContinue(...)  (fputs(logIndent,logFile),logNote(__VA_ARGS__))                       
-
-/*   To ease text alignment in the log, the string '{=logIndent} contains 
-** the spaces needed to pass the date, time and type field.
-** For example:
+/*   
 ** .v
 **   logError("Too many items at counter %d (%d)",numcounter,numitems);
-**   logContinue("Occured %d times",times++);
+**   logNote("Occured %d times",times++);
 ** ..
 ** will produce:
 ** .v
@@ -541,6 +535,9 @@ extern FILE *log_file;
 **                             Occured 3 times
 ** ..
 */
+
+#define logNote(...)  (fputs("\n                        ",logFile), \
+                       fprintf(logFile,__VA_ARGS__), fflush(logFile))                       
 
 #define logIf(lvl) if (log_level >= log_##lvl)
 
@@ -551,7 +548,6 @@ extern FILE *log_file;
 #define logFile stderr          (utl_output = utl_output)
 #define logOpen(fname,mode)     (utl_output = utl_output)
 #define logClose()              (utl_output = utl_output)
-#define logWrite(lvl,...)       (utl_output = utl_output)
 #define logDebug(...)           (utl_output = utl_output)
 #define logInfo(...)            (utl_output = utl_output)
 #define logWarn(...)            (utl_output = utl_output)
