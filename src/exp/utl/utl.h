@@ -84,12 +84,12 @@
 #endif
 
 #ifdef UTL_C
-#define UTL_EXTERN(n,v) n v
+#define utl_extern(n,v) n v
 #else
-#define UTL_EXTERN(n,v) extern n
+#define utl_extern(n,v) extern n
 #endif
 
-#define UTL_NOINIT ;
+#define utl_initvoid ;
 
 /* .% Variables
 ** ============
@@ -115,7 +115,7 @@ int   utlEmptyFun(void) {return 0;}
 **  ..
 */
 
-UTL_EXTERN(char *utlEmptyString, = "");
+utl_extern(char *utlEmptyString, = "");
 
 /*   .[utlZero]  Is a constant whose value is 0 and that is to be used in
 **               idioms like '|do { ... } while (utlZero)|.
@@ -128,7 +128,7 @@ UTL_EXTERN(char *utlEmptyString, = "");
 #ifdef __GNUC__
 #define utlZero 0
 #else
-UTL_EXTERN(const int utlZero, = 0);
+utl_extern(const int utlZero, = 0);
 #endif
 
 #ifdef _MSC_VER
@@ -153,7 +153,7 @@ UTL_EXTERN(const int utlZero, = 0);
 **   Actually I see no reason why you should need it, but just in case ... 
 */
 
-UTL_EXTERN(FILE *utl_output, = NULL);
+utl_extern(FILE *utl_output, = NULL);
 
 #define utlOut (utl_output? utl_output: stderr)
 
@@ -214,14 +214,14 @@ UTL_EXTERN(FILE *utl_output, = NULL);
 **   }
 */ 
 
-#define utl_TRYMAX 16
+#define utl_trymax 16
 
-UTL_EXTERN( int     utlErr , = 0);
-UTL_EXTERN( int     utl_jbn , = 0);
-UTL_EXTERN( jmp_buf utl_jbv[utl_TRYMAX], UTL_NOINIT );  
+utl_extern( int     utlErr , = 0);
+utl_extern( int     utl_jbn , = 0);
+utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );  
 
 #define utlTry      for (  utlErr = -1  \
-                         ; utlErr == -1 && utl_jbn < utl_TRYMAX \
+                         ; utlErr == -1 && utl_jbn < utl_trymax \
                          ; (utl_jbn> 0 ? utl_jbn-- : 0 ) , \
                            ((utlErr > 0)? utlThrow(utlErr) : 0), \
                            (utlErr = 0) ) \
@@ -422,13 +422,13 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #include <time.h>
 #include <ctype.h>
                            /* 0     1     2     3     4     5     6     7 */
-#define UTL_ABBREV         {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"}
-UTL_EXTERN( char const *log_abbrev[] , = UTL_ABBREV);
+#define utl_abbrev         {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"}
+utl_extern( char const *log_abbrev[] , = utl_abbrev);
 
-UTL_EXTERN( FILE       *log_file , = NULL);
-UTL_EXTERN( int         log_level, = log_Off);
-UTL_EXTERN( char        log_timestr[32], UTL_NOINIT);
-UTL_EXTERN( time_t      log_time , = 0 );
+utl_extern( FILE       *log_file , = NULL);
+utl_extern( int         log_level, = log_Off);
+utl_extern( char        log_timestr[32], utl_initvoid);
+utl_extern( time_t      log_time , = 0 );
 
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
