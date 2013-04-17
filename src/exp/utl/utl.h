@@ -240,10 +240,17 @@ UTL_EXTERN( jmp_buf utl_jbv[utl_TRYMAX], UTL_NOINIT );
 **  Functions to handle serious errors.  
 **
 */
-#define utlError(e,m) (logError("%04d %s",e,(m?m:utlEmptyString),\
-                       (e>0)? utlThrow(e) : exit(-e))
+#define utlError(e,m) do { \
+                        int utl_e = e; char *utl_m=(char *)(m); \
+                        logError("%04d %s",utl_e,(utl_m?utl_m:utlEmptyString); \
+                        if (utl_e > 0) utlThrow(utl_e) else exit(-utl_e);
+                      } while (utlZero)
                        
-#define utlFatal(e)  (logFatal("%04d %s",e,(m?m:utlEmptyString),exit(e))
+#define utlFatal(e)   do { \
+                        int utl_e = e; char *utl_m=(char *)(m); \
+                        logFatal("%04d %s",utl_e,(utl_m?utl_m:utlEmptyString); \
+                        exit(utl_e > 0 ? utl_e : -utl_e); \
+                      } while (utlZero)
 
 #endif
 
