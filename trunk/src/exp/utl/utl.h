@@ -234,6 +234,7 @@ utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );
 #define utlThrow(e) (utlErr=e, (utl_jbn>0 && utlErr? \
                                   longjmp(utl_jbv[utl_jbn-1], utlErr):\
                                   exit(utlErr)))
+#define utlReThrow  break
 
 /* .%% Errors Handling
 ** ==================
