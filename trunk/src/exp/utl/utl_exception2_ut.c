@@ -38,7 +38,7 @@ int main (int argc, char *argv[])
           utlTry      { utlThrow(2);}
           utlCatch(1) { k = 1; }
           utlCatch(2) { k = 2; }
-        } TST("Exception caught", k==2);
+        } TSTEQINT("Exception caught", 2,k);
         TSTCODE {
           k = 9999;
           utlTry      { utlThrow(4); }

@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
           utlCatch(2) { k = 2; }
           utlCatchAny { k = 9; }
           
-        } TST("Exception 1 caught", k==1);
+        } TSTEQINT("Exception 1 caught", 1,k);
       }
      
       TSTGROUP("catch 2") {
@@ -47,7 +47,7 @@ int main (int argc, char *argv[])
           utlCatch(1) { k = 1; }
           utlCatch(2) { k = 2; }
           utlCatchAny { k = 9; }
-        } TST("Exception 2 caught", k==2);
+        } TSTEQINT("Exception 2 caught", 2,k);
       }
       
       TSTGROUP("catch default") {
@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
           utlCatch(1) { k = 1; }
           utlCatch(2) { k = 2; }
           utlCatchAny { k = 9; }
-        } TST("Exception not caught", k==9);
+        } TSTEQINT("Exception not caught", 9,k);
       }
 
     }
@@ -70,7 +70,7 @@ int main (int argc, char *argv[])
           utlCatch(1)  k = 1;
           utlCatch(2)  k = 2;
           utlCatchAny  k = 9;
-        } TST("Exception 1 caught", k==1);
+        } TSTEQINT("Exception 1 caught", 1,k);
       }
       
       TSTGROUP("catch 2") {
@@ -80,7 +80,7 @@ int main (int argc, char *argv[])
           utlCatch(1)  k = 1;
           utlCatch(2)  k = 2;
           utlCatchAny  k = 9;
-        } TST("Exception 2 caught", k==2);
+        } TSTEQINT("Exception 2 caught", 2,k);
       }
       
       TSTGROUP("catch default") {
@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
           utlCatch(1)  k = 1;
           utlCatch(2)  k = 2;
           utlCatchAny  k = 9;
-        } TST("Exception not caught", k==9);
+        } TSTEQINT("Exception not caught", 9,k);
       }
     }
     
@@ -101,7 +101,7 @@ int main (int argc, char *argv[])
           utlTry       functhrow(1);
           utlCatch(1)  k = 1;
           utlCatch(2)  k = 2;
-        } TST("Exception 1 caught", k==1);
+        } TSTEQINT("Exception 1 caught", 1,k);
       }
       
       TSTGROUP("catch 2") {
@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
           utlCatch(1)  k = 1;
           utlCatch(2)  k = 2;
         }
-        TST("Exception 2 caught", k==2);
+        TSTEQINT("Exception 2 caught", 2,k);
       }
       
       TSTGROUP("catch default") {
@@ -122,7 +122,7 @@ int main (int argc, char *argv[])
           utlCatch(2)  k = 2;
           utlCatchAny  k = 9;
         }
-        TST("Exception not caught", k==9);
+        TSTEQINT("Exception not caught", 9,k);
         TSTFAILNOTE("Expected: %d got: %d",9,k);
       }
     }
@@ -139,7 +139,7 @@ int main (int argc, char *argv[])
           utlCatch(1) {k += 1;}
           utlCatch(2) {k += 2;}
         }
-        TST("Exception 20 caught", k==20);
+        TSTEQINT("Exception 20 caught", 20,k);
         
         TSTCODE {
           k = 0;
@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
           utlCatch(1) {k += 1;}
           utlCatch(2) {k += 2;}
         }
-        TST("Exception 2 caught", k==2);
+        TSTEQINT("Exception 2 caught", 2,k);
       }
       
       TSTGROUP("Visibility") {
@@ -166,7 +166,7 @@ int main (int argc, char *argv[])
           utlCatch(2) {k += 2; functhrow(10);}
           utlCatchAny {k += 100;}
         }
-        TST("Inner try are invisible", k==102);
+        TSTEQINT("Inner try are invisible", 102,k);
         TSTEXPECTED("%d",102,"%d",k);
       }
 
@@ -180,7 +180,7 @@ int main (int argc, char *argv[])
           utlCatch(1) { k += 1; }
           utlCatch(2) { k += 2; functhrow(1);}
           utlCatchAny { k += 9; }
-        } TST("Exception 2 then 1 caught", k==3);
+        } TSTEQINT("Exception 2 then 1 caught", 3,k);
       }
         
       TSTGROUP("Nested try") {
@@ -194,7 +194,7 @@ int main (int argc, char *argv[])
           utlCatch(1) {k += 1;}
           utlCatch(2) {k += 2;}
           
-        }  TST("Exception 10,20,2 caught", k==32);
+        }  TSTEQINT("Exception 10,20,2 caught", 32,k);
         
         TSTCODE {
           k = 0;
@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
           utlCatch(1) {k += 1;}
           utlCatch(2) {k += 2; functhrow(3);}
           utlCatchAny {k += 100; }
-        }  TST("Exception 10,20,2,3 caught", k==132);
+        }  TSTEQINT("Exception 10,20,2,3 caught", 132,k);
       }
     }
     

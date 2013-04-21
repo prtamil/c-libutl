@@ -17,6 +17,7 @@ int main (int argc, char *argv[])
   char *ptr_a;
   char *ptr_b;
   int valid;
+  int k;
   
   TSTPLAN("utl unit test: memory check") {
     logLevel(Info);
@@ -24,32 +25,38 @@ int main (int argc, char *argv[])
 
     TSTSECTION("malloc") {
       TSTGROUP("malloc") {
-        TSTCODE {
-           ptr_a = malloc(32);
-        }
-        TST("Check Valid after malloc()",utlMemCheck(ptr_a) == utlMemValid);
-        TST("Allocated memory is 32",utlMemAllocated == 32);
+        TSTCODE { ptr_a = malloc(32); }
+        TSTEQINT("Check Valid after malloc()",utlMemValid,utlMemCheck(ptr_a) );
+        TSTEQINT("Allocated memory is 32",32, utlMemAllocated);
         
-        TSTCODE {
-           free(ptr_a);
-        }
-        TST("Check invalid after free",utlMemCheck(ptr_a) < utlMemValid);
-        TST("Allocated memory is 0",utlMemAllocated == 0);
-        TSTCODE {
-           free(ptr_a);
-        }
-        TST("Check invalid again",utlMemCheck(ptr_a) < utlMemValid);
+        TSTCODE { free(ptr_a); }
+        TSTNEQINT("Check invalid after free", utlMemValid, utlMemCheck(ptr_a));
+        TSTEQINT("Allocated memory is 0",0,utlMemAllocated);
+        
+        TSTCODE { free(ptr_a); }
+        TSTNEQINT("Check invalid again",utlMemValid,utlMemCheck(ptr_a));
+        
+        TSTCODE { ptr_a = malloc(0); }
+        TSTEQINT("Check Valid after malloc(0)",utlMemValid,utlMemCheck(ptr_a) );
+        TSTCODE { free(ptr_a); }
       }
-      TSTGROUP("malloc (overrun memory)") {
-        TSTCODE {
-           ptr_a = malloc(16);
-        }
-        TST("Check Valid after malloc()",utlMemCheck(ptr_a) == utlMemValid);
-        TST("Allocated memory is 16",utlMemAllocated == 16);
-        TSTCODE {
-           ptr_a[16] = '\0';
-        }
-        TST("Check invalid after overrun",utlMemCheck(ptr_a) == utlMemOverflow);
+      
+      TSTGROUP("calloc") {
+        TSTCODE { ptr_a = calloc(8,4); }
+        TSTEQINT("Allocated 8x4 ", utlMemValid,utlMemCheck(ptr_a) );
+        TSTCODE {for (k=0,valid=0; k<32; k++) valid += ptr_a[k];} 
+        TSTEQINT("Memory is clear",0, valid);
+        TSTCODE { free(ptr_a); }
+      }
+      
+      TSTGROUP("overrun memory") {
+        TSTCODE { ptr_a = malloc(16);  }
+        TSTEQINT("Check Valid after malloc()",utlMemValid,utlMemCheck(ptr_a));
+        TSTEQINT("Allocated memory is 16",16,utlMemAllocated);
+        
+        TSTCODE { ptr_a[16] = '\0'; }
+        TSTEQINT("Check invalid after overrun",utlMemOverflow ,utlMemCheck(ptr_a) );
+        TSTCODE { free(ptr_a); }
       
       }
     }
