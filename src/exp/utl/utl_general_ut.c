@@ -23,25 +23,25 @@ int main (int argc, char *argv[])
   
     TSTSECTION("General use constants") {
       TSTGROUP("utlEmptyFun()") {
-        TST("Is not NULL", utlEmptyFun != NULL);
-        TST("Can be called", utlEmptyFun() == 0);
+        TSTNEQPTR("Is not NULL", NULL, utlEmptyFun );
+        TSTEQINT("Can be called", 0,utlEmptyFun());
       }
   
       TSTGROUP("utlEmptyString") {
-        TST("Is not NULL", utlEmptyString != NULL);
-        TST("Is empty", utlEmptyString[0] == '\0');
+        TSTNEQPTR("Is not NULL", NULL,utlEmptyString);
+        TSTEQINT("Is empty", '\0', utlEmptyString[0]);
       }
   
       TSTGROUP("utlZero") {
-        TST("Is zero", utlZero == 0);
+        TSTEQINT("Is zero", 0, utlZero);
       }
     }
     
     TSTSECTION("Output file") {
       /* We cannot play to much as the TST macros themselves use '{utl_output} */
       TSTGROUP("Defaults (stderr)") {
-        TST("Defaults to NULL", utl_output == NULL);
-        TST("Actually to stderr", utlOut == stderr);
+        TSTEQPTR("Defaults to NULL", NULL,utl_output);
+        TSTEQPTR("Actually to stderr", stderr , utlOut);
       }
       
       TSTGROUP("Diverted") {
@@ -51,21 +51,21 @@ int main (int argc, char *argv[])
     
         utlSetOutput("TSTOUT.tmp");
         
-        TST("utl_output not null", utl_output != NULL);
-        TST("utlOut not stderr", utlOut != stderr);
-        TST("utlOut equals utl_output", utlOut == utl_output);
+        TSTNEQPTR("utl_output not null", NULL,utl_output );
+        TSTNEQPTR("utlOut not stderr", stderr,utlOut );
+        TSTEQPTR("utlOut equals utl_output", utl_output,utlOut);
         
         utlSetOutput(NULL);
         TSTCODE {
           f = fopen("TSTOUT.tmp","r");
-        } TST("Able to read it back",f != NULL);
+        } TSTNEQPTR("Able to read it back",NULL,f);
         if (!TSTFAILED) {
           TSTNOTE("Check the number order!");
           while (fgets(buf,512,f)) fputs(buf,utlOut);
           fclose(f); f = NULL;
         }
-        TST("Back to default (NULL)", utl_output == NULL);
-        TST("Back to default (stderr)", utlOut == stderr);
+        TSTEQPTR("Back to default (NULL)", NULL,utl_output);
+        TSTEQPTR("Back to default (stderr)", stderr,utlOut);
         
       }
     }

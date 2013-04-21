@@ -43,10 +43,6 @@
 **                    that account and report about misuse of memory.
 **  ..
 **
-** .% How to add utl.h to your project
-** ===================================
-**
-**  
 */
 
 #include <stdio.h>
@@ -58,6 +54,49 @@
 #include <stddef.h>
 
 #include <setjmp.h>
+
+/*
+** .% How to use '|utl|
+** ====================
+**
+**  To access '|utl| functions Just follow these easy steps:
+**
+**  .# include '|utl.h| in each source file
+**   # in one of the source file (usually the one that has you '|main()|
+**     function) #define the symbol '|ULT_C| before including '|utl.h|
+**  ..
+**
+**   As an alternative, you can create a source file (say '|utl.c|) with
+**  only the following lines:
+**  .{{ C
+**       #define  UTL_C
+**       #include "utl.h"
+**  .}}
+**  and link it to your project.
+**
+**  The '{utl_extern} macro will take care of actually initializing the 
+**  variables needed by '|utl.c| instead of simply declaring them as '|extern|
+*/
+
+#ifdef UTL_C
+#define utl_extern(n,v) n v
+#else
+#define utl_extern(n,v) extern n
+#endif
+
+#define utl_initvoid ;
+
+
+/* .%% Enable/disable utl features
+** -------------------------------
+**
+*/
+
+#ifdef NDEBUG
+#ifdef DEBUG
+#undef DEBUG
+#endif
+#endif
 
 #ifdef UTL_NOMEMCHECK
 #ifdef UTL_MEMCHECK
@@ -71,25 +110,12 @@
 #endif
 #endif
 
-#ifdef NDEBUG
-#ifdef DEBUG
-#undef DEBUG
-#endif
-#endif
-
 #ifdef UTL_UNITTEST
 #ifndef DEBUG
 #define DEBUG
 #endif
 #endif
 
-#ifdef UTL_C
-#define utl_extern(n,v) n v
-#else
-#define utl_extern(n,v) extern n
-#endif
-
-#define utl_initvoid ;
 
 /* .% Variables
 ** ============
@@ -131,6 +157,8 @@ utl_extern(char *utlEmptyString, = "");
 utl_extern(const int utlZero, = 0);
 #endif
 
+/*  MS Visual C doesnt have '|snprintf()| ! How could it be?
+*/
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -169,7 +197,7 @@ utl_extern(FILE *utl_output, = NULL);
 #define utlSetOutput(fname) ((utl_output ? fclose(utl_output) : 0),\
                              (utl_output = (fname? fopen(fname,"w"): NULL)))
 
-#ifndef UTL_NOTRYCATCH
+
 
 /* .% Try/Catch
 ** ~~~~~~~~~~~~~~~~~~~~~~~
@@ -190,6 +218,7 @@ utl_extern(FILE *utl_output, = NULL);
 **   utlCatchAny {  // None of the above! If not present the exception
 **                  // will be thrown again at the upper level
 **                  // if no handler is found the program exits
+*                   // utlErr is the exception code
 **      ... code ...
 **   }
 ** 
@@ -214,6 +243,8 @@ utl_extern(FILE *utl_output, = NULL);
 **   }
 */ 
 
+#ifndef UTL_NOTRYCATCH
+
 #define utl_trymax 16
 
 utl_extern( int     utlErr , = 0);
@@ -234,7 +265,6 @@ utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );
 #define utlThrow(e) (utlErr=e, (utl_jbn>0 && utlErr? \
                                   longjmp(utl_jbv[utl_jbn-1], utlErr):\
                                   exit(utlErr)))
-#define utlReThrow  break
 
 /* .%% Errors Handling
 ** ==================
@@ -244,7 +274,7 @@ utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );
 #define utlError(e,m) do { \
                         int utl_e = e; char *utl_m=(char *)(m); \
                         logError("%04d %s",utl_e,(utl_m?utl_m:utlEmptyString); \
-                        if (utl_e > 0) utlThrow(utl_e) else exit(-utl_e);
+                        if (utl_e > 0) utlThrow(utl_e) else exit(-utl_e); \
                       } while (utlZero)
                        
 #define utlFatal(e)   do { \
@@ -348,6 +378,26 @@ utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );
 
 #define TSTEXPECTED(f1,v1,f2,v2) \
                              (TSTRES? 0 : (TSTNOTE("Expected "f1" got "f2,v1,v2)))
+
+#define TSTEQINT(s,e,r) do { int __exp = (e); int __ret = (r);\
+                             TST(s,__exp==__ret);\
+                             TSTEXPECTED("(int) %d",__exp,"%d",__ret); \
+                           } while (utlZero)
+
+#define TSTNEQINT(s,e,r) do { int __exp = (e); int __ret = (r);\
+                             TST(s,__exp!=__ret);\
+                             TSTEXPECTED("(int) other than %d",__exp,"%d",__ret); \
+                           } while (utlZero)
+                           
+#define TSTEQPTR(s,e,r)  do { void *__exp = (e); void *__ret = (r); \
+                              TST(s,__exp == __ret) ; \
+                              TSTEXPECTED("(ptr) 0x%p",__exp,"0x%p",__ret); \
+                            }  while (utlZero)
+
+#define TSTNEQPTR(s,e,r) do { void *__exp = (e); void *__ret = (r); \
+                              TST(s,__exp != __ret) ; \
+                              TSTEXPECTED("(ptr) other than 0x%p",__exp,"0x%p",__ret); \
+                            }  while (utlZero)
 
 #define TSTBAILOUT(r) \
           if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
@@ -560,17 +610,17 @@ int log_levelenv(const char *var, int level);
 
 #else
 
-#define logLevel(level)         (utl_output = utl_output)
-#define logLevelEnv(v,l)        (utl_output = utl_output)
-#define logFile stderr          (utl_output = utl_output)
-#define logOpen(fname,mode)     (utl_output = utl_output)
-#define logClose()              (utl_output = utl_output)
-#define logDebug(...)           (utl_output = utl_output)
-#define logInfo(...)            (utl_output = utl_output)
-#define logWarn(...)            (utl_output = utl_output)
-#define logError(...)           (utl_output = utl_output)
-#define logFatal(...)           (utl_output = utl_output)
-#define logMessage(...)         (utl_output = utl_output)
+#define logLevel(level)         
+#define logLevelEnv(v,l)        
+#define logFile stderr          
+#define logOpen(fname,mode)     
+#define logClose()              
+#define logDebug(...)           
+#define logInfo(...)            
+#define logWarn(...)            
+#define logError(...)           
+#define logFatal(...)           
+#define logMessage(...)         
 
 #define logIf(x) if (utlZero)
 
@@ -578,7 +628,7 @@ int log_levelenv(const char *var, int level);
 
 #ifdef NDEBUG
 #undef logDebug
-#define logDebug(...) (utl_output = utl_output)
+#define logDebug(...) 
 #endif
 
 #define _logDebug(...)
@@ -593,67 +643,38 @@ int log_levelenv(const char *var, int level);
 **  Macros to embed Finite state machine into C programs.
 **
 ** .v
-**      fsmStart(FSM_NAME) {
-**        fsmState(x) { ...
+**      fsm {
+**        fsmGoto(y); // Start state is y
+**
+**        fsmState(x) : { ...
 **                   if (c == 0) fsmGoto(z);
 **                   fsmGoto(y);
 **        }
 **
-**        fsmState(y) { ...
-**                   fsmExit(FSM_NAME);  // exit from the FSM
-**        }
-*
-**        fsmState(z) { ...
-**                   fsmGosub(t);
+**        fsmState(z) : { ...
+**                   break;  // exit from the FSM
 **        }
 **
-**        fsmState(t) { ...
-**                   fsmReturn;  // Go back to the caller state
+**        fsmState(y) : { ...
+**                   if (c == 1) fsmGoto(x);
+**                   fsmGoto(z);
 **        }
 **      }
-**      fsmEnd(FSM_NAME);
 ** ..
 **
-**   It's a good practice to include a graphic of the FSM in the technical
+**   It's a good practice to include a drawing of the FSM in the technical
 ** documentation (e.g including the GraphViz description in comments).
 */
 
-#define fsmStart(x)  \
-   for (;;) { \
-     int utl_fsmcur; \
-     int utl_fsmcnt; \
-     int utl_fsmret; \
-     int utl_fsmrets[16];  \
-     for(utl_fsmcnt=0;utl_fsmcnt<16;utl_fsmcnt++)  \
-       utl_fsmrets[utl_fsmcnt] = 0;  \
-     for(utl_fsmret=0,utl_fsmcnt=0;;) {  \
-       goto fsm_##x##_s; \
-       fsm_##x##_s : utl_fsmcur = __LINE__ ; \
-            if (!utl_fsmret || (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
+#define fsm         do { int fsm_next , fsm_state; \
+                      for (fsm_next=0; fsm_next>=0;) \
+                        switch((fsm_state=fsm_next, fsm_next=-1, fsm_state))
+#define fsmState      break; case  
+#define fsmGoto(x)    fsm_next = x; break;  
+#define fsmEnd      } while (utlZero) 
 
-#define fsmState(x) \
-   fsm_##x##_s : utl_fsmcur = __LINE__ ; \
-                 if (!utl_fsmret || \
-                     (utl_fsmret == utl_fsmcur && !(utl_fsmret=0)))
-                               
-#define fsmGoto(x)  goto fsm_##x##_s
-
-#define fsmGosub(x) do { \
-                      if (utl_fsmcnt < utl_fsmmax) \
-                        utl_fsmrets[utl_fsmcnt++] = utl_fsmcur; \
-                      goto fsm_##x##_s; \
-                    } while (utlZero) 
-                  
-#define fsmReturn \
-           do { utl_fsmret = (utl_fsmcnt > 0? utl_fsmrets[--utl_fsmcnt] : 0); \
-                continue; \
-              } while (utlZero) 
-
-#define fsmExit(x) goto fsm_##x##_e 
-
-#define fsmEnd(x) fsm_##x##_e: utl_fsmcnt=0; utl_fsmrets[0]+=0; break;} break;} 
-
-
+#define fsmSTART  0
+#define fsmEND   -1
 
 /*  .% Traced memory check
 **  ======================
@@ -662,7 +683,6 @@ int log_levelenv(const char *var, int level);
 #define utlMemOverflow   -1
 #define utlMemValid       0
 #define utlMemNull        1
-#define utlMemFreed       2
 
 #ifdef UTL_MEMCHECK
 void *utl_malloc  (size_t size, char *file, int line );
@@ -744,7 +764,7 @@ void utl_free(void *ptr, char *file, int line)
   utl_mem_t *p=NULL;
   
   switch (utl_check(ptr,file,line)) {
-    case utlMemNull  :    logInfo("free NULL (%u %s %d)", \
+    case utlMemNull  :    logInfo("free NULL (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
                           break;
                           
@@ -752,13 +772,13 @@ void utl_free(void *ptr, char *file, int line)
     case utlMemValid :    p = utl_mem(ptr); 
                           memcpy(p->chk,CLR_CHK,4);
                           utl_mem_allocated -= p->size;
-                          free(p);
-                          logInfo("free %p [%d] (%u %s %d)", ptr, \
-                                    p?p->size:0,utl_mem_allocated, file, line);
-                          break;
-                          
-    case utlMemFreed :    logInfo("free an already free block! (%u %s %d)", \
+                          if (p->size == 0)
+                            logWarn("Freeing a block of 0 bytes (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
+
+                          logInfo("free %p [%d] (%u %s %d)", ptr, 
+                                    p?p->size:0,utl_mem_allocated, file, line);
+                          free(p);
                           break;
                           
     case utlMemInvalid :  logInfo("free an invalid pointer! (%u %s %d)", \
