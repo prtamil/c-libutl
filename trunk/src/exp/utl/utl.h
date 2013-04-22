@@ -245,6 +245,31 @@ utl_extern(FILE *utl_output, = NULL);
 
 #ifndef UTL_NOTRYCATCH
 
+#define utl_lbl0(x,l)  x##l
+#define utl_lbl(x,l)  utl_lbl0(x,l)
+
+#define try(utl_env) \
+               do {int utl_err = 0; int utlErr = 0;\
+                   jmp_buf utl_jb; \
+                   tryenv utl_jb_prev = utl_env; \
+                   utl_env = &utl_jb; \
+                   for (;utl_env && utl_err>=0; (utl_env = utl_jb_prev)) \
+                     if (utl_err > 0) throw(utl_env,utl_err); \
+                     else switch ((utl_err = setjmp(*utl_env)))  {\
+                            case 0 :
+                          
+#define catch(e)         break; case e : utlErr = utl_err; utl_err = -1; \
+                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__) 
+
+#define catchall         break; default : utlErr = utl_err; utl_err = -1;  \
+                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__)
+              
+#define tryend    } } while(0)
+
+#define throw(env,err) (env? longjmp(*env, err): exit(utlErr))
+
+typedef jmp_buf *tryenv; 
+
 #define utl_trymax 16
 
 utl_extern( int     utlErr , = 0);
@@ -644,7 +669,6 @@ int log_levelenv(const char *var, int level);
 **
 ** .v
 **      fsm {
-**        fsmGoto(y); // Start state is y
 **
 **        fsmState(x) : { ...
 **                   if (c == 0) fsmGoto(z);
@@ -659,7 +683,7 @@ int log_levelenv(const char *var, int level);
 **                   if (c == 1) fsmGoto(x);
 **                   fsmGoto(z);
 **        }
-**      }
+**      }fsmend
 ** ..
 **
 **   It's a good practice to include a drawing of the FSM in the technical
@@ -668,10 +692,10 @@ int log_levelenv(const char *var, int level);
 
 #define fsm         do { int fsm_next , fsm_state; \
                       for (fsm_next=0; fsm_next>=0;) \
-                        switch((fsm_state=fsm_next, fsm_next=-1, fsm_state))
+                        switch((fsm_state=fsm_next, fsm_next=-1, fsm_state)) {
 #define fsmState      break; case  
 #define fsmGoto(x)    fsm_next = x; break;  
-#define fsmEnd      } while (utlZero) 
+#define fsmEnd      } } while (utlZero) 
 
 #define fsmSTART  0
 #define fsmEND   -1

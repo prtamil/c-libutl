@@ -11,35 +11,28 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+#define utl_lbl0(x,l)  x##l
+#define utl_lbl(x,l)  utl_lbl0(x,l)
 
-#ifdef UTL_C
-#define utl_extern(n,v) n v
-#else
-#define utl_extern(n,v) extern n
-#endif
-#define utl_initvoid ;
-
-#define utl_trymax 16
-
-#define utlTry(utl_env) \
+#define try(utl_env) \
                do {int utl_err = 0; int utlErr = 0;\
                    jmp_buf utl_jb; \
                    jmp_buf *utl_jb_prev = utl_env; \
                    utl_env = &utl_jb; \
                    for (;utl_err>=0; (utl_env = utl_jb_prev)) \
-                     if (utl_err > 0) utlThrow(utl_env,utl_err); \
-                     else switch ((utl_err = setjmp(*utl_env))) if (1) {case 0 :} goto x##__LINE__ ; { \
+                     if (utl_err > 0) throw(utl_env,utl_err); \
+                     else switch ((utl_err = setjmp(*utl_env)))  {\
                             case 0 :
                           
-#define utlCatch(e)         break; case e : utlErr = utl_err; utl_err = -1;
+#define catch(e)         break; case e : utlErr = utl_err; utl_err = -1; \
+                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__) 
 
-#define utlCatchAny         break; default : utlErr = utl_err; utl_err = -1;  
+#define catchall         break; default : utlErr = utl_err; utl_err = -1;  \
+                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__)
               
-#define utlTryEnd    } \
-                   } while(0)
+#define tryend    } } while(0)
 
-
-#define utlThrow(env,err) (env? longjmp(*env, err): exit(utlErr))
+#define throw(env,err) (env? longjmp(*env, err): exit(utlErr))
 
 typedef jmp_buf *utlEnv_t; 
 
@@ -48,11 +41,11 @@ void main()
           int k = 0;
           utlEnv_t jb = NULL;
           
-          utlTry(jb)  { utlThrow(jb,7); }
-          utlCatch(1) { k = 1; }
-          utlCatch(2) { k = 2; }
-          utlCatchAny { printf("%d - ",utlErr);k = 9; }
-          utlTryEnd;
+          try(jb)    { throw(jb,7); }
+            catch(1) : { k = 1; }
+            catch(2) : { k = 2; }
+            catchall : { printf("%d - ",utlErr);k = 9; }
+          tryend;
           
  printf("%d\n",k);
 }
