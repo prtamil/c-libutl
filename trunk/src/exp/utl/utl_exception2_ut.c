@@ -27,7 +27,8 @@ void uncatch()
 
 int main (int argc, char *argv[])
 {
-
+  tryenv env=NULL;
+  
   atexit(uncatch);
   
   TSTPLAN("utl unit test: unhandled") {
@@ -35,15 +36,17 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          utlTry      { utlThrow(2);}
-          utlCatch(1) { k = 1; }
-          utlCatch(2) { k = 2; }
+          try(env)     { throw(env,2);}
+            catch(1) : { k = 1; }
+            catch(2) : { k = 2; }
+          tryend;
         } TSTEQINT("Exception caught", 2,k);
         TSTCODE {
           k = 9999;
-          utlTry      { utlThrow(4); }
-          utlCatch(1) { k = 1; }
-          utlCatch(2) { k = 2; }
+          try(env)     { throw(env,4); }
+            catch(1) : { k = 1; }
+            catch(2) : { k = 2; }
+          tryend;
         } TST("Exit for unhandled exception", 0);
       }
     }
