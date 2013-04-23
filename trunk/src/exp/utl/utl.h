@@ -203,44 +203,48 @@ utl_extern(FILE *utl_output, = NULL);
 ** ~~~~~~~~~~~~~~~~~~~~~~~
 **   Simple implementation of try/catch.
 **
-**   utlTry {
+**   tryenv env = NULL;
+**   try(env)) {
 **      ... code ...
-**      if (something_failed) utlThrow(execption_num)  // must be > 0 
+**      if (something_failed) throw(env, execption_num)  // must be > 0 
 **      some_other_func(); // you can trhow exceptions from other functions 
 **      ... code ...
 **   }  
-**   utlCatch(3) {
+**   catch(3) {
 **      ... code ...
 **   }
-**   utlCatch(4) {
+**   catch(4) {
 **      ... code ...
 **   }
-**   utlCatchAny {  // None of the above! If not present the exception
+**   catchall {  // None of the above! If not present the exception
 **                  // will be thrown again at the upper level
 **                  // if no handler is found the program exits
 *                   // utlErr is the exception code
 **      ... code ...
 **   }
+**   tryend;
 ** 
 **  This comes useful when you throw an exception form a called function.
 **  The example below, handles the "out of mem" condition in the same place
 **  regardless of where the exception was raised.
 ** 
 **   #define ERR_OUTOFMEM 0xF0CA
-**   char *f1(int x)   { ... utlThrow(ERR_OUTOFMEM} ... }
-**   void *f2(char *x) { ... utlThrow(ERR_OUTOFMEM} ... }
-**   utlTry {
+**   tryenv env = NULL; // Remember to set to NULL initally!
+**   char *f1(tryenv ee, int x)   { ... throw(ee, ERR_OUTOFMEM} ... }
+**   void *f2(tryenv ee, char *x) { ... throw(ee, ERR_OUTOFMEM} ... }
+**   try(env) {
 **      ... code ...
-**      f1(3); 
+**      f1(env,3); 
 **      ... code ...
-**      if ... utlThrow(ERR_OUTFOMEM) 
+**      if ... throw(env,ERR_OUTFOMEM) 
 **      ... code ...
-**      f2("Hello"); 
+**      f2(env,"Hello"); 
 **      ... code ...
 **   }  
 **   utlCatch(ERR_OUTOFMEM) {
 **      ... code ... // Handle all your cleanup here!
 **   }
+**   tryend;
 */ 
 
 #ifndef UTL_NOTRYCATCH
@@ -269,37 +273,16 @@ typedef struct utl_env_s {
 
 #define catch(e)                   break; \
                           case e : utlErr = utl_cur_env.err; \
-                                   utl_cur_env.err = -1; \
-                                   goto utl_lbl(_try_ , __LINE__); \
-                                   utl_lbl(_try_ , __LINE__)
+                                   utl_cur_env.err = -1; 
                                     
 #define catchall                   break; \
                          default : utlErr = utl_cur_env.err; \
-                                   utl_cur_env.err = -1;  \
-                                   goto utl_lbl(_try_ , __LINE__); \
-                                   utl_lbl(_try_ , __LINE__)
+                                   utl_cur_env.err = -1;  
 
 #define tryend         } \
                } while(0)
 
 #define throw(env,err) (env? longjmp(env->jb, err): exit(err))
-
-/* .%% Errors Handling
-** ==================
-**  Functions to handle serious errors.  
-**
-*/
-#define utlError(e,m) do { \
-                        int utl_e = e; char *utl_m=(char *)(m); \
-                        logError("%04d %s",utl_e,(utl_m?utl_m:utlEmptyString); \
-                        if (utl_e > 0) utlThrow(utl_e) else exit(-utl_e); \
-                      } while (utlZero)
-                       
-#define utlFatal(e)   do { \
-                        int utl_e = e; char *utl_m=(char *)(m); \
-                        logFatal("%04d %s",utl_e,(utl_m?utl_m:utlEmptyString); \
-                        exit(utl_e > 0 ? utl_e : -utl_e); \
-                      } while (utlZero)
 
 #endif
 
