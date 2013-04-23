@@ -34,10 +34,10 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          try(env,err)      { throw(env,1); }
+          try(env)   { throw(env,1); }
           catch(1) : { k = 1; }
           catch(2) : { k = 2; }
-          catchall :  { k = 9; } 
+          catchall : { k = 9; } 
           tryend;
         } TSTEQINT("Exception 1 caught", 1,k);
       }
@@ -45,10 +45,10 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 2") {
         TSTCODE {
           k = 0;
-          try(env,err)      { throw(env,2); }
+          try(env)   { throw(env,2); }
           catch(1) : { k = 1; }
           catch(2) : { k = 2; }
-          catchall :  { k = 9; } 
+          catchall : { k = 9; } 
           tryend;
         } TSTEQINT("Exception 2 caught", 2,k);
       }
@@ -56,10 +56,10 @@ int main (int argc, char *argv[])
       TSTGROUP("catch default") {
         TSTCODE {
           k = 0;
-          try(env,err) { throw(env,3);  }
-          catch(1) : { k = 1; }
-          catch(2) : { k = 2; }
-          catchall :  { k = 9; } 
+          try(env)     { throw(env,3);  }
+            catch(1) : { k = 1; }
+            catch(2) : { k = 2; }
+            catchall : { k = 9; } 
           tryend;
         } TSTEQINT("Exception not caught", 9,k);
       }
@@ -69,9 +69,9 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          try(env,err)       functhrow(env,1);
-          catch(1) :  k = 1;
-          catch(2) :  k = 2;
+          try(env)      functhrow(env,1);
+            catch(1) :  k = 1;
+            catch(2) :  k = 2;
           tryend;
         } TSTEQINT("Exception 1 caught", 1,k);
       }
@@ -79,9 +79,9 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 2") {
         TSTCODE {
           k = 0;
-          try(env,err)       functhrow(env,2);
-          catch(1) :  k = 1;
-          catch(2) :  k = 2;
+          try(env)      functhrow(env,2);
+            catch(1) :  k = 1;
+            catch(2) :  k = 2;
           tryend;
         }
         TSTEQINT("Exception 2 caught", 2,k);
@@ -90,10 +90,10 @@ int main (int argc, char *argv[])
       TSTGROUP("catch default") {
         TSTCODE {
           k = 0;
-          try(env,err)       functhrow(env,3);
-          catch(1) :  k = 1;
-          catch(2) :  k = 2;
-          catchall :   k = 9; 
+          try(env)      functhrow(env,3);
+            catch(1) :  k = 1;
+            catch(2) :  k = 2;
+            catchall :  k = 9; 
           tryend;
         }
         TSTEQINT("Exception not caught", 9,k);
@@ -105,10 +105,10 @@ int main (int argc, char *argv[])
       TSTGROUP("2 levels") {
         TSTCODE {
           k = 0;
-          try(env,err)      {
-            try(env,err)    { functhrow(env,20); }
-            catch(10) : {k += 10;}
-            catch(20) : {k += 20;}
+          try(env)      {
+            try(env)    { functhrow(env,20); }
+              catch(10) : {k += 10;}
+              catch(20) : {k += 20;}
             tryend;
           }
           catch(1) : {k += 1;}
@@ -119,12 +119,12 @@ int main (int argc, char *argv[])
         
         TSTCODE {
           k = 0;
-          try(env,err) {
-            try(env,err)      { functhrow(env,2); }
-            catch(10) : {k += 10;}
-            catch(20) : {k += 20;}
+          try(env) {
+            try(env)      { functhrow(env,2); }
+              catch(10) : {k += 10;}
+              catch(20) : {k += 20;}
             tryend;
-        }
+          }
           catch(1) : {k += 1;}
           catch(2) : {k += 2;}
           tryend;
@@ -135,15 +135,15 @@ int main (int argc, char *argv[])
       TSTGROUP("Visibility") {
         TSTCODE {
           k = 0;
-          try(env,err) {
-            try(env,err)      { functhrow(env,2); }
-            catch(10) : {k += 10;}
-            catch(20) : {k += 20;}
+          try(env) {
+            try(env)      { functhrow(env,2); }
+              catch(10) : {k += 10;}
+              catch(20) : {k += 20;}
             tryend;
-          }
-          catch(1) : {k += 1;}
-          catch(2) : {k += 2; functhrow(env,10);}
-          catchall :  {k += 100;} 
+            }
+            catch(1) : {k += 1;}
+            catch(2) : {k += 2; functhrow(env,10);}
+            catchall :  {k += 100;} 
           tryend;
         }
         TSTEQINT("Inner try are invisible", 102,k);
@@ -156,10 +156,10 @@ int main (int argc, char *argv[])
       TSTGROUP("Same try") {
         TSTCODE {
           k = 0;
-          try(env,err)      { throw(env,2); }
-          catch(1) : { k += 1; }
-          catch(2) : { k += 2; functhrow(env,1);}
-          catchall :  { k += 9; } 
+          try(env)      { throw(env,2); }
+            catch(1) : { k += 1; }
+            catch(2) : { k += 2; functhrow(env,1);}
+            catchall :  { k += 9; } 
           tryend;
         } TSTEQINT("Exception 2 then 1 caught", 3,k);
       }
@@ -167,33 +167,32 @@ int main (int argc, char *argv[])
       TSTGROUP("Nested try") {
         TSTCODE {
           k = 0;
-          try(env,err)      {
-            try(env,err)      { functhrow(env,20); }
-            catch(10) : {k += 10; functhrow(env,2);}
-            catch(20) : {k += 20; throw(env,10);}
+          try(env) {
+            try(env)      { functhrow(env,20); }
+              catch(10) : {k += 10; functhrow(env,2);}
+              catch(20) : {k += 20; throw(env,10);}
             tryend;
-          }
-          catch(1) : {k += 1;}
-          catch(2) : {k += 2;}
+            }
+            catch(1) : {k += 1;}
+            catch(2) : {k += 2;}
           tryend;
           
         }  TSTEQINT("Exception 10,20,2 caught", 32,k);
         
         TSTCODE {
           k = 0;
-          try(env,err)      {
-            try(env,err)      { functhrow(env,20); }
-            catch(10) : {k += 10; functhrow(env,2);}
-            catch(20) : {k += 20; throw(env,10);}
+          try(env)      {
+            try(env)      { functhrow(env,20); }
+              catch(10) : {k += 10; functhrow(env,2);}
+              catch(20) : {k += 20; throw(env,10);}
             tryend;
-          }
-          catch(1) : {k += 1;}
-          catch(2) : {k += 2; functhrow(env,3);}
-          catchall :  {k += 100; } 
+            }
+            catch(1) : {k += 1;}
+            catch(2) : {k += 2; functhrow(env,3);}
+            catchall : {k += 100; } 
           tryend;
         }  TSTEQINT("Exception 10,20,2,3 caught", 132,k);
       }
-    }
-    
+    }    
   }
 }

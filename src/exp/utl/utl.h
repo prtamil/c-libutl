@@ -245,51 +245,44 @@ utl_extern(FILE *utl_output, = NULL);
 
 #ifndef UTL_NOTRYCATCH
 
-#define utl_lbl0(x,l)  x##l
-#define utl_lbl(x,l)  utl_lbl0(x,l)
+typedef struct utl_env_s { 
+  jmp_buf jb;
+  struct utl_env_s *prev;
+  int err;
+} utl_env_s, *tryenv; 
+
+#define utl_lblx(x,l)  x##l
+#define utl_lbl(x,l)   utl_lblx(x,l)
 
 #define try(utl_env) \
-               do {int utl_err = 0; int utlErr = 0;\
-                   jmp_buf utl_jb; \
-                   tryenv utl_jb_prev = utl_env; \
-                   utl_env = &utl_jb; \
-                   for (;utl_env && utl_err>=0; (utl_env = utl_jb_prev)) \
-                     if (utl_err > 0) throw(utl_env,utl_err); \
-                     else switch ((utl_err = setjmp(*utl_env)))  {\
-                            case 0 :
-                          
-#define catch(e)         break; case e : utlErr = utl_err; utl_err = -1; \
-                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__) 
+            do { struct utl_env_s utl_cur_env; int utlErr; \
+                 utl_cur_env.err = 0; \
+                 utl_cur_env.prev = utl_env; \
+                 utl_env = &utl_cur_env; \
+                 for ( ; utl_cur_env.err >= 0 \
+                       ; (utl_env = utl_cur_env.prev) \
+                         ? utl_env->err = utl_cur_env.err : 0 ) \
+                   if (utl_cur_env.err > 0) throw(utl_env,utl_cur_env.err); \
+                   else if (!utl_env) break; \
+                   else switch ((utl_cur_env.err = setjmp(utl_cur_env.jb))) {\
+                          case 0 :
 
-#define catchall         break; default : utlErr = utl_err; utl_err = -1;  \
-                                goto utl_lbl(_try_ , __LINE__) ; utl_lbl(_try_ , __LINE__)
-              
-#define tryend    } } while(0)
+#define catch(e)                   break; \
+                          case e : utlErr = utl_cur_env.err; \
+                                   utl_cur_env.err = -1; \
+                                   goto utl_lbl(_try_ , __LINE__); \
+                                   utl_lbl(_try_ , __LINE__)
+                                    
+#define catchall                   break; \
+                         default : utlErr = utl_cur_env.err; \
+                                   utl_cur_env.err = -1;  \
+                                   goto utl_lbl(_try_ , __LINE__); \
+                                   utl_lbl(_try_ , __LINE__)
 
-#define throw(env,err) (env? longjmp(*env, err): exit(utlErr))
+#define tryend         } \
+               } while(0)
 
-typedef jmp_buf *tryenv; 
-
-#define utl_trymax 16
-
-utl_extern( int     utlErr , = 0);
-utl_extern( int     utl_jbn , = 0);
-utl_extern( jmp_buf utl_jbv[utl_trymax], utl_initvoid );  
-
-#define utlTry      for (  utlErr = -1  \
-                         ; utlErr == -1 && utl_jbn < utl_trymax \
-                         ; (utl_jbn> 0 ? utl_jbn-- : 0 ) , \
-                           ((utlErr > 0)? utlThrow(utlErr) : 0), \
-                           (utlErr = 0) ) \
-                       if ((utlErr = setjmp(utl_jbv[utl_jbn++])) == 0 )
-
-#define utlCatch(e)    else if ((utlErr == (e)) && ((utlErr = 0) == 0))
-
-#define utlCatchAny    else for ( ;utlErr > 0; utlErr = 0)
-              
-#define utlThrow(e) (utlErr=e, (utl_jbn>0 && utlErr? \
-                                  longjmp(utl_jbv[utl_jbn-1], utlErr):\
-                                  exit(utlErr)))
+#define throw(env,err) (env? longjmp(env->jb, err): exit(err))
 
 /* .%% Errors Handling
 ** ==================
