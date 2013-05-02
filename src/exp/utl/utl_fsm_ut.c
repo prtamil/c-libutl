@@ -26,29 +26,29 @@ int main (int argc, char *argv[])
     TSTSECTION("Simple FSM") {
       TSTGROUP("Start state") {
         TSTCODE {
-          fsm {
-            fsmState START: k = 1;
-          } fsmEnd;
+          fsm ({
+            case fsmSTART : k = 1; 
+          });
         } TSTEQINT("Start executed", 1,k);
         TSTCODE {
           k = 0;
-          fsm {
-            fsmState OTHER : k = 1;
-          } fsmEnd;
+          fsm ({
+            case OTHER : k = 1; 
+          });
         } TSTEQINT("No start state", 0,k);
         TSTCODE {
           k = 0;
-          fsm {
-            fsmState OTHER : k = 2;
-            fsmState START : k = 1;
-            fsmState     2 : k = 3;
-          } fsmEnd;
+          fsm ({
+            case OTHER : k = 2; break;
+            case fsmSTART : k = 1; break;
+            case 2 : k = 3; break;
+          });
         } TSTEQINT("Start is not the first", 1,k);
         TSTCODE {
-          fsm {
-            fsmState START : k = 1;
-            fsmState OTHER : k += 2;
-          } fsmEnd;
+          fsm ({
+            case fsmSTART : k = 1; break;
+            case OTHER : k += 2; break;
+          });
         } TSTEQINT("No fallthrough",1,k);
       }
     }
@@ -57,16 +57,17 @@ int main (int argc, char *argv[])
       TSTGROUP("Start state") {
         TSTCODE {
           k = 0;
-          fsm {
-            fsmState 0: k = 1; fsmGoto(1);
-            fsmState 2: k = 3;
-            fsmState 1: k += 10;
-                        fsm {
-                           fsmState 0: k += 100; fsmGoto(2);
-                           fsmState 2: k += 1000; break;
-                        } fsmEnd;
-          } fsmEnd;
-        } TSTEQINT("Nested",1112,k);
+          fsm({
+            case fsmSTART: k = 1; fsmGoto(1);
+            case 2: k = 3; break;
+            case 1: k += 10;
+                    fsm ({
+                       case fsmSTART: k += 100; fsmGoto(2);
+                       case 2: k += 1000; break;
+                    });
+                    break;
+          });
+        } TSTEQINT("Nested",1111,k);
       }
     }
   } 
