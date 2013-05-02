@@ -11,41 +11,40 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-        typedef struct utl_env_s { 
-          jmp_buf jb;
-          struct utl_env_s *prev;
-          int err;
-        } utl_env_s, *tryenv; 
-        
-        #define utl_lblx(x,l)  x##l
-        #define utl_lbl(x,l)   utl_lblx(x,l)
-        
-        #define try(utl_env) \
-                    do { struct utl_env_s utl_cur_env; int utlErr; \
-                         utl_cur_env.err = 0; \
-                         utl_cur_env.prev = utl_env; \
-                         utl_env = &utl_cur_env; \
-                         for ( ; utl_cur_env.err >= 0 \
-                               ; (utl_env = utl_cur_env.prev) \
-                                 ? utl_env->err = utl_cur_env.err : 0 ) \
-                           if (utl_cur_env.err > 0) throw(utl_env,utl_cur_env.err); \
-                           else if (!utl_env) break; \
-                           else switch ((utl_cur_env.err = setjmp(utl_cur_env.jb))) {\
-                                  case 0 :
-        
-        #define catch(e)                   break; \
-                                  case e : utlErr = utl_cur_env.err; \
-                                           utl_cur_env.err = -1; 
-                                            
-        #define catchall                   break; \
-                                 default : utlErr = utl_cur_env.err; \
-                                           utl_cur_env.err = -1;  
-        
-        #define tryend         } \
-                       } while(0)
-        
-        #define throw(env,err) (env? longjmp(env->jb, err): exit(err))
+typedef struct utl_env_s { 
+  jmp_buf jb;
+  struct utl_env_s  *prev;
+  struct utl_env_s **orig;
+  int err;
+} utl_env_s, *tryenv; 
 
+#define utl_lblx(x,l)  x##l
+#define utl_lbl(x,l)   utl_lblx(x,l)
+
+#define try(utl_env,x) \
+            do { struct utl_env_s utl_cur_env; int utlErr; \
+                 utl_cur_env.err = 0; \
+                 utl_cur_env.prev = utl_env; \
+                 utl_cur_env.orig = &utl_env; \
+                 utl_env = &utl_cur_env; \
+                 if ((utl_cur_env.err = setjmp(utl_cur_env.jb))==0) {\
+                   x \
+                 }   
+                 
+#define catch(y) else { \
+                   utlErr = utl_cur_env.err; \
+                   *utl_cur_env.orig = utl_cur_env.prev;\
+                   if (utlErr == 0) break; \
+                   else switch (utlErr) { \
+                      y \
+                   } \
+                 } \
+               } while(0)
+
+                  
+
+#define throw(env,err) (env? longjmp(env->jb, err): exit(err))
+#define rethrow        (throw(utl_cur_env.prev,utlErr))
 
 int functhr(tryenv ee,int err) 
 {
@@ -57,20 +56,27 @@ void main()
           int k = 0;
           tryenv ee = NULL;
           
-          try(ee)    { throw(ee,7); }
-            catch(1)  { k = 1; }
-            catch(2)  { k = 2; }
-            catchall  { printf("%d - ",utlErr);k = 9; }
-          tryend;
- printf("%d %p\n",k,ee);
-          ee = NULL;
-          try(ee)    { functhr(ee,5); }
-            catch(1)  { k = 1; }
-            catch(2)  { k = 2; }
-            catchall  { printf("%d - ",utlErr);k = 9; }
-          tryend;
+          try(ee , {
+            throw(ee,7);
+          }) 
+          catch ({
+             case 7 : k = 9;
+                      break;
+             default : rethrow ;
+          });
           
  printf("%d %p\n",k,ee);
+          ee = NULL; k = 9;
+          try(ee, {
+           functhr(ee,5);
+          })
+          catch ({
+            case 5 : k = 1; break;
+            case 2 : k = 2; break;
+          });
+          
+ printf("%d %p\n",k,ee);
+#if 0
           ee = NULL;
           try(ee)    { functhr(ee,2); }
             catch(1)  { k = 1; }
@@ -87,5 +93,5 @@ void main()
           tryend;
           
  printf("%d %p\n",k,ee);
-
+#endif
 }

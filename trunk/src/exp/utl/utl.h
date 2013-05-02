@@ -22,21 +22,19 @@
 **
 **   This file ('|utl.h|) provide the following basic elements:
 **
-**  .[Logging]        To print logging traces during program execution.
-**                    It offers multilevel logging similar to '|log4j|
-**                    but limited to files.
-**
-**   [Unit Testing]   A simple framework to create unit tests. Tests output
+**  .[Unit Testing]   A simple framework to create unit tests. Tests output
 **                    is compliant with the TAP '(Test Anything Protocol)
 **                    standard.
+**
+**   [Logging]        To print logging traces during program execution.
+**                    It offers multilevel logging similar to '|log4j|
+**                    but limited to files.
 **
 **   [Finite State Machine]
 **                    Macros to use FSM as if they were a native C control
 **                    structure (similar to switch).
 **
 **   [Exceptions]     A simple implementation of try/catch. Similar to C++.
-**
-**   [Error handling] Simple handling for serious errors.
 **
 **   [Guarded memory allocation]
 **                    Replacement for malloc(), calloc(), realloc() and free()
@@ -62,12 +60,12 @@
 **  To access '|utl| functions Just follow these easy steps:
 **
 **  .# include '|utl.h| in each source file
-**   # in one of the source file (usually the one that has you '|main()|
+**   # in one of the source files (usually the one that has your '|main()|
 **     function) #define the symbol '|ULT_C| before including '|utl.h|
 **  ..
 **
-**   As an alternative, you can create a source file (say '|utl.c|) with
-**  only the following lines:
+**    As an alternative to the second step above, you can create a source
+**  file (say '|utl.c|) with only the following lines:
 **  .{{ C
 **       #define  UTL_C
 **       #include "utl.h"
@@ -117,7 +115,7 @@
 #endif
 
 
-/* .% Variables
+/* .% Constants
 ** ============
 **
 **  A set of constants for generic use. Provided by for convenience.
@@ -163,71 +161,37 @@ utl_extern(const int utlZero, = 0);
 #define snprintf _snprintf
 #endif
 
-/* .% Messages Output
-** ==================
-**
-** Log messages and unit tests output normally go on '{stderr}.
-** This could be not suitable for applications that are not attached to 
-** a console (e.g. background servers, GUI applications).
-** 
-** Functions and variables in this section allows you to define where to
-** redirect those messages.
-**
-**   '{=utl_output} is a global variable holding the current file to be
-** used when printing a debug or test message.   It's not intended be used
-** directly, use the macro '{=utlOut} instead if you need to refer to 
-** the file.
-**
-**   Actually I see no reason why you should need it, but just in case ... 
-*/
-
-utl_extern(FILE *utl_output, = NULL);
-
-#define utlOut (utl_output? utl_output: stderr)
-
-/*   The '/public/ function to set the output file, is '{=utlSetOutput()}
-** that takes the filename as input, open the file and and sets '{utl_output}
-** to it.  If a previous file had been opened, it will be closed. 
-**
-**   Passing '|NULL| as argument closes the current output file (if there
-** was one opened) and sets '{utl_output} to '|NULL|, which implies that the
-** default '|stderr| will be used from that moment on.
-** 
-*/
-#define utlSetOutput(fname) ((utl_output ? fclose(utl_output) : 0),\
-                             (utl_output = (fname? fopen(fname,"w"): NULL)))
-
-
 
 /* .% Try/Catch
 ** ~~~~~~~~~~~~~~~~~~~~~~~
-**   Simple implementation of try/catch.
+**   Exceptions can be very useful when dealing with error conditions is so
+** complicate that the logic of errors handling obscures the logic of the 
+** program itself.
+**   If an error happens in the '|try| section, you can '|throw()| an exception
+** (an error condition) and the control goes back to the '|catch| section
+** where the proper actions can be taken.
 **
+**   Simple implementation of try/catch.
+** .{{ c
 **   tryenv env = NULL;
-**   try(env)) {
+**   try(env) {
 **      ... code ...
-**      if (something_failed) throw(env, execption_num)  // must be > 0 
-**      some_other_func(); // you can trhow exceptions from other functions 
-**      ... code ...
+**      if (something_failed) throw(env, ERR_OUTOFMEM)  // must be > 0 
+**      some_other_func(env); // you can trhow exceptions from other functions 
+**      ... code ...          // as long as you pass it the try environment.
 **   }  
-**   catch(3) {
-**      ... code ...
-**   }
-**   catch(4) {
-**      ... code ...
-**   }
-**   catchall {  // None of the above! If not present the exception
-**                  // will be thrown again at the upper level
-**                  // if no handler is found the program exits
-*                   // utlErr is the exception code
-**      ... code ...
-**   }
-**   tryend;
-** 
+**   catch({                  // NOTE the catch part is enclosed in special 
+*       case ERR_OUTOFMEM :   // braces: '|({ ... })| and is the body of a
+**      ... code ...          // '|switch()| statement (including fallthrough!)
+**   });
+** .}}
+**
 **  This comes useful when you throw an exception form a called function.
 **  The example below, handles the "out of mem" condition in the same place
 **  regardless of where the exception was raised.
-** 
+**
+** .{{ C
+**
 **   #define ERR_OUTOFMEM 0xF0CA
 **   tryenv env = NULL; // Remember to set to NULL initally!
 **   char *f1(tryenv ee, int x)   { ... throw(ee, ERR_OUTOFMEM} ... }
@@ -241,50 +205,84 @@ utl_extern(FILE *utl_output, = NULL);
 **      f2(env,"Hello"); 
 **      ... code ...
 **   }  
-**   utlCatch(ERR_OUTOFMEM) {
-**      ... code ... // Handle all your cleanup here!
-**   }
-**   tryend;
+**   catch({                    // Note the use of '|({| and '|})| !!
+**      case  ERR_OUTOFMEM : 
+**                 ... code ... // Handle all your cleanup here!
+**                 break;
+**   });
+**
+** .}}
 */ 
 
 #ifndef UTL_NOTRYCATCH
 
 typedef struct utl_env_s { 
   jmp_buf jb;
-  struct utl_env_s *prev;
-  int err;
-} utl_env_s, *tryenv; 
-
-#define utl_lblx(x,l)  x##l
-#define utl_lbl(x,l)   utl_lblx(x,l)
+  struct utl_env_s volatile *prev;
+  struct utl_env_s volatile **orig;
+} *tryenv; 
 
 #define try(utl_env) \
-            do { struct utl_env_s utl_cur_env; int utlErr; \
-                 utl_cur_env.err = 0; \
-                 utl_cur_env.prev = utl_env; \
+            do { struct utl_env_s utl_cur_env; volatile int utl_err; \
+                 utl_cur_env.prev = (void *)utl_env; \
+                 utl_cur_env.orig = (void *)(&utl_env); \
                  utl_env = &utl_cur_env; \
-                 for ( ; utl_cur_env.err >= 0 \
-                       ; (utl_env = utl_cur_env.prev) \
-                         ? utl_env->err = utl_cur_env.err : 0 ) \
-                   if (utl_cur_env.err > 0) throw(utl_env,utl_cur_env.err); \
-                   else if (!utl_env) break; \
-                   else switch ((utl_cur_env.err = setjmp(utl_cur_env.jb))) {\
-                          case 0 :
+                 if ((utl_err = setjmp(utl_cur_env.jb))==0)
+                 
+#define catch(y) if (utl_err) switch (utl_err) { \
+                      y \
+                   } \
+                   utl_err = 0;\
+                  *utl_cur_env.orig = utl_cur_env.prev; \
+                } while(0)
 
-#define catch(e)                   break; \
-                          case e : utlErr = utl_cur_env.err; \
-                                   utl_cur_env.err = -1; 
-                                    
-#define catchall                   break; \
-                         default : utlErr = utl_cur_env.err; \
-                                   utl_cur_env.err = -1;  
-
-#define tryend         } \
-               } while(0)
-
-#define throw(env,err) (env? longjmp(env->jb, err): exit(err))
+#define throw(env,err) (env? longjmp(((tryenv)env)->jb, err): exit(err))
+#define rethrow        (*utl_cur_env.orig = utl_cur_env.prev,throw(*utl_cur_env.orig,utl_err))
 
 #endif
+
+
+/*  .% Finite state machine
+**  =======================
+**
+**    A Finite State Machine (FSM) is very useful when 
+**
+** .v
+**      fsm ({            // Note the use of '|({| and '|})| !!
+**
+**        case : { ...
+**                   if (c == 0) fsmGoto(z);
+**                   fsmGoto(y);
+**        }
+**
+**        case z : { ...
+**                   break;  // exit from the FSM
+**        }
+**
+**        case y : { ...
+**                   if (c == 1) fsmGoto(x);
+**                   fsmGoto(z);
+**        }
+**      });
+** ..
+**
+**   It's a good practice to include a drawing of the FSM in the technical
+** documentation (e.g including the GraphViz description in comments).
+*/
+
+#define fsmSTART  0
+#define fsmEND   -1
+
+#define fsm(x)  do { int fsm_next , fsm_state; \
+                      for (fsm_next=fsmSTART; fsm_next>=0;) \
+                        switch((fsm_state=fsm_next, fsm_next=-1, fsm_state)) { \
+                        x \
+                }} while (utlZero)
+                         
+#define fsmGoto(x)  fsm_next = x; break
+#define fsmRestart fsm_next = fsmSTART; break
+#define fsmExit    fsm_next = fsmEND; break
+
 
 /* .% UnitTest
 ** ===========
@@ -301,10 +299,13 @@ typedef struct utl_env_s {
 
 #ifdef UTL_UNITTEST
 
+utl_extern(FILE *TST_FILE, = NULL);
+#define TSTFILE (TST_FILE?TST_FILE:stderr)
+
 /* Output is flushed every time to avoid we lose a message in case of
 ** abnormal exit. 
 */
-#define TSTWRITE(...) (fprintf(utlOut,__VA_ARGS__),fflush(utlOut))
+#define TSTWRITE(...) (fprintf(TSTFILE,__VA_ARGS__),fflush(TSTFILE))
 
 #define TSTTITLE(s) TSTWRITE("TAP version 13\n#\n# ** %s - (%s)\n",s,__FILE__)
 
@@ -415,7 +416,7 @@ typedef struct utl_env_s {
   TSTWRITE("#\n# TOTAL OK: %d/%d SKIP: %d TODO: %d\n",TSTGPAS,TSTGTT, \
                                                               TSTNSK,TSTNTD), \
   TSTWRITE("#\n# TEST PLAN: %s \n",TSTPASSED ? "PASSED" : "FAILED"), \
-  TSTWRITE("#\n1..%d\n",TSTGTT),fflush(utlOut)) )
+  TSTWRITE("#\n1..%d\n",TSTGTT),fflush(TSTFILE)) )
 
 /* Execute a statement if a test succeeded */
 #define TSTIF_OK  if (TSTRES)
@@ -447,40 +448,32 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 /* .% Logging
 ** ==========
 **
-** While the debugging functions are meant to be used during the
-** development process, logging functions are intended to be used
-** in production, after a stable  version of the application has
-** been released.
-** 
-** These functions are modeled after the widely used log4j
-** framework but only offers logging to local files.
 */
+
+#define log_D 7
+#define log_I 6
+#define log_M 5
+#define log_W 4
+#define log_E 3
+#define log_C 2
+#define log_A 1
+#define log_F 0
+
 
 /* Logging functions are available unless the symbol '{=UTL_NOLOGGING}
 ** has been defined before including '|utl.h|.
 */
 
-#define log_All    0
-#define log_Debug  1
-#define log_Info   2
-#define log_Warn   3
-#define log_Error  4
-#define log_Fatal  5
-#define log_Msg    6
-#define log_Off    7
-
 #ifndef UTL_NOLOGGING
+
+typedef struct {
+  FILE *file;
+  short level;
+  short count;
+} utl_log_s, *logger;
 
 #include <time.h>
 #include <ctype.h>
-                           /* 0     1     2     3     4     5     6     7 */
-#define utl_abbrev         {"ALL","DBG","INF","WRN","ERR","FTL","MSG","OFF"}
-utl_extern( char const *log_abbrev[] , = utl_abbrev);
-
-utl_extern( FILE       *log_file , = NULL);
-utl_extern( int         log_level, = log_Off);
-utl_extern( char        log_timestr[32], utl_initvoid);
-utl_extern( time_t      log_time , = 0 );
 
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
@@ -493,24 +486,29 @@ utl_extern( time_t      log_time , = 0 );
 **                         enviroment variable.
 */
 
-#define logLevel(level)         (log_level = (log_##level))
-#define logLevelEnv(var,level)  (log_level = log_levelenv(var,log_##level))
+                                    /* 0   1   2   3   4   5   6   7   8*/
+utl_extern(char const *log_abbrev, = "FTL ALT CRT ERR WRN MSG INF DBG OFF    ");
 
-int log_levelenv(const char *var, int level);
+int   log_level(logger lg);
+int   log_chrlevel(char *l);
+int   logLevel(logger lg, char *lv); 
+int   logLevelEnv(logger lg, char *var, char *level);
 
 /*
 ** The table below shows whether a message of a certain level will be
 ** printed (Y) or not (N) given the current level of logging.
 ** .v
-**                       message level 
-**                    DBG INF WRN ERR FTL
-**               ALL   Y   Y   Y   Y   Y
-**               DBG   Y   Y   Y   Y   Y
-**               INF   N   Y   Y   Y   Y
-**      current  WRN   N   N   Y   Y   Y
-**      logging  ERR   N   N   N   Y   Y
-**       level   FTL   N   N   N   N   Y
-**               OFF   N   N   N   N   N
+**                          message level 
+**                    DBG INF MSG WRN ERR CRT ALT FTL
+**               DBG   Y   Y   Y   Y   Y   Y   Y   Y
+**               INF   N   Y   Y   Y   Y   Y   Y   Y
+**               MSG   N   N   Y   Y   Y   Y   Y   Y
+**      current  WRN   N   N   N   Y   Y   Y   Y   Y
+**      logging  ERR   N   N   N   N   Y   Y   Y   Y
+**       level   CRT   N   N   N   N   N   Y   Y   Y
+**               ALT   N   N   N   N   N   N   Y   Y
+**               FTL   N   N   N   N   N   N   N   Y
+**               OFF   N   N   N   N   N   N   N   N
 ** ..
 */
 
@@ -540,62 +538,52 @@ int log_levelenv(const char *var, int level);
 ** you should use the '{=logFile} macro.
 */
 
-#define logFile         (log_file? log_file: stderr) 
 
 /*    Log files can be opened in "write" or "append" mode as any normal file 
 ** using the '{=logOpen()} function.
 ** For example:
 ** .v  
-**   logOpen("file1.log","w") // Delete old log file and create a new one
+**   logOpen(lgr,"file1.log","w") // Delete old log file and create a new one
 **   ...
-**   logOpen(NULL,NULL); // Close log file, send next messages to stderr
-**   ... 
-**   logOpen("file1.log","a") // Append to previous log file
+**   logOpen(lgr",file1.log","a") // Append to previous log file
 ** .. 
 */
 
-#define logOpen(fname,mode) ((log_file? fclose(log_file) : 0),\
-                                (log_file = fname? fopen(fname,mode) : NULL))
+#define logOpen(l,f,m) (l=log_open(l,f,m))
+#define logClose(l)    (l=log_open(l,NULL,NULL))
+logger log_open(logger lg, char *fname, char *mode);
+FILE *log_file(logger lg);
 
-#define logClose() logOpen(NULL,NULL)
+#define logIf(lg,lc) log_if(lg,log_chrlevel(lc))
 
-/*   To actually write a message on the log file, use the '{=log_write()}
-** function as if it was a '|printf()| with the exception that the first
-** paratmeter is the level of the message.
-** Example:
-** .v
-**    log_write(log_Info,"Something weird at %d is happening", counter);
-** ..
-*/
+#define log_if(lg,lv) if ((lv) >= log_level(lg)) utlZero ; else
 
-#define log_write(lvl,...) \
-       (lvl >= log_level  \
-          ? (time(&log_time),\
-             strftime(log_timestr,32,"%Y-%m-%d %X",localtime(&log_time)),\
-             fprintf(logFile,"\n%s %s ",log_timestr, log_abbrev[lvl]),\
-             fprintf(logFile,__VA_ARGS__),\
-             fflush(logFile)\
-            )\
-          : 0)
+#define log_write(lg,lv,...) \
+            log_if(lg,lv) { \
+              char tstr[32]; time_t t; FILE *f = log_file(lg);\
+              time(&t);\
+              strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));\
+              fprintf(f,"\n%s %.4s",tstr, log_abbrev+(lv<<2));\
+              fprintf(f,__VA_ARGS__); fflush(f);\
+            } 
 
-/* You can also use one of the following functions that won't require you 
-** to pass the message level as parameter:
-*/          
-#define logDebug(...)    log_write(log_Debug, __VA_ARGS__)
-#define logInfo(...)     log_write(log_Info,  __VA_ARGS__)
-#define logWarn(...)     log_write(log_Warn,  __VA_ARGS__)
-#define logError(...)    log_write(log_Error, __VA_ARGS__)
-#define logFatal(...)    log_write(log_Fatal, __VA_ARGS__)
-#define logMessage(...)  log_write(log_Msg,   __VA_ARGS__)
+          
+#define logDebug(lg, ...)    log_write(lg,log_D, __VA_ARGS__)
+#define logInfo(lg, ...)     log_write(lg,log_I, __VA_ARGS__)
+#define logMessage(lg, ...)  log_write(lg,log_M, __VA_ARGS__)
+#define logWarn(lg, ...)     log_write(lg,log_W, __VA_ARGS__)
+#define logError(lg, ...)    log_write(lg,log_E, __VA_ARGS__)
+#define logCritical(lg, ...) log_write(lg,log_C, __VA_ARGS__)
+#define logAlarm(lg, ...)    log_write(lg,log_A, __VA_ARGS__)
+#define logFatal(lg, ...)    log_write(lg,log_F, __VA_ARGS__)
 
-/* If you want to add something to the log file without creating a new entry
-** in the log file, you can use the '{=logMessage()} function. 
-*/
+#define logContinue(...)  (fputs("\n                        ",logFile),\
+                           (fprintf(logFile,__VA_ARGS__), fflush(logFile)))                       
 
-/*   
+/*
 ** .v
 **   logError("Too many items at counter %d (%d)",numcounter,numitems);
-**   logNote("Occured %d times",times++);
+**   logContinue("Occured %d times",times++);
 ** ..
 ** will produce:
 ** .v
@@ -604,26 +592,85 @@ int log_levelenv(const char *var, int level);
 ** ..
 */
 
-#define logNote(...)  (fputs("\n                        ",logFile), \
-                       fprintf(logFile,__VA_ARGS__), fflush(logFile))                       
+#ifdef UTL_C
+int   log_level(logger lg) { return (lg ? lg->level : log_W) ; }
+FILE *log_file(logger lg)  { return ((lg && (lg->file)) ? lg->file : stderr);}
 
-#define logIf(lvl) if (log_level >= log_##lvl)
+int   log_chrlevel(char *l) {
+  int i=0;
+  char c = l ? toupper(l[0]) : 'W';
+  
+  while (log_abbrev[i] != ' ' && log_abbrev[i] != c) i+=4;
+  i = (i <= 4*7) ? (i>> 2) : log_W;
+  return i;
+}
+
+int logLevel(logger lg, char *lv) 
+{
+  if (lg) {
+    if (lv && lv[0])
+      lg->level = log_chrlevel(lv);
+  }
+  return log_level(lg);  
+}
+
+int logLevelEnv(logger lg, char *var, char *level)
+{
+  char *lvl_str;
+  
+  lvl_str=getenv(var);
+  if (!lvl_str) lvl_str = level;
+  return logLevel(lg,lvl_str);
+}
+
+logger log_open(logger lg, char *fname, char *mode)
+{
+  char md[4];
+
+  if (lg) {
+    if (lg->file && lg->file != stderr && lg->file != stdout)
+      fclose(lg->file);
+    if (!fname) { free(lg); lg = NULL; }
+  }  
+  else
+    if (fname) lg = malloc(sizeof(utl_log_s));
+  if (lg && fname) {
+    lg->level = log_W;
+    if (strcmp(fname,"stderr") == 0) lg->file = stderr;
+    else if (strcmp(fname,"stdout") == 0) lg->file = stdout;
+    else {
+      md[0] = 'a'; md[1] = '\0';
+      if (mode[0] == 'w' || mode[0] == 'W') md[0] = 'w'; 
+      lg->file = fopen(fname,md);
+      if (!lg->file) lg->file = stderr;
+    }
+  }
+  return lg;
+}
+
+#endif
 
 #else
 
-#define logLevel(level)         
-#define logLevelEnv(v,l)        
-#define logFile stderr          
-#define logOpen(fname,mode)     
-#define logClose()              
-#define logDebug(...)           
-#define logInfo(...)            
-#define logWarn(...)            
-#define logError(...)           
-#define logFatal(...)           
-#define logMessage(...)         
+#define logLevel(lg,lv)       log_W
+#define logLevelEnv(lg,v,l)   log_W     
+#define logDebug(lg, ...)    
+#define logInfo(lg, ...)     
+#define logMessage(lg, ...)  
+#define logWarn(lg, ...)     
+#define logError(lg, ...)    
+#define logCritical(lg, ...) 
+#define logAlarm(lg, ...)    
+#define logFatal(lg, ...)    
 
-#define logIf(x) if (utlZero)
+#define logIf(lg,lv) if (!utlZero) utlZero ; else
+
+#define log_file(l) NULL
+
+#define logOpen(l,f,m) NULL
+#define logClose(l)    NULL
+
+typedef void *logger;
 
 #endif /*- UTL_NOLOGGING */
 
@@ -632,49 +679,7 @@ int log_levelenv(const char *var, int level);
 #define logDebug(...) 
 #endif
 
-#define _logDebug(...)
-
-/* dbgmsg shouldn't be used */
-#define  dbgmsg  logDebug
-#define _dbgmsg _logDebug
-
-/*  .% Finite state machine
-**  =======================
-**
-**  Macros to embed Finite state machine into C programs.
-**
-** .v
-**      fsm {
-**
-**        fsmState(x) : { ...
-**                   if (c == 0) fsmGoto(z);
-**                   fsmGoto(y);
-**        }
-**
-**        fsmState(z) : { ...
-**                   break;  // exit from the FSM
-**        }
-**
-**        fsmState(y) : { ...
-**                   if (c == 1) fsmGoto(x);
-**                   fsmGoto(z);
-**        }
-**      }fsmend
-** ..
-**
-**   It's a good practice to include a drawing of the FSM in the technical
-** documentation (e.g including the GraphViz description in comments).
-*/
-
-#define fsm         do { int fsm_next , fsm_state; \
-                      for (fsm_next=0; fsm_next>=0;) \
-                        switch((fsm_state=fsm_next, fsm_next=-1, fsm_state)) {
-#define fsmState      break; case  
-#define fsmGoto(x)    fsm_next = x; break;  
-#define fsmEnd      } } while (utlZero) 
-
-#define fsmSTART  0
-#define fsmEND   -1
+#define logNDebug(...)
 
 /*  .% Traced memory check
 **  ======================
@@ -692,6 +697,12 @@ void  utl_free    (void *ptr, char *file, int line );
 void *utl_strdup  (void *ptr, char *file, int line);
 
 int utl_check(void *ptr,char *file, int line);
+
+#ifndef UTL_NOMEMLOGGER
+logger memLogger();
+#else
+#define memlogger() NULL
+#endif 
 
 #ifdef UTL_C
 /*************************************/
@@ -717,16 +728,16 @@ int utl_check(void *ptr,char *file, int line)
   if (ptr == NULL) return utlMemNull;
   p = utl_mem(ptr);
   if (memcmp(p->chk,BEG_CHK,4)) { 
-    logError("Invalid or double freed %p (%u %s %d)",p->data, \
+    logError(memLogger(),"Invalid or double freed %p (%u %s %d)",p->data, \
                                                utl_mem_allocated, file, line);     
     return utlMemInvalid; 
   }
   if (memcmp(p->data+p->size,END_CHK,4)) {
-    logError("Boundary overflow detected %p [%d] (%u %s %d)", \
+    logError(memLogger(),"Boundary overflow detected %p [%d] (%u %s %d)", \
                               p->data, p->size, utl_mem_allocated, file, line); 
     return utlMemOverflow;
   }
-  logInfo("Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
+  logInfo(memLogger(),"Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
   return utlMemValid; 
 }
 
@@ -734,18 +745,18 @@ void *utl_malloc(size_t size, char *file, int line )
 {
   utl_mem_t *p;
   
-  if (size == 0) logWarn("Shouldn't allocate 0 bytes (%u %s %d)", \
+  if (size == 0) logWarn(memLogger(),"Shouldn't allocate 0 bytes (%u %s %d)", \
                                                 utl_mem_allocated, file, line);
   p = malloc(sizeof(utl_mem_t) +size);
   if (p == NULL) {
-    logError("Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
+    logCritical(memLogger(),"Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
     return NULL;
   }
   p->size = size;
   memcpy(p->chk,BEG_CHK,4);
   memcpy(p->data+p->size,END_CHK,4);
   utl_mem_allocated += size;
-  logInfo("alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated,file,line);
+  logInfo(memLogger(),"alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated,file,line);
   return p->data;
 };
 
@@ -764,24 +775,25 @@ void utl_free(void *ptr, char *file, int line)
   utl_mem_t *p=NULL;
   
   switch (utl_check(ptr,file,line)) {
-    case utlMemNull  :    logInfo("free NULL (%u %s %d)", 
+    case utlMemNull  :    logWarn(memLogger(),"free NULL (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
                           break;
                           
-    case utlMemOverflow :
+    case utlMemOverflow : logWarn(memLogger(), "Freeing an overflown block  (%u %s %d)", 
+                                                           utl_mem_allocated, file, line);
     case utlMemValid :    p = utl_mem(ptr); 
                           memcpy(p->chk,CLR_CHK,4);
                           utl_mem_allocated -= p->size;
                           if (p->size == 0)
-                            logWarn("Freeing a block of 0 bytes (%u %s %d)", 
+                            logWarn(memLogger(),"Freeing a block of 0 bytes (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
 
-                          logInfo("free %p [%d] (%u %s %d)", ptr, 
+                          logInfo(memLogger(),"free %p [%d] (%u %s %d)", ptr, 
                                     p?p->size:0,utl_mem_allocated, file, line);
                           free(p);
                           break;
                           
-    case utlMemInvalid :  logInfo("free an invalid pointer! (%u %s %d)", \
+    case utlMemInvalid :  logError(memLogger(),"free an invalid pointer! (%u %s %d)", \
                                                 utl_mem_allocated, file, line);
                           break;
   }
@@ -792,25 +804,25 @@ void *utl_realloc(void *ptr, size_t size, char *file, int line)
   utl_mem_t *p;
   
   if (size == 0) {
-    logInfo("realloc %p -> [0] (%u %s %d)",ptr,utl_mem_allocated, file, line);
+    logWarn(memLogger(),"realloc() used as free() %p -> [0] (%u %s %d)",ptr,utl_mem_allocated, file, line);
     utl_free(ptr,file,line); 
   } 
   else {
     switch (utl_check(ptr,file,line)) {
-      case utlMemNull   : logInfo("realloc NULL (%u %s %d)", \
+      case utlMemNull   : logWarn(memLogger(),"realloc() used as malloc() (%u %s %d)", \
                                              utl_mem_allocated, file, line);
                           return utl_malloc(size,file,line);
                         
       case utlMemValid  : p = utl_mem(ptr); 
                           p = realloc(p,sizeof(utl_mem_t) + size); 
                           if (p == NULL) {
-                            logError("Out of Memory (%u %s %d)", \
+                            logCritical(memLogger(),"Out of Memory (%u %s %d)", \
                                              utl_mem_allocated, file, line);
                             return NULL;
                           }
                           utl_mem_allocated -= p->size;
                           utl_mem_allocated += size; 
-                          logInfo("realloc %p [%d] -> %p [%d] (%u %s %d)", \
+                          logInfo(memLogger(),"realloc %p [%d] -> %p [%d] (%u %s %d)", \
                                           ptr, p->size, p->data, size, \
                                           utl_mem_allocated, file, line);
                           p->size = size;
@@ -823,21 +835,20 @@ void *utl_realloc(void *ptr, size_t size, char *file, int line)
   return ptr;
 }
 
-
 void *utl_strdup(void *ptr, char *file, int line)
 {
   char *dest;
   size_t size;
-  
+	
   if (ptr == NULL) {
-    logWarn("strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
+    logWarn(memLogger(),"strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
     return NULL;
   }
   size = strlen(ptr)+1;
 
   dest = utl_malloc(size,file,line);
   if (dest) memcpy(dest,ptr,size);
-  logInfo("strdup %p [%d] -> %p (%u %s %d)", ptr, size, dest, \
+  logInfo(memLogger(),"strdup %p [%d] -> %p (%u %s %d)", ptr, size, dest, \
                                                 utl_mem_allocated, file, line);
   return dest;
 }
@@ -855,6 +866,13 @@ void *utl_strdup(void *ptr, char *file, int line)
 #define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
 #define utlMemAllocated utl_mem_allocated
 #define utlMemValidate(p) utl_mem_validate(p)
+
+#define utlMalloc(n)     utl_malloc(n,__FILE__,__LINE__)
+#define utlCalloc(n,s)   utl_calloc(n,s,__FILE__,__LINE__)
+#define utlRealloc(p,n)  utl_realloc(p,n,__FILE__,__LINE__)
+#define utlFree(p)       utl_free(p,__FILE__,__LINE__)
+#define utlStrdup(p)     utl_strdup(p,__FILE__,__LINE__)
+
 
 #else /* UTL_MEMCHECK */
 

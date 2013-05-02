@@ -34,70 +34,87 @@ int main (int argc, char *argv[])
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          try(env)  { throw(env,1); }
-          catch(1)  { k = 1; }
-          catch(2)  { k = 2; }
-          catchall  { k = 9; } 
-          tryend;
-        } TSTEQINT("Exception 1 caught", 1,k);
+          try(env) {
+            throw(env,1); 
+          }
+          catch ({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9; 
+          }); 
+        }
+        TSTEQINT("Exception 1 caught", 1,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
      
       TSTGROUP("catch 2") {
         TSTCODE {
-          k = 0;
-          try(env)   { throw(env,2); }
-          catch(1)  { k = 1; }
-          catch(2)  { k = 2; }
-          catchall  { k = 9; } 
-          tryend;
-        } TSTEQINT("Exception 2 caught", 2,k);
+          k = 0; env = NULL;
+          try(env) {
+            throw(env,2);
+          }
+          catch ({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9;  
+          });
+        }
+        TSTEQINT("Exception 2 caught", 2,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
       
       TSTGROUP("catch default") {
         TSTCODE {
           k = 0;
-          try(env)    { throw(env,3);  }
-            catch(1)  { k = 1; }
-            catch(2)  { k = 2; }
-            catchall  { k = 9; } 
-          tryend;
+          try(env) { throw(env,3); }
+          catch({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9;  
+          });
         } TSTEQINT("Exception not caught", 9,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
     }
-    
+  
     TSTSECTION("Catch exceptions from functions") {
       TSTGROUP("catch 1") {
         TSTCODE {
           k = 0;
-          try(env)    functhrow(env,1);
-            catch(1)  k = 1;
-            catch(2)  k = 2;
-          tryend;
+          try(env) { functhrow(env,1); }
+          catch ({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9; 
+          }); 
         } TSTEQINT("Exception 1 caught", 1,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
-      
+     
       TSTGROUP("catch 2") {
         TSTCODE {
-          k = 0;
-          try(env)    functhrow(env,2);
-            catch(1)  k = 1;
-            catch(2)  k = 2;
-          tryend;
-        }
-        TSTEQINT("Exception 2 caught", 2,k);
+          k = 0; env = NULL;
+          try(env)  functhrow(env,2); 
+          catch ({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9;  
+          });
+        } TSTEQINT("Exception 2 caught", 2,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
       
       TSTGROUP("catch default") {
         TSTCODE {
           k = 0;
-          try(env)     functhrow(env,3);
-            catch(1)   k = 1;
-            catch(2)   k = 2;
-            catchall   k = 9; 
-          tryend;
-        }
-        TSTEQINT("Exception not caught", 9,k);
-        TSTFAILNOTE("Expected: %d got: %d",9,k);
+          try(env) { functhrow(env,3); }
+          catch({
+            case 1 :  k = 1; break;
+            case 2 :  k = 2; break;
+            default:  k = 9;  
+          });
+        } TSTEQINT("Exception not caught", 9,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
     }
 
@@ -106,93 +123,129 @@ int main (int argc, char *argv[])
         TSTCODE {
           k = 0;
           try(env)      {
-            try(env)    { functhrow(env,20); }
-              catch(10)  {k += 10;}
-              catch(20)  {k += 20;}
-            tryend;
+            try(env)    { 
+              functhrow(env,20);
+            }
+            catch({
+              case 10 : k += 10; break;
+              case 20 : k += 20; break;
+              default : rethrow;
+            });
           }
-          catch(1) {k += 1;}
-          catch(2) {k += 2;}
-          tryend;
+          catch({
+            case 1 : k += 1; break;
+            case 2 : k += 2; break;
+          });
         }
         TSTEQINT("Exception 20 caught", 20,k);
+        TSTEQPTR("Env is null",NULL,env);
         
         TSTCODE {
           k = 0;
           try(env) {
-            try(env)     { functhrow(env,2); }
-              catch(10)  {k += 10;}
-              catch(20)  {k += 20;}
-            tryend;
+            try(env) {
+             functhrow(env,2);
+            }
+            catch({
+              case 10 : k += 10; break;
+              case 20 : k += 20; break;
+              default : rethrow;
+            });
           }
-          catch(1)  {k += 1;}
-          catch(2)  {k += 2;}
-          tryend;
+          catch({
+            case 1 : k += 1; break;
+            case 2 : k += 2; break;
+            default : rethrow;
+          });
         }
         TSTEQINT("Exception 2 caught", 2,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
       
       TSTGROUP("Visibility") {
         TSTCODE {
           k = 0;
+          env = NULL;
           try(env) {
-            try(env)      { functhrow(env,2); }
-              catch(10) {k += 10;}
-              catch(20) {k += 20;}
-            tryend;
+            TSTNOTE("A %d %p %d",k,env,__LINE__);
+            try(env) {
+              TSTNOTE("B %d %p %d",k,env,__LINE__);
+              try(env) { 
+                TSTNOTE("C %d %p %d",k,env,__LINE__);
+                functhrow(env,2);
+              }
+              catch({
+                case 10 : k += 10; break;
+                case 20 : k += 20; break;
+                default : TSTNOTE("2 %d %p %d",k,env,__LINE__); rethrow;
+              });
             }
-            catch(1) {k += 1;}
-            catch(2) {k += 2; functhrow(env,10);}
-            catchall {k += 100;} 
-          tryend;
+            catch({
+              case 1 : k += 1; TSTNOTE("3 %d %p %d",k,env,__LINE__);break;
+              case 2 : k += 2; TSTNOTE("4 %d %p %d",k,env,__LINE__);functhrow(env,10); break;
+              default: k += 100; TSTNOTE("5 %d %p %d",k,env,__LINE__);
+            });
+          }
+          catch(
+           default: k += 300; TSTNOTE("6 %d %p %d",k,env,__LINE__);
+          );
         }
         TSTEQINT("Inner try are invisible", 102,k);
-        TSTEXPECTED("%d",102,"%d",k);
+        TSTEQPTR("Env is null",NULL,env);
       }
-
     }
-    
+
     TSTSECTION("Multiple throw") {
       TSTGROUP("Same try") {
         TSTCODE {
           k = 0;
-          try(env)    { throw(env,2); }
-            catch(1) { k += 1; }
-            catch(2) { k += 2; functhrow(env,1);}
-            catchall  { k += 9; } 
-          tryend;
+          try(env)  { throw(env,2); }
+          catch({
+            case 1 :  k += 1; break;
+            case 2 :  k += 2; functhrow(env,1);
+            default:  k += 9;  
+          });
         } TSTEQINT("Exception 2 then 1 caught", 3,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
         
       TSTGROUP("Nested try") {
         TSTCODE {
           k = 0;
           try(env) {
-            try(env)      { functhrow(env,20); }
-              catch(10)  {k += 10; functhrow(env,2);}
-              catch(20)  {k += 20; throw(env,10);}
-            tryend;
-            }
-            catch(1)  {k += 1;}
-            catch(2)  {k += 2;}
-          tryend;
+            try(env)   { functhrow(env,20); }
+            catch({
+              case 10 : k += 10; functhrow(env,2);
+              case 20 : k += 20; throw(env,10);
+              default : rethrow;
+            });
+          }
+          catch({
+            case 1 : k += 1; break;
+            case 2 : k += 2; break;
+          });
           
         }  TSTEQINT("Exception 10,20,2 caught", 32,k);
+        TSTEQPTR("Env is null",NULL,env);
         
         TSTCODE {
           k = 0;
-          try(env)      {
-            try(env)      { functhrow(env,20); }
-              catch(10)  {k += 10; functhrow(env,2);}
-              catch(20)  {k += 20; throw(env,10);}
-            tryend;
-            }
-            catch(1) {k += 1;}
-            catch(2) {k += 2; functhrow(env,3);}
-            catchall {k += 100; } 
-          tryend;
+          try(env) {
+            try(env)    { functhrow(env,20); }
+            catch({
+              case 10 : k += 10; functhrow(env,2);
+              case 20 : k += 20; throw(env,10);
+              default : rethrow;
+            });
+          }
+          catch({
+            case 1 : k += 1; break;
+            case 2 : k += 2; functhrow(env,3);
+            default: k += 100;  
+          });
         }  TSTEQINT("Exception 10,20,2,3 caught", 132,k);
+        TSTEQPTR("Env is null",NULL,env);
       }
-    }    
+    }
   }
 }
