@@ -401,6 +401,11 @@ utl_extern(FILE *TST_FILE, = NULL);
                               TSTEXPECTED("(ptr) other than 0x%p",__exp,"0x%p",__ret); \
                             }  while (utlZero)
 
+#define TSTNULL(s,r)     TSTEQPTR(s,NULL,r)
+
+#define TSTNNULL(s,r)    TSTNEQPTR(s,NULL,r)
+
+							
 #define TSTBAILOUT(r) \
           if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
 
@@ -466,10 +471,17 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 
 #ifndef UTL_NOLOGGING
 
+#define UTL_LOG_NEW 0x00
+#define UTL_LOG_ADD 0x01
+#define UTL_LOG_BIN 0x02
+#define UTL_LOG_ROT 0x04
+#define UTL_LOG_ERR 0x10
+
 typedef struct {
-  FILE *file;
-  short level;
-  short count;
+  FILE          *file;
+  unsigned char  level;
+  unsigned char  flags;
+  unsigned short count;
 } utl_log_s, *logger;
 
 #include <time.h>
@@ -486,8 +498,9 @@ typedef struct {
 **                         enviroment variable.
 */
 
-                                    /* 0   1   2   3   4   5   6   7   8*/
-utl_extern(char const *log_abbrev, = "FTL ALT CRT ERR WRN MSG INF DBG OFF    ");
+                                   /* 0   1   2   3   4   5   6   7   8   9    */
+                                   /* 0   4   8   12  16  20  24  28  32  36   */
+utl_extern(char const *log_abbrev, = "FTL ALT CRT ERR WRN MSG INF DBG OFF LOG   ");
 
 int   log_level(logger lg);
 int   log_chrlevel(char *l);
@@ -512,6 +525,20 @@ int   logLevelEnv(logger lg, char *var, char *level);
 ** ..
 */
 
+/* .%% Logging file rotate
+** ~~~~~~~~~~~~~~~~~~~~~~~
+**
+** For long running programs (servers, daemons, ...) it is important to rotate 
+** the log files from time to time so that they won't become too big.
+** utl offers a very simple model, if rotation is enabled, every 65536 messages
+** the file will be closed and a new file will be opened. Assuming
+** Then new file will be renamed _1, _2, etc.
+**
+**   logRotateOn(lg)
+**   logRotateOff(lg)
+**
+
+**
 /* .%% Logging format
 ** ~~~~~~~~~~~~~~~~~~
 ** 
@@ -528,45 +555,28 @@ int   logLevelEnv(logger lg, char *var, char *level);
 **
 */
 
-/* .%% Setting the log file
-** ~~~~~~~~~~~~~~~~~~~~~~~~
-**
-**   By default, logging messages will be sent to stderr. The internal
-** variable '{=log_file} holds the file descriptor of the file the log
-** messages should be sent to. 
-**   Don't use it in your program, if you need a pointer to the log file,
-** you should use the '{=logFile} macro.
-*/
-
-
 /*    Log files can be opened in "write" or "append" mode as any normal file 
 ** using the '{=logOpen()} function.
 ** For example:
 ** .v  
-**   logOpen(lgr,"file1.log","w") // Delete old log file and create a new one
+**   logger lgr = NULL;
+**   logOpen(lgr,"file1.log",UTL_LOG_NEW) // Delete old log file and create a new one
 **   ...
-**   logOpen(lgr",file1.log","a") // Append to previous log file
+**   logOpen(lgr,"file1.log",UTL_LOG_ADD) // Append to previous log file
 ** .. 
 */
 
-#define logOpen(l,f,m) (l=log_open(l,f,m))
-#define logClose(l)    (l=log_open(l,NULL,NULL))
-logger log_open(logger lg, char *fname, char *mode);
-FILE *log_file(logger lg);
+#define logOpen(l,f,m)   (l=log_open(f,m))
+#define logClose(l)      (log_close(l),l=NULL)
+
+logger log_open(char *fname, unsigned char mode);
+logger log_close(logger lg);
+void log_write(logger lg,int lv, char *format, ...);
+FILE *logFile(logger lg);
 
 #define logIf(lg,lc) log_if(lg,log_chrlevel(lc))
 
 #define log_if(lg,lv) if ((lv) >= log_level(lg)) utlZero ; else
-
-#define log_write(lg,lv,...) \
-            log_if(lg,lv) { \
-              char tstr[32]; time_t t; FILE *f = log_file(lg);\
-              time(&t);\
-              strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));\
-              fprintf(f,"\n%s %.4s",tstr, log_abbrev+(lv<<2));\
-              fprintf(f,__VA_ARGS__); fflush(f);\
-            } 
-
           
 #define logDebug(lg, ...)    log_write(lg,log_D, __VA_ARGS__)
 #define logInfo(lg, ...)     log_write(lg,log_I, __VA_ARGS__)
@@ -577,8 +587,8 @@ FILE *log_file(logger lg);
 #define logAlarm(lg, ...)    log_write(lg,log_A, __VA_ARGS__)
 #define logFatal(lg, ...)    log_write(lg,log_F, __VA_ARGS__)
 
-#define logContinue(...)  (fputs("\n                        ",logFile),\
-                           (fprintf(logFile,__VA_ARGS__), fflush(logFile)))                       
+#define logContinue(lg,...)  (fputs("                        ",logFile(lg),\
+                             (fprintf(logFile,__VA_ARGS__), fputc('\n',logFile(lg)),fflush(logFile(lg))))
 
 /*
 ** .v
@@ -593,8 +603,8 @@ FILE *log_file(logger lg);
 */
 
 #ifdef UTL_C
-int   log_level(logger lg) { return (lg ? lg->level : log_W) ; }
-FILE *log_file(logger lg)  { return ((lg && (lg->file)) ? lg->file : stderr);}
+int   log_level(logger lg) { return (int)(lg ? lg->level : log_W) ; }
+FILE *logFile(logger lg) {FILE *f=NULL; if (lg) f = lg->file; return f?f:stderr; }
 
 int   log_chrlevel(char *l) {
   int i=0;
@@ -623,32 +633,69 @@ int logLevelEnv(logger lg, char *var, char *level)
   return logLevel(lg,lvl_str);
 }
 
-logger log_open(logger lg, char *fname, char *mode)
+logger log_open(char *fname, unsigned char mode)
 {
   char md[4];
-
+  logger lg;
+  
+  lg = malloc(sizeof(utl_log_s));
   if (lg) {
-    if (lg->file && lg->file != stderr && lg->file != stdout)
-      fclose(lg->file);
-    if (!fname) { free(lg); lg = NULL; }
-  }  
-  else
-    if (fname) lg = malloc(sizeof(utl_log_s));
-  if (lg && fname) {
-    lg->level = log_W;
-    if (strcmp(fname,"stderr") == 0) lg->file = stderr;
-    else if (strcmp(fname,"stdout") == 0) lg->file = stdout;
-    else {
-      md[0] = 'a'; md[1] = '\0';
-      if (mode[0] == 'w' || mode[0] == 'W') md[0] = 'w'; 
+	lg->file = NULL;
+    if (fname) {
+      md[0] = 'w'; md[1] = '\0';
+      if (mode & UTL_LOG_ADD) md[0] = 'a'; 
       lg->file = fopen(fname,md);
-      if (!lg->file) lg->file = stderr;
     }
+	if (!lg->file)
+      lg->file = (mode & UTL_LOG_ERR)? stderr : stdout;
+
+	if (lg->file != stderr && lg->file != stdout) {
+      lg->level = 9;
+      log_write(lg,9, "%s \"%s\"", (mode & UTL_LOG_ADD) ? "ADDEDTO" : "CREATED",fname); 
+	}
+
+    lg->level = log_W;
   }
   return lg;
 }
 
-#endif
+logger log_close(logger lg)
+{
+  if (lg) {
+    if (lg->file && lg->file != stderr && lg->file != stdout)
+	  fclose(lg->file);
+	lg->file = NULL;
+	free(lg);
+  }
+  return NULL;
+}
+
+void log_write(logger lg, int lv, char *format, ...)
+{
+  va_list args;
+  char tstr[32];
+  time_t t;
+  FILE *f = stderr;
+  int lg_lv = log_W;
+  if (lg) {
+    f = lg->file;
+    lg_lv = lg->level;
+  }
+  lv = lv & 0x0F;
+  if(lg_lv <= lv) {
+    time(&t);
+    strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));
+    fprintf(f,"%s %.4s",tstr, log_abbrev+(lv<<2));
+    va_start(args, format);
+    vfprintf(f,format, args);
+    va_end(args);
+	fputc('\n',f);
+    fflush(f);
+  }    
+}
+
+
+#endif  /*- UTL_C */
 
 #else
 
@@ -665,10 +712,10 @@ logger log_open(logger lg, char *fname, char *mode)
 
 #define logIf(lg,lv) if (!utlZero) utlZero ; else
 
-#define log_file(l) NULL
+#define logContinue(lg,...)  
 
-#define logOpen(l,f,m) NULL
-#define logClose(l)    NULL
+#define logOpen(lg,f,m) (lg=NULL)
+#define logClose(lg)    (lg=NULL)
 
 typedef void *logger;
 
@@ -676,10 +723,12 @@ typedef void *logger;
 
 #ifdef NDEBUG
 #undef logDebug
-#define logDebug(...) 
+#define logDebug(lg,...) 
 #endif
 
-#define logNDebug(...)
+#define logNDebug(lg,...)
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*  .% Traced memory check
 **  ======================
