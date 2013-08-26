@@ -537,8 +537,11 @@ int   logLevelEnv(logger lg, char *var, char *level);
 **   logRotateOn(lg)
 **   logRotateOff(lg)
 **
+*/
 
-**
+#define logRotOn(lg)   (lg? lg->flag |=  UTL_LOG_ROT : 0)
+#define logRotOff(lg)  (lg? lg->flag &= ~UTL_LOG_ROT : 0)
+
 /* .%% Logging format
 ** ~~~~~~~~~~~~~~~~~~
 ** 
@@ -604,6 +607,7 @@ FILE *logFile(logger lg);
 
 #ifdef UTL_C
 int   log_level(logger lg) { return (int)(lg ? lg->level : log_W) ; }
+
 FILE *logFile(logger lg) {FILE *f=NULL; if (lg) f = lg->file; return f?f:stderr; }
 
 int   log_chrlevel(char *l) {
@@ -642,7 +646,7 @@ logger log_open(char *fname, unsigned char mode)
   if (lg) {
 	lg->file = NULL;
     if (fname) {
-      md[0] = 'w'; md[1] = '\0';
+      md[0] = 'w'; md[1] = '+'; md[2] = '\0';
       if (mode & UTL_LOG_ADD) md[0] = 'a'; 
       lg->file = fopen(fname,md);
     }
@@ -664,10 +668,29 @@ logger log_close(logger lg)
   if (lg) {
     if (lg->file && lg->file != stderr && lg->file != stdout)
 	  fclose(lg->file);
-	lg->file = NULL;
-	free(lg);
+    lg->file = NULL;
+    free(lg);
   }
   return NULL;
+}
+
+/* 
+** if limit reached, close the log and open a new one incrementing
+** the name.
+**      mylog.log
+**      mylog_001.log
+**      mylog_002.log
+**       etc...
+*/
+static void log_rotate(lg)
+{
+  FILE *f;
+  char fname[1024];
+  
+  if (lg->count++ == 0 && lg->file != stdout && lg->file != stderr) {
+    fclose(lg->file);
+    f = fopen
+  }
 }
 
 void log_write(logger lg, int lv, char *format, ...)
@@ -686,11 +709,10 @@ void log_write(logger lg, int lv, char *format, ...)
     time(&t);
     strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));
     fprintf(f,"%s %.4s",tstr, log_abbrev+(lv<<2));
-    va_start(args, format);
-    vfprintf(f,format, args);
-    va_end(args);
-	fputc('\n',f);
+    va_start(args, format);  vfprintf(f,format, args);  va_end(args);
+    fputc('\n',f);
     fflush(f);
+    if (lg && (lg->flag & UTL_LOG_ROT)) log_rotate(lg);
   }    
 }
 
