@@ -22,7 +22,7 @@ logger lg = NULL;
 
 int main (int argc, char *argv[])
 {
-  TSTPLAN("utl unit test: logging") {
+  TSTPLAN("utl test: logging") {
     
     TSTSECTION("Enabled") {
         #ifdef UTL_NOLOGGING
@@ -148,7 +148,8 @@ int main (int argc, char *argv[])
         buf[0] = '\0';
         if(f) fgets(buf,120,f);
         p=buf;
-        while (*p && *p != '\n') p++; *p='\0';
+        while (*p && *p != '\n') p++;
+        *p='\0';
       }
       TSTEQINT("Log appending ok",0,strcmp(buf+20,"LOG ADDEDTO \"test.log\""));
       TSTFAILNOTE("Second line: [%s]",buf);

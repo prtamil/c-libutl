@@ -471,17 +471,15 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 
 #ifndef UTL_NOLOGGING
 
-#define UTL_LOG_NEW 0x00
-#define UTL_LOG_ADD 0x01
-#define UTL_LOG_BIN 0x02
-#define UTL_LOG_ROT 0x04
-#define UTL_LOG_ERR 0x10
+#define UTL_LOG_NEW 0x00    
+#define UTL_LOG_ADD 0x01    /* append to existing file */
+#define UTL_LOG_ERR 0x02    /* use stderr */
 
 typedef struct {
   FILE          *file;
   unsigned char  level;
   unsigned char  flags;
-  unsigned short count;
+  unsigned short rot;
 } utl_log_s, *logger;
 
 #include <time.h>
@@ -490,8 +488,7 @@ typedef struct {
 /* .%% Logging levels
 ** ~~~~~~~~~~~~~~~~~~
 **
-**   Logging levels are hierarchical and structured as in log4j. The variable 
-** '{=log_level} contains the current logging level.  Logging is off by default.
+**   Logging levels are hierarchical and structured. Default log level is WARN.
 **
 **   Use '{=logLevel()}    to set the desired level of logging.
 **   Use '{=logLevelEnv()} to set the desired level of logging based on an
@@ -530,17 +527,16 @@ int   logLevelEnv(logger lg, char *var, char *level);
 **
 ** For long running programs (servers, daemons, ...) it is important to rotate 
 ** the log files from time to time so that they won't become too big.
-** utl offers a very simple model, if rotation is enabled, every 65536 messages
-** the file will be closed and a new file will be opened. Assuming
+** The function logRotateOn() will check the current size of the log file and 
+** if it's bigger than the threshold specified, will close it and open a new
+** one with the same name and numbering it.
 ** Then new file will be renamed _1, _2, etc.
 **
-**   logRotateOn(lg)
-**   logRotateOff(lg)
+**   logRotate(lg,n)
 **
 */
 
-#define logRotOn(lg)   (lg? lg->flag |=  UTL_LOG_ROT : 0)
-#define logRotOff(lg)  (lg? lg->flag &= ~UTL_LOG_ROT : 0)
+
 
 /* .%% Logging format
 ** ~~~~~~~~~~~~~~~~~~
@@ -659,6 +655,8 @@ logger log_open(char *fname, unsigned char mode)
 	}
 
     lg->level = log_W;
+	lg->flags = 0;
+	lg->rot = 0;
   }
   return lg;
 }
@@ -682,15 +680,9 @@ logger log_close(logger lg)
 **      mylog_002.log
 **       etc...
 */
-static void log_rotate(lg)
+static void log_rotate(logger lg)
 {
-  FILE *f;
-  char fname[1024];
-  
-  if (lg->count++ == 0 && lg->file != stdout && lg->file != stderr) {
-    fclose(lg->file);
-    f = fopen
-  }
+
 }
 
 void log_write(logger lg, int lv, char *format, ...)
@@ -708,18 +700,18 @@ void log_write(logger lg, int lv, char *format, ...)
   if(lg_lv <= lv) {
     time(&t);
     strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));
-    fprintf(f,"%s %.4s",tstr, log_abbrev+(lv<<2));
+    fprintf(f, "%s %.4s", tstr, log_abbrev+(lv<<2));
     va_start(args, format);  vfprintf(f,format, args);  va_end(args);
     fputc('\n',f);
     fflush(f);
-    if (lg && (lg->flag & UTL_LOG_ROT)) log_rotate(lg);
+    if (lg && (lg->rot >0)) log_rotate(lg);
   }    
 }
 
 
 #endif  /*- UTL_C */
 
-#else
+#else   /*- UTL_NOLOGGING */
 
 #define logLevel(lg,lv)       log_W
 #define logLevelEnv(lg,v,l)   log_W     
@@ -746,7 +738,7 @@ typedef void *logger;
 #ifdef NDEBUG
 #undef logDebug
 #define logDebug(lg,...) 
-#endif
+#endif  /*- NDEBUG */
 
 #define logNDebug(lg,...)
 
@@ -954,8 +946,25 @@ void *utl_strdup(void *ptr, char *file, int line)
 #endif /* UTL_MEMCHECK */
 
 
+/* Static assertion (assumptions)
+** http://www.drdobbs.com/compile-time-assertions/184401873
+*/
+
+#ifdef __GNUC__
+#define utl_assum1(e,l) typedef struct {int utl_assumption[(e)?1:-1];} utl_assumption_##l
+#define utl_assum0(e,l) utl_assum1(e,l)
+#define utl_assume(e)   utl_assum0(e,__LINE__)
+#else
+#define utl_assum1(e,l) extern int utl_assumption_##l[(e)?1:-1]
+#define utl_assum0(e,l) utl_assum1(e,l)
+#define utl_assume(e)   utl_assum0(e,__LINE__)
+#endif 
+
+/* this is only provided to make a nice pair utl_assert/utl_assume */
+#include <assert.h>
+#define utl_assert(e) assert(e)
+
 #endif /* UTL_H */
 
 /**************************************************************************/
-
 
