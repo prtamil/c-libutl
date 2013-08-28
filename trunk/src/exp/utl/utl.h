@@ -52,6 +52,7 @@
 #include <stddef.h>
 
 #include <setjmp.h>
+#include <assert.h>
 
 /*
 ** .% How to use '|utl|
@@ -75,6 +76,12 @@
 **  The '{utl_extern} macro will take care of actually initializing the 
 **  variables needed by '|utl.c| instead of simply declaring them as '|extern|
 */
+
+#ifdef UTL_LIB
+#ifndef UTL_C
+#define UTL_C
+#endif
+#endif
 
 #ifdef UTL_C
 #define utl_extern(n,v) n v
@@ -160,6 +167,16 @@ utl_extern(const int utlZero, = 0);
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
+
+
+/* .% Assumptions (static assertions)
+** ~~~~~~~~~~~~~~~~~~~~~~~
+** http://www.drdobbs.com/compile-time-assertions/184401873
+*/
+
+#define utl_assum1(e,l) typedef struct {int utl_assumption[(e)?1:-1];} utl_assumption_##l
+#define utl_assum0(e,l) utl_assum1(e,l)
+#define utlAssume(e)    utl_assum0(e,__LINE__)
 
 
 /* .% Try/Catch
@@ -464,6 +481,8 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #define log_A 1
 #define log_F 0
 
+#define log_L 9
+
 
 /* Logging functions are available unless the symbol '{=UTL_NOLOGGING}
 ** has been defined before including '|utl.h|.
@@ -495,9 +514,9 @@ typedef struct {
 **                         enviroment variable.
 */
 
-                                   /* 0   1   2   3   4   5   6   7   8   9    */
-                                   /* 0   4   8   12  16  20  24  28  32  36   */
-utl_extern(char const *log_abbrev, = "FTL ALT CRT ERR WRN MSG INF DBG OFF LOG   ");
+                                    /* 0   1   2   3   4   5   6   7   8   9    */
+                                    /* 0   4   8   12  16  20  24  28  32  36   */
+utl_extern(char const log_abbrev[], = "FTL ALT CRT ERR WRN MSG INF DBG OFF LOG ");
 
 int   log_level(logger lg);
 int   log_chrlevel(char *l);
@@ -567,6 +586,7 @@ int   logLevelEnv(logger lg, char *var, char *level);
 
 #define logOpen(l,f,m)   (l=log_open(f,m))
 #define logClose(l)      (log_close(l),l=NULL)
+#define logStderr        NULL
 
 logger log_open(char *fname, unsigned char mode);
 logger log_close(logger lg);
@@ -575,7 +595,7 @@ FILE *logFile(logger lg);
 
 #define logIf(lg,lc) log_if(lg,log_chrlevel(lc))
 
-#define log_if(lg,lv) if ((lv) >= log_level(lg)) utlZero ; else
+#define log_if(lg,lv) if ((lv) > log_level(lg)) utlZero ; else
           
 #define logDebug(lg, ...)    log_write(lg,log_D, __VA_ARGS__)
 #define logInfo(lg, ...)     log_write(lg,log_I, __VA_ARGS__)
@@ -585,6 +605,8 @@ FILE *logFile(logger lg);
 #define logCritical(lg, ...) log_write(lg,log_C, __VA_ARGS__)
 #define logAlarm(lg, ...)    log_write(lg,log_A, __VA_ARGS__)
 #define logFatal(lg, ...)    log_write(lg,log_F, __VA_ARGS__)
+#define logAssert(lg,e)      log_assert(lg,e,#e, __FILE__, __LINE__)
+
 
 #define logContinue(lg,...)  (fputs("                        ",logFile(lg),\
                              (fprintf(logFile,__VA_ARGS__), fputc('\n',logFile(lg)),fflush(logFile(lg))))
@@ -650,8 +672,11 @@ logger log_open(char *fname, unsigned char mode)
       lg->file = (mode & UTL_LOG_ERR)? stderr : stdout;
 
 	if (lg->file != stderr && lg->file != stdout) {
-      lg->level = 9;
-      log_write(lg,9, "%s \"%s\"", (mode & UTL_LOG_ADD) ? "ADDEDTO" : "CREATED",fname); 
+	  /* Assume that log_L is the last level in log_abbrev */
+	  utlAssume( (log_L +1) == ((sizeof(log_abbrev)-1)>>2));
+	  
+      lg->level = log_L;
+      log_write(lg,log_L, "%s \"%s\"", (mode & UTL_LOG_ADD) ? "ADDEDTO" : "CREATED",fname); 
 	}
 
     lg->level = log_W;
@@ -682,7 +707,7 @@ logger log_close(logger lg)
 */
 static void log_rotate(logger lg)
 {
-
+  // TODO:
 }
 
 void log_write(logger lg, int lv, char *format, ...)
@@ -697,7 +722,7 @@ void log_write(logger lg, int lv, char *format, ...)
     lg_lv = lg->level;
   }
   lv = lv & 0x0F;
-  if(lg_lv <= lv) {
+  if( lv <= lg_lv) {
     time(&t);
     strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));
     fprintf(f, "%s %.4s", tstr, log_abbrev+(lv<<2));
@@ -708,25 +733,35 @@ void log_write(logger lg, int lv, char *format, ...)
   }    
 }
 
-
+void log_assert(logger lg,int e,char *estr, char *file,int line)
+{ 
+  if (!e) {
+    logFatal(lg,"Assertion failed:  %s, file %s, line %d", estr, file, line);
+#ifndef NDEBUG
+	abort();
+#endif
+  }
+}
+							   
 #endif  /*- UTL_C */
 
 #else   /*- UTL_NOLOGGING */
 
 #define logLevel(lg,lv)       log_W
 #define logLevelEnv(lg,v,l)   log_W     
-#define logDebug(lg, ...)    
-#define logInfo(lg, ...)     
-#define logMessage(lg, ...)  
-#define logWarn(lg, ...)     
-#define logError(lg, ...)    
-#define logCritical(lg, ...) 
-#define logAlarm(lg, ...)    
-#define logFatal(lg, ...)    
+#define logDebug(lg, ...)     (void)0
+#define logInfo(lg, ...)      (void)0
+#define logMessage(lg, ...)   (void)0
+#define logWarn(lg, ...)      (void)0
+#define logError(lg, ...)     (void)0
+#define logCritical(lg, ...)  (void)0
+#define logAlarm(lg, ...)     (void)0
+#define logFatal(lg, ...)     (void)0
+#define logAssert(lg,e)       (void)0
 
-#define logIf(lg,lv) if (!utlZero) utlZero ; else
+#define logIf(lg,lv) if (!utlZero) (void)0 ; else
 
-#define logContinue(lg,...)  
+#define logContinue(lg,...)   (void)0
 
 #define logOpen(lg,f,m) (lg=NULL)
 #define logClose(lg)    (lg=NULL)
@@ -926,8 +961,8 @@ void *utl_strdup(void *ptr, char *file, int line)
 #define free(p)       utl_free(p,__FILE__,__LINE__)
 #define strdup(p)     utl_strdup(p,__FILE__,__LINE__)
 
-#define utlMemCheck(p) utl_check(p,__FILE__, __LINE__)
-#define utlMemAllocated utl_mem_allocated
+#define utlMemCheck(p)    utl_check(p,__FILE__, __LINE__)
+#define utlMemAllocated   utl_mem_allocated
 #define utlMemValidate(p) utl_mem_validate(p)
 
 #define utlMalloc(n)     utl_malloc(n,__FILE__,__LINE__)
@@ -945,24 +980,6 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #endif /* UTL_MEMCHECK */
 
-
-/* Static assertion (assumptions)
-** http://www.drdobbs.com/compile-time-assertions/184401873
-*/
-
-#ifdef __GNUC__
-#define utl_assum1(e,l) typedef struct {int utl_assumption[(e)?1:-1];} utl_assumption_##l
-#define utl_assum0(e,l) utl_assum1(e,l)
-#define utl_assume(e)   utl_assum0(e,__LINE__)
-#else
-#define utl_assum1(e,l) extern int utl_assumption_##l[(e)?1:-1]
-#define utl_assum0(e,l) utl_assum1(e,l)
-#define utl_assume(e)   utl_assum0(e,__LINE__)
-#endif 
-
-/* this is only provided to make a nice pair utl_assert/utl_assume */
-#include <assert.h>
-#define utl_assert(e) assert(e)
 
 #endif /* UTL_H */
 
