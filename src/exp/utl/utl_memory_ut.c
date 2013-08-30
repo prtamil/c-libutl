@@ -10,11 +10,7 @@
 #define UTL_MEMCHECK
 #define UTL_UNITTEST
 
-
 #include "utl.h"
-
-logger mlg = NULL;
-logger memLogger() {return mlg;}
 
 int main (int argc, char *argv[])
 {
@@ -24,8 +20,8 @@ int main (int argc, char *argv[])
   int k;
   
   TSTPLAN("utl unit test: memory check") {
-    logOpen(mlg,"memory.info","w");
-    logLevel(mlg,"Info");
+    logOpen(utlMemLog,"memory.info","w");
+    logLevel(utlMemLog,"Info");
 
     TSTSECTION("malloc") {
       TSTGROUP("malloc") {
@@ -67,5 +63,5 @@ int main (int argc, char *argv[])
     TSTNOTE("Check the file 'memory.info' to see the log of traced allocations");
   }
   
-  logClose(mlg);
+  logClose(utlMemLog);
 }
