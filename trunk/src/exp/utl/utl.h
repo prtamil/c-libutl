@@ -10,7 +10,8 @@
 #define UTL_H
 
 /* .% Overview
-** ===========
+**
+** =========== 
 ** .v
 **                           ___   __
 **                       ___/  (_ /  )
@@ -58,32 +59,36 @@
 ** .% How to use '|utl|
 ** ====================
 **
-**  To access '|utl| functions Just follow these easy steps:
+**  To access '|utl| functions you simply:
 **
-**  .# include '|utl.h| in each source file
-**   # in one of the source files (usually the one that has your '|main()|
-**     function) #define the symbol '|ULT_C| before including '|utl.h|
+**  .# #include '|utl.h| in each source file
+**   # in one (and only one) of the source files #define the symbol
+**     '|UTL_LIB| before including '|utl.h| (a good place is the
+**     file where  your '|main()| function is defined)
 **  ..
 **
 **    As an alternative to the second step above, you can create a source
 **  file (say '|utl.c|) with only the following lines:
 **  .{{ C
-**       #define  UTL_C
+**       #define  UTL_LIB
 **       #include "utl.h"
 **  .}}
 **  and link it to your project.
 **
+*/
+
+#ifdef UTL_C
+#ifndef UTL_LIB
+#define UTL_LIB
+#endif
+#endif
+
+/*
 **  The '{utl_extern} macro will take care of actually initializing the 
 **  variables needed by '|utl.c| instead of simply declaring them as '|extern|
 */
 
 #ifdef UTL_LIB
-#ifndef UTL_C
-#define UTL_C
-#endif
-#endif
-
-#ifdef UTL_C
 #define utl_extern(n,v) n v
 #else
 #define utl_extern(n,v) extern n
@@ -91,6 +96,7 @@
 
 #define utl_initvoid ;
 
+#define UTL_VERSION 0x0003  /* 0.3 */
 
 /* .%% Enable/disable utl features
 ** -------------------------------
@@ -137,7 +143,7 @@
 */
 
 int utlEmptyFun(void); 
-#ifdef UTL_C
+#ifdef UTL_LIB
 int   utlEmptyFun(void) {return 0;}
 #endif
 
@@ -162,7 +168,7 @@ utl_extern(char *utlEmptyString, = "");
 utl_extern(const int utlZero, = 0);
 #endif
 
-/*  MS Visual C doesnt have '|snprintf()| ! How could it be?
+/*  MS Visual C doesn't have '|snprintf()| ! How could it be?
 */
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -291,7 +297,7 @@ typedef struct utl_env_s {
 #define fsmEND   -1
 
 #define fsm(x)  do { int fsm_next , fsm_state; \
-                      for (fsm_next=fsmSTART; fsm_next>=0;) \
+                      for (fsm_next=fsmSTART; fsm_next>fsmEND;) \
                         switch((fsm_state=fsm_next, fsm_next=-1, fsm_state)) { \
                         x \
                 }} while (utlZero)
@@ -337,28 +343,27 @@ utl_extern(FILE *TST_FILE, = NULL);
 */
 #define TSTSECTION(s)  if ((TSTSTAT(), TSTGRP = 0, TSTSEC++, \
                              TSTWRITE("#\n# * %d. %s (%s:%d)\n", \
-                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) 0; \
+                             TSTSEC, s, __FILE__, __LINE__), TSTPASS=0)) ((void)0); \
                        else                                               
 
 /* to disable an entire test section, just prepend '|_| or '|X|*/
  
-#define XTSTSECTION(s) if (!utlZero) 0; else 
+#define XTSTSECTION(s) if (!utlZero) ((void)0); else 
 #define _TSTSECTION(s) XTSTSECTION(s)
 
 /* In each section, tests can be logically grouped so that different aspects
 ** of related functions can be tested.
 */
 #define TSTGROUP(s) \
-    if ((TSTWRITE("#\n# *   %d.%d %s\n",TSTSEC,++TSTGRP,s),TSTNUM=0)) 0; \
-    else
+    if ((TSTWRITE("#\n# *   %d.%d %s\n",TSTSEC,++TSTGRP,s),TSTNUM=0)) ((void)0); else
                      
 /* to disable a n entire test group , just prepend '|_| or '|X| */
-#define XTSTGROUP(s) if (!utlZero) 0; else  
+#define XTSTGROUP(s) if (!utlZero) ((void)0); else  
 #define _TSTGROUP(s) XTSTGROUP(s)
 
 /* Test code will be skipped if needed */
-#define TSTCODE   if (TSTSKP)   0; else  
-#define XTSTCODE  if (!utlZero) 0; else
+#define TSTCODE   if (TSTSKP)   ((void)0); else  
+#define XTSTCODE  if (!utlZero) ((void)0); else
 #define _TSTCODE  XTSTCODE
                      
 /* The single test is defined  with the '|TST(s,x)| macro.
@@ -386,7 +391,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 /* You can skip a set of tests giving a reason.
 ** Nested skips are not supported!
 */
-#define TSTSKIP(x,r) if (!(x)) 0; else for (TSTSKP=r; TSTSKP; TSTSKP=NULL)
+#define TSTSKIP(x,r) if (!(x)) ((void)0); else for (TSTSKP=r; TSTSKP; TSTSKP=NULL)
 
 #define TSTTODO(r)   for (TSTTD=r; TSTTD; TSTTD=NULL)
 
@@ -424,7 +429,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 
 							
 #define TSTBAILOUT(r) \
-          if (!(r)) 0; else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
+          if (!(r)) ((void)0); else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \
@@ -472,6 +477,7 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 **
 */
 
+
 #define log_D 7
 #define log_I 6
 #define log_M 5
@@ -481,7 +487,9 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #define log_A 1
 #define log_F 0
 
-#define log_L 9
+
+#define log_X (log_D + 1)
+#define log_L (log_D + 2)
 
 
 /* Logging functions are available unless the symbol '{=UTL_NOLOGGING}
@@ -493,6 +501,7 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 #define UTL_LOG_NEW 0x00    
 #define UTL_LOG_ADD 0x01    /* append to existing file */
 #define UTL_LOG_ERR 0x02    /* use stderr */
+#define UTL_LOG_OUT 0x04    /* use stdout */
 
 typedef struct {
   FILE          *file;
@@ -500,6 +509,18 @@ typedef struct {
   unsigned char  flags;
   unsigned short rot;
 } utl_log_s, *logger;
+
+#define log_stdout_init {NULL, log_W, UTL_LOG_OUT,0}
+utl_extern(utl_log_s log_stdout , = log_stdout_init);
+utl_extern(logger logStdout , = &log_stdout);
+
+#define log_stderr_init {NULL, log_W, UTL_LOG_ERR,0}
+utl_extern(utl_log_s log_stderr , = log_stderr_init);
+utl_extern(logger logStderr , = &log_stderr);
+
+#define logNull NULL
+
+utl_extern(logger utl_logger , = logNull);
 
 #include <time.h>
 #include <ctype.h>
@@ -578,24 +599,31 @@ int   logLevelEnv(logger lg, char *var, char *level);
 ** For example:
 ** .v  
 **   logger lgr = NULL;
-**   logOpen(lgr,"file1.log",UTL_LOG_NEW) // Delete old log file and create a new one
+**   logOpen(lgr,"file1.log","w") // Delete old log file and create a new one
 **   ...
-**   logOpen(lgr,"file1.log",UTL_LOG_ADD) // Append to previous log file
+**   logOpen(lgr,"file1.log","a") // Append to previous log file
 ** .. 
+**
+**   There are three predefined loggers:
+**   .[{logNull}]    A null logger that won't output any message
+**    [{logStdout}]  A logger that will output on stdout
+**    [{logStderr}]  A logger that will output on stderr
+**   ..
+** They are '{logClose()} safe, i.e. you can pass them to logClose() and nothing
+** bad will happen.
 */
 
 #define logOpen(l,f,m)   (l=log_open(f,m))
 #define logClose(l)      (log_close(l),l=NULL)
-#define logStderr        NULL
 
-logger log_open(char *fname, unsigned char mode);
+logger log_open(char *fname, char *mode);
 logger log_close(logger lg);
 void log_write(logger lg,int lv, char *format, ...);
 FILE *logFile(logger lg);
 
 #define logIf(lg,lc) log_if(lg,log_chrlevel(lc))
 
-#define log_if(lg,lv) if ((lv) > log_level(lg)) utlZero ; else
+#define log_if(lg,lv) if ((lv) > log_level(lg)) ((void)0) ; else
           
 #define logDebug(lg, ...)    log_write(lg,log_D, __VA_ARGS__)
 #define logInfo(lg, ...)     log_write(lg,log_I, __VA_ARGS__)
@@ -605,6 +633,7 @@ FILE *logFile(logger lg);
 #define logCritical(lg, ...) log_write(lg,log_C, __VA_ARGS__)
 #define logAlarm(lg, ...)    log_write(lg,log_A, __VA_ARGS__)
 #define logFatal(lg, ...)    log_write(lg,log_F, __VA_ARGS__)
+
 #define logAssert(lg,e)      log_assert(lg,e,#e, __FILE__, __LINE__)
 
 
@@ -623,10 +652,16 @@ FILE *logFile(logger lg);
 ** ..
 */
 
-#ifdef UTL_C
-int   log_level(logger lg) { return (int)(lg ? lg->level : log_W) ; }
+#ifdef UTL_LIB
+int   log_level(logger lg) { return (int)(lg ? lg->level : log_X) ; }
 
-FILE *logFile(logger lg) {FILE *f=NULL; if (lg) f = lg->file; return f?f:stderr; }
+FILE *logFile(logger lg)
+{
+  if (!lg) return NULL;
+  if (lg->flags & UTL_LOG_ERR) return stderr;
+  if (lg->flags & UTL_LOG_OUT) return stdout;
+  return lg->file;
+}
 
 int   log_chrlevel(char *l) {
   int i=0;
@@ -639,10 +674,10 @@ int   log_chrlevel(char *l) {
 
 int logLevel(logger lg, char *lv) 
 {
-  if (lg) {
-    if (lv && lv[0])
+  if (!lg) return log_X;
+  
+  if (lv && lv[0] && lv[0] != '?')
       lg->level = log_chrlevel(lv);
-  }
   return log_level(lg);  
 }
 
@@ -655,42 +690,40 @@ int logLevelEnv(logger lg, char *var, char *level)
   return logLevel(lg,lvl_str);
 }
 
-logger log_open(char *fname, unsigned char mode)
+logger log_open(char *fname, char *mode)
 {
   char md[4];
-  logger lg;
+  logger lg = logNull;
+  FILE *f = NULL;
   
-  lg = malloc(sizeof(utl_log_s));
-  if (lg) {
-	lg->file = NULL;
-    if (fname) {
-      md[0] = 'w'; md[1] = '+'; md[2] = '\0';
-      if (mode & UTL_LOG_ADD) md[0] = 'a'; 
-      lg->file = fopen(fname,md);
-    }
-	if (!lg->file)
-      lg->file = (mode & UTL_LOG_ERR)? stderr : stdout;
-
-	if (lg->file != stderr && lg->file != stdout) {
-	  /* Assume that log_L is the last level in log_abbrev */
-	  utlAssume( (log_L +1) == ((sizeof(log_abbrev)-1)>>2));
-	  
-      lg->level = log_L;
-      log_write(lg,log_L, "%s \"%s\"", (mode & UTL_LOG_ADD) ? "ADDEDTO" : "CREATED",fname); 
-	}
-
-    lg->level = log_W;
-	lg->flags = 0;
-	lg->rot = 0;
+  if (fname) {
+    md[0] = mode[0]; md[1] = '+'; md[2] = '\0';
+    if (md[0] != 'a' && md[0] != 'w') md[0] = 'a'; 
+    f = fopen(fname,md);
   }
+  
+  if (f) {
+    lg = malloc(sizeof(utl_log_s));
+    if (lg) { 
+      lg->flags = 0;
+      lg->rot = 0;
+      lg->file = f;
+	  {/* Assume that log_L is the last level in log_abbrev */
+	    utlAssume( (log_L +1) == ((sizeof(log_abbrev)-1)>>2));
+        lg->level = log_L;
+        log_write(lg,log_L, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
+	  }
+      lg->level = log_W;
+	}
+  }
+  if (f && !lg) fclose(f);
   return lg;
 }
 
 logger log_close(logger lg)
 {
-  if (lg) {
-    if (lg->file && lg->file != stderr && lg->file != stdout)
-	  fclose(lg->file);
+  if (lg && lg != logStdout && lg != logStderr) {
+    if (lg->file) fclose(lg->file);
     lg->file = NULL;
     free(lg);
   }
@@ -717,10 +750,14 @@ void log_write(logger lg, int lv, char *format, ...)
   time_t t;
   FILE *f = stderr;
   int lg_lv = log_W;
-  if (lg) {
-    f = lg->file;
-    lg_lv = lg->level;
-  }
+  
+  if (!lg) return; 
+  
+  if (lg->flags & UTL_LOG_OUT) f = stdout;
+  else if (lg->flags & UTL_LOG_ERR) f = stderr;
+  else f = lg->file;
+  
+  lg_lv = lg->level;
   lv = lv & 0x0F;
   if( lv <= lg_lv) {
     time(&t);
@@ -729,7 +766,7 @@ void log_write(logger lg, int lv, char *format, ...)
     va_start(args, format);  vfprintf(f,format, args);  va_end(args);
     fputc('\n',f);
     fflush(f);
-    if (lg && (lg->rot >0)) log_rotate(lg);
+    if (lg->rot >0) log_rotate(lg);
   }    
 }
 
@@ -743,25 +780,24 @@ void log_assert(logger lg,int e,char *estr, char *file,int line)
   }
 }
 							   
-#endif  /*- UTL_C */
+#endif  /*- UTL_LIB */
 
 #else   /*- UTL_NOLOGGING */
 
 #define logLevel(lg,lv)       log_W
 #define logLevelEnv(lg,v,l)   log_W     
-#define logDebug(lg, ...)     (void)0
-#define logInfo(lg, ...)      (void)0
-#define logMessage(lg, ...)   (void)0
-#define logWarn(lg, ...)      (void)0
-#define logError(lg, ...)     (void)0
-#define logCritical(lg, ...)  (void)0
-#define logAlarm(lg, ...)     (void)0
-#define logFatal(lg, ...)     (void)0
-#define logAssert(lg,e)       (void)0
+#define logDebug(lg, ...)     ((void)0)
+#define logInfo(lg, ...)      ((void)0)
+#define logMessage(lg, ...)   ((void)0)
+#define logWarn(lg, ...)      ((void)0)
+#define logError(lg, ...)     ((void)0)
+#define logCritical(lg, ...)  ((void)0)
+#define logAlarm(lg, ...)     ((void)0)
+#define logFatal(lg, ...)     ((void)0)
+#define logAssert(lg,e)       ((void)0)
+#define logContinue(lg,...)   ((void)0)
 
 #define logIf(lg,lv) if (!utlZero) (void)0 ; else
-
-#define logContinue(lg,...)   (void)0
 
 #define logOpen(lg,f,m) (lg=NULL)
 #define logClose(lg)    (lg=NULL)
@@ -772,10 +808,10 @@ typedef void *logger;
 
 #ifdef NDEBUG
 #undef logDebug
-#define logDebug(lg,...) 
+#define logDebug(lg,...) ((void)0)
 #endif  /*- NDEBUG */
 
-#define logNDebug(lg,...)
+#define logNDebug(lg,...) ((void)0)
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
@@ -796,13 +832,9 @@ void *utl_strdup  (void *ptr, char *file, int line);
 
 int utl_check(void *ptr,char *file, int line);
 
-#ifndef UTL_NOMEMLOGGER
-logger memLogger();
-#else
-#define memlogger() NULL
-#endif 
+utl_extern(logger utlMemLog , = &log_stderr);
 
-#ifdef UTL_C
+#ifdef UTL_LIB
 /*************************************/
 
 static char *BEG_CHK = "\xBE\xEF\xF0\x0D";
@@ -826,16 +858,16 @@ int utl_check(void *ptr,char *file, int line)
   if (ptr == NULL) return utlMemNull;
   p = utl_mem(ptr);
   if (memcmp(p->chk,BEG_CHK,4)) { 
-    logError(memLogger(),"Invalid or double freed %p (%u %s %d)",p->data, \
+    logError(utlMemLog,"Invalid or double freed %p (%u %s %d)",p->data, \
                                                utl_mem_allocated, file, line);     
     return utlMemInvalid; 
   }
   if (memcmp(p->data+p->size,END_CHK,4)) {
-    logError(memLogger(),"Boundary overflow detected %p [%d] (%u %s %d)", \
+    logError(utlMemLog,"Boundary overflow detected %p [%d] (%u %s %d)", \
                               p->data, p->size, utl_mem_allocated, file, line); 
     return utlMemOverflow;
   }
-  logInfo(memLogger(),"Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
+  logInfo(utlMemLog,"Valid pointer %p (%u %s %d)",ptr, utl_mem_allocated, file, line); 
   return utlMemValid; 
 }
 
@@ -843,18 +875,18 @@ void *utl_malloc(size_t size, char *file, int line )
 {
   utl_mem_t *p;
   
-  if (size == 0) logWarn(memLogger(),"Shouldn't allocate 0 bytes (%u %s %d)", \
+  if (size == 0) logWarn(utlMemLog,"Shouldn't allocate 0 bytes (%u %s %d)", \
                                                 utl_mem_allocated, file, line);
   p = malloc(sizeof(utl_mem_t) +size);
   if (p == NULL) {
-    logCritical(memLogger(),"Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
+    logCritical(utlMemLog,"Out of Memory (%u %s %d)",utl_mem_allocated, file, line);
     return NULL;
   }
   p->size = size;
   memcpy(p->chk,BEG_CHK,4);
   memcpy(p->data+p->size,END_CHK,4);
   utl_mem_allocated += size;
-  logInfo(memLogger(),"alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated,file,line);
+  logInfo(utlMemLog,"alloc %p [%d] (%u %s %d)",p->data,size,utl_mem_allocated,file,line);
   return p->data;
 };
 
@@ -873,25 +905,25 @@ void utl_free(void *ptr, char *file, int line)
   utl_mem_t *p=NULL;
   
   switch (utl_check(ptr,file,line)) {
-    case utlMemNull  :    logWarn(memLogger(),"free NULL (%u %s %d)", 
+    case utlMemNull  :    logWarn(utlMemLog,"free NULL (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
                           break;
                           
-    case utlMemOverflow : logWarn(memLogger(), "Freeing an overflown block  (%u %s %d)", 
+    case utlMemOverflow : logWarn(utlMemLog, "Freeing an overflown block  (%u %s %d)", 
                                                            utl_mem_allocated, file, line);
     case utlMemValid :    p = utl_mem(ptr); 
                           memcpy(p->chk,CLR_CHK,4);
                           utl_mem_allocated -= p->size;
                           if (p->size == 0)
-                            logWarn(memLogger(),"Freeing a block of 0 bytes (%u %s %d)", 
+                            logWarn(utlMemLog,"Freeing a block of 0 bytes (%u %s %d)", 
                                                 utl_mem_allocated, file, line);
 
-                          logInfo(memLogger(),"free %p [%d] (%u %s %d)", ptr, 
+                          logInfo(utlMemLog,"free %p [%d] (%u %s %d)", ptr, 
                                     p?p->size:0,utl_mem_allocated, file, line);
                           free(p);
                           break;
                           
-    case utlMemInvalid :  logError(memLogger(),"free an invalid pointer! (%u %s %d)", \
+    case utlMemInvalid :  logError(utlMemLog,"free an invalid pointer! (%u %s %d)", \
                                                 utl_mem_allocated, file, line);
                           break;
   }
@@ -902,25 +934,25 @@ void *utl_realloc(void *ptr, size_t size, char *file, int line)
   utl_mem_t *p;
   
   if (size == 0) {
-    logWarn(memLogger(),"realloc() used as free() %p -> [0] (%u %s %d)",ptr,utl_mem_allocated, file, line);
+    logWarn(utlMemLog,"realloc() used as free() %p -> [0] (%u %s %d)",ptr,utl_mem_allocated, file, line);
     utl_free(ptr,file,line); 
   } 
   else {
     switch (utl_check(ptr,file,line)) {
-      case utlMemNull   : logWarn(memLogger(),"realloc() used as malloc() (%u %s %d)", \
+      case utlMemNull   : logWarn(utlMemLog,"realloc() used as malloc() (%u %s %d)", \
                                              utl_mem_allocated, file, line);
                           return utl_malloc(size,file,line);
                         
       case utlMemValid  : p = utl_mem(ptr); 
                           p = realloc(p,sizeof(utl_mem_t) + size); 
                           if (p == NULL) {
-                            logCritical(memLogger(),"Out of Memory (%u %s %d)", \
+                            logCritical(utlMemLog,"Out of Memory (%u %s %d)", \
                                              utl_mem_allocated, file, line);
                             return NULL;
                           }
                           utl_mem_allocated -= p->size;
                           utl_mem_allocated += size; 
-                          logInfo(memLogger(),"realloc %p [%d] -> %p [%d] (%u %s %d)", \
+                          logInfo(utlMemLog,"realloc %p [%d] -> %p [%d] (%u %s %d)", \
                                           ptr, p->size, p->data, size, \
                                           utl_mem_allocated, file, line);
                           p->size = size;
@@ -939,14 +971,14 @@ void *utl_strdup(void *ptr, char *file, int line)
   size_t size;
 	
   if (ptr == NULL) {
-    logWarn(memLogger(),"strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
+    logWarn(utlMemLog,"strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
     return NULL;
   }
   size = strlen(ptr)+1;
 
   dest = utl_malloc(size,file,line);
   if (dest) memcpy(dest,ptr,size);
-  logInfo(memLogger(),"strdup %p [%d] -> %p (%u %s %d)", ptr, size, dest, \
+  logInfo(utlMemLog,"strdup %p [%d] -> %p (%u %s %d)", ptr, size, dest, \
                                                 utl_mem_allocated, file, line);
   return dest;
 }
@@ -971,7 +1003,6 @@ void *utl_strdup(void *ptr, char *file, int line)
 #define utlFree(p)       utl_free(p,__FILE__,__LINE__)
 #define utlStrdup(p)     utl_strdup(p,__FILE__,__LINE__)
 
-
 #else /* UTL_MEMCHECK */
 
 #define utlMemCheck(p) utlMemValid
@@ -980,6 +1011,113 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #endif /* UTL_MEMCHECK */
 
+/* .% Variable length strings
+** ~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+#ifndef UTL_NOCHS
+ 
+#define chs_blk_inc 16
+
+typedef struct {
+  long size;
+  long len;
+  char chs[chs_blk_inc];
+} chs_blk_t;
+
+typedef char *chs_t;
+
+chs_t chs_setsize(chs_t s, long ndx);
+#define chsNew(s) (s = chs_setsize(NULL,0)) 
+
+chs_t chs_free(chs_t s);
+#define chsFree(s) (s=chs_free(s))
+
+long chsLen(chs_t s);
+long chsSize(chs_t s);
+
+char   chsChrAt  (chs_t s, long ndx);
+
+chs_t chs_set(chs_t s, long ndx, char c);
+#define chsSetChr(s, n, c) (s = chs_Set(s,n,c))
+
+#ifdef UTL_LIB
+
+#define chs_blk(s) ((chs_blk_t *)(((char*)(s)) - offsetof(chs_blk_t,chs)))
+#define chs_chs(b) ((char *)(((char *)b)+ offsetof(chs_blk_t,chs)))
+
+chs_t chs_setsize(chs_t s, long ndx)
+{
+  long sz = 0;
+  chs_blk_t *cb = NULL;
+  
+  if (s) cb = chs_blk(s);
+  
+  if (cb) sz = cb->size;
+  
+  if (ndx < sz) return s; /* enough room already */
+ 
+  sz = (ndx / chs_blk_inc) * chs_blk_inc; /* round to the next block size */
+  cb = realloc(cb, sizeof(chs_blk_t) + sz);
+  logDebug(utl_logger,"realloc() failed");
+  if (!cb) return NULL;
+
+  cb->size = sz + chs_blk_inc; /* chs_blk_inc are in the chs_blk_t struct already */
+
+  if (!s) {  /* created a fresh string */
+    cb->len    = 0;
+    cb->chs[0] = '\0';
+  }
+  return cb->chs;  
+}
+
+chs_t chs_free(chs_t s) { if (s) free(chs_blk(s)); return NULL; }
+
+long chsLen(chs_t s)
+{
+  chs_blk_t *cb;
+  long l;
+  cb = chs_blk(s);
+  l = (s? cb->len  : 0);
+  logDebug(utl_logger,"CHSLEN: %p %ld\n",s,l);
+  return l;
+}
+
+static long fixndx(chs_t s, long n)
+{
+  logDebug(utl_logger,"fixndx: %p  %d -> ",s,n);
+  if (s) {
+    if (n < 0) n += chsLen(s);
+    if (n > chsLen(s)) n = chsLen(s)-1;
+  }
+  if (n < 0) n = 0;
+  logDebug(utl_logger,"%d\n",n);
+  
+  return n;
+}
+
+chs_t chs_set(chs_t s, long ndx, char c)
+{
+  chs_blk_t *cb;
+  
+  if (ndx < 0) ndx = fixndx(s,ndx);
+  s = chs_setsize(s,ndx+1);
+
+  s[ndx] = c;
+  cb = chs_blk(s);
+  
+  if (c == '\0') 
+    cb->len = ndx;
+  else if (ndx >= cb->len)
+    cb->len = ndx+1;
+    
+  s[ndx+1] = '\0';
+  logDebug(utl_logger,"chs_Set: [%d] = %d\n",ndx,c);
+  return s;
+}
+
+#endif  /*- UTL_LIB */
+
+#endif /*- UTL_NOCHS */
 
 #endif /* UTL_H */
 

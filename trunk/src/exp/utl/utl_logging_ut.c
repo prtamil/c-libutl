@@ -33,19 +33,19 @@ int main (int argc, char *argv[])
     }
     
     TSTSECTION("NULL logger") {
-      lg =NULL;
+      lg = logNULL;
       TSTNULL("logger is NULL",  lg);
-      TSTEQPTR("log file is stderr", stderr,logFile(lg));
-      TSTEQINT("logLevel is Warn", log_W , logLevel(lg,"") );
+      TSTEQPTR("log file is NULL", NULL,logFile(lg));
+      TSTEQINT("log is disabled", log_X , logLevel(lg,"?") );
       TSTCODE {
         logLevel(lg,"MSG");
-      } TSTEQINT("NULL logger level can't be changed", log_W, logLevel(lg,"") );
+      } TSTEQINT("NULL logger level can't be changed", log_X, logLevel(lg,"") );
     }
     
-    TSTSECTION("Not NULL logger (stdout)") {
+    TSTSECTION("stdout logger") {
     
       TSTCODE {
-        logOpen(lg,NULL,UTL_LOG_NEW); /* stdout */
+        lg = logStdout;
       } 
       TSTNNULL("logger is not NULL",lg);
       TSTEQPTR("log file is stdout", stdout,logFile(lg));
@@ -53,7 +53,7 @@ int main (int argc, char *argv[])
 
       TSTCODE {
         logLevel(lg,"Msg");
-      } TSTEQINT("Log level changed", log_M, logLevel(lg,"") );
+      } TSTEQINT("Log level changed", log_M, logLevel(lg,"?") );
       
       TSTCODE {
         k = 0;
@@ -68,18 +68,19 @@ int main (int argc, char *argv[])
       TSTEQPTR("logger is NULL", NULL,lg);
     }
     
-    TSTSECTION("Not NULL logger (stderr)") {
+    TSTSECTION("stderr logger") {
     
       TSTCODE {
-        logOpen(lg,NULL,UTL_LOG_ERR); /* stderr */
+        lg = logStderr;
       } 
       TSTNNULL("logger is not NULL",lg);
+      TSTFAILNOTE("&log_stderr = %p logStderr = %p",&log_stderr,logStderr);
       TSTEQPTR("log file is stderr", stderr,logFile(lg));
       TSTEQINT("logLevel is Warn", log_W, logLevel(lg,"") );
 
       TSTCODE {
         logLevel(lg,"Msg");
-      } TSTEQINT("Log level changed", log_M, logLevel(lg,"") );
+      } TSTEQINT("Log level changed", log_M, logLevel(lg,"?") );
       
       TSTCODE {
         k = 0;
@@ -91,13 +92,13 @@ int main (int argc, char *argv[])
       TSTCODE {
         logClose(lg);
       }
-      TSTNULL("logger is NULL",lg);
+      TSTEQPTR("logger is NULL", NULL,lg);
     }
     
-    TSTSECTION("Not NULL logger (test.log)") {
+    TSTSECTION("test.log") {
     
       TSTCODE {
-        logOpen(lg,"test.log",UTL_LOG_NEW); 
+        logOpen(lg,"test.log","w"); 
       } 
       TSTNNULL("logger is not NULL", lg);
       TSTNNULL("log file is not NULL", logFile(lg));
@@ -126,7 +127,7 @@ int main (int argc, char *argv[])
       if(f) fclose(f);
 
       TSTCODE {
-        logOpen(lg,"test.log",UTL_LOG_ADD); 
+        logOpen(lg,"test.log","a"); 
         logClose(lg);
       } 
       
@@ -157,5 +158,8 @@ int main (int argc, char *argv[])
       if(f) fclose(f);
 
     }
+#if 0    
+   
+#endif
   }
 }
