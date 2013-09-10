@@ -56,6 +56,13 @@ utl_fsm_ut.o: utl.h utl_fsm_ut.c
 fsm$(_EXE): utl_fsm_ut.o
 	gcc -o $@ $<
   
+
+utl_chs_ut.o: utl.h utl_chs_ut.c
+
+chs$(_EXE): utl_chs_ut.o
+	gcc -o $@ $<
+
+  
 clean:
 	rm -f *.exe *.$(_OBJ) *.tmp
 
