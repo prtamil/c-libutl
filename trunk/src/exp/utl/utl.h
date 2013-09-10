@@ -1037,8 +1037,8 @@ long chsSize(chs_t s);
 
 char   chsChrAt  (chs_t s, long ndx);
 
-chs_t chs_set(chs_t s, long ndx, char c);
-#define chsSetChr(s, n, c) (s = chs_Set(s,n,c))
+chs_t chs_set(chs_t s, long ndx, uint32_t c);
+#define chsSetChr(s, n, c) (s = chs_set(s,n,c))
 
 #ifdef UTL_LIB
 
@@ -1095,12 +1095,12 @@ static long fixndx(chs_t s, long n)
   return n;
 }
 
-chs_t chs_set(chs_t s, long ndx, char c)
+chs_t chs_set(chs_t s, long ndx, uint32_t c)
 {
   chs_blk_t *cb;
   
   if (ndx < 0) ndx = fixndx(s,ndx);
-  s = chs_setsize(s,ndx+1);
+  s = chs_setsize(s,ndx+8); /* ensure enough space for an UTF char */
 
   s[ndx] = c;
   cb = chs_blk(s);
@@ -1117,6 +1117,46 @@ chs_t chs_set(chs_t s, long ndx, char c)
 
 #endif  /*- UTL_LIB */
 
+
+#define chsnew     chsNew            
+#define chsfree    chsFree           
+#define chslen     chsLen            
+                                     
+#define chscpy     chsCpy            
+#define chsncpy    chsCpyL           
+#define chscat     chsAddStr         
+#define chsins     chsInsStr         
+#define chsncat    chsAddStrL        
+#define chsnins    chsInsStrL        
+                                     
+#define chssetchr  chsChrSet         
+#define chscatchr  chsAddChar        
+#define chsinschr  chsInsChar        
+
+#define chsprintf chsPrintf
+                                     
+#define chsdel     chsDel            
+#define chstrim    chsTrim           
+                                     
+#define chsupper   chsUpper          
+#define chslower   chsLower          
+#define chsnupper  chsUpper          
+#define chsnlower  chsLower          
+#define chsreverse chsReverse        
+                                     
+#define chsgetline chsCpyLine        
+#define chsgetfile chsCpyFile        
+#define chscatline chsAddLine        
+#define chscatfile chsAddFile        
+#define chslines   chsForLines       
+                                     
+#define chsmatch   chsMatch          
+#define chssub     chsSubStr         
+#define chssubarr  chsSubArr         
+#define chssubfun  chsSubfun         
+#define chssubfun_t chsSubF_t
+                                     
+#define chschrat   chsChrAt          
 #endif /*- UTL_NOCHS */
 
 #endif /* UTL_H */
