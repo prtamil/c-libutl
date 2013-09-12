@@ -1079,7 +1079,9 @@ chs_t chs_setsize(chs_t s, long ndx)
   logDebug(utl_logger,"realloc() failed");
   if (!cb) return NULL;
 
-  cb->size = sz + chs_blk_inc; /* chs_blk_inc are in the chs_blk_t struct already */
+  sz += chs_blk_inc;   /* chs_blk_inc are in the chs_blk_t struct already */
+  
+  cb->size = sz;
 
   if (!s) {  /* created a fresh string */
     cb->len    = 0;
@@ -1142,6 +1144,7 @@ char chsChrAt(chs_t s, long ndx)
   ndx = fixndx(s,ndx);
   return (s && ndx < chsLen(s)) ? s[ndx] : '\0';
 }
+
 #endif  /*- UTL_LIB */
 
 #define chslen     chsLen            
