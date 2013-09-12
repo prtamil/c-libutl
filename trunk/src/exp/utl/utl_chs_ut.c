@@ -15,7 +15,7 @@ FILE *f = NULL;
 char buf[512];
 int k=0;
 int c=0;
-chs_t s;
+chs_t s=NULL;
 
 int main (int argc, char *argv[])
 {
@@ -30,8 +30,13 @@ int main (int argc, char *argv[])
     }
     TSTSECTION("chs add") {
       TSTGROUP("chsset()") {
+        TSTEQINT("Len 1", 1, chsLen(s) );
         chsSetChr(s,3,'a');
         TSTNEQPTR("Is not NULL", NULL, s );
+        TSTEQINT("Set properly direct access", 'a', s[3] );
+        TSTEQINT("Set properly (chrAt)", 'a', chsChrAt(s,3) );
+        TSTEQINT("Len 1", 1, chsLen(s) );
+        
       }
     }
   }
