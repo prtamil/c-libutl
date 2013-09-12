@@ -618,27 +618,32 @@ int   logLevelEnv(logger lg, char *var, char *level);
 
 logger log_open(char *fname, char *mode);
 logger log_close(logger lg);
-void log_write(logger lg,int lv, char *format, ...);
+void log_write(logger lg,int lv, int tstamp, char *format, ...);
 FILE *logFile(logger lg);
 
 #define logIf(lg,lc) log_if(lg,log_chrlevel(lc))
 
 #define log_if(lg,lv) if ((lv) > log_level(lg)) ((void)0) ; else
           
-#define logDebug(lg, ...)    log_write(lg,log_D, __VA_ARGS__)
-#define logInfo(lg, ...)     log_write(lg,log_I, __VA_ARGS__)
-#define logMessage(lg, ...)  log_write(lg,log_M, __VA_ARGS__)
-#define logWarn(lg, ...)     log_write(lg,log_W, __VA_ARGS__)
-#define logError(lg, ...)    log_write(lg,log_E, __VA_ARGS__)
-#define logCritical(lg, ...) log_write(lg,log_C, __VA_ARGS__)
-#define logAlarm(lg, ...)    log_write(lg,log_A, __VA_ARGS__)
-#define logFatal(lg, ...)    log_write(lg,log_F, __VA_ARGS__)
+#define logDebug(lg, ...)      log_write(lg, log_D, 1, __VA_ARGS__)
+#define logInfo(lg, ...)       log_write(lg, log_I, 1, __VA_ARGS__)
+#define logMessage(lg, ...)    log_write(lg, log_M, 1, __VA_ARGS__)
+#define logWarn(lg, ...)       log_write(lg, log_W, 1, __VA_ARGS__)
+#define logError(lg, ...)      log_write(lg, log_E, 1, __VA_ARGS__)
+#define logCritical(lg, ...)   log_write(lg, log_C, 1, __VA_ARGS__)
+#define logAlarm(lg, ...)      log_write(lg, log_A, 1, __VA_ARGS__)
+#define logFatal(lg, ...)      log_write(lg, log_F, 1, __VA_ARGS__)
 
-#define logAssert(lg,e)      log_assert(lg,e,#e, __FILE__, __LINE__)
+#define logDContinue(lg, ...)  log_write(lg, log_D, 0, __VA_ARGS__)
+#define logIContinue(lg, ...)  log_write(lg, log_I, 0, __VA_ARGS__)
+#define logMContinue(lg, ...)  log_write(lg, log_M, 0, __VA_ARGS__)
+#define logWContinue(lg, ...)  log_write(lg, log_W, 0, __VA_ARGS__)
+#define logEContinue(lg, ...)  log_write(lg, log_E, 0, __VA_ARGS__)
+#define logCContinue(lg, ...)  log_write(lg, log_C, 0, __VA_ARGS__)
+#define logAContinue(lg, ...)  log_write(lg, log_A, 0, __VA_ARGS__)
+#define logFContinue(lg, ...)  log_write(lg, log_F, 0, __VA_ARGS__)
 
-
-#define logContinue(lg,...)  (fputs("                        ",logFile(lg),\
-                             (fprintf(logFile,__VA_ARGS__), fputc('\n',logFile(lg)),fflush(logFile(lg))))
+#define logAssert(lg,e)        log_assert(lg, e, #e, __FILE__, __LINE__)
 
 /*
 ** .v
@@ -711,7 +716,7 @@ logger log_open(char *fname, char *mode)
 	  {/* Assume that log_L is the last level in log_abbrev */
 	    utlAssume( (log_L +1) == ((sizeof(log_abbrev)-1)>>2));
         lg->level = log_L;
-        log_write(lg,log_L, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
+        log_write(lg,log_L, 1, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
 	  }
       lg->level = log_W;
 	}
@@ -743,7 +748,7 @@ static void log_rotate(logger lg)
   // TODO:
 }
 
-void log_write(logger lg, int lv, char *format, ...)
+void log_write(logger lg, int lv, int tstamp, char *format, ...)
 {
   va_list args;
   char tstr[32];
@@ -760,8 +765,12 @@ void log_write(logger lg, int lv, char *format, ...)
   lg_lv = lg->level;
   lv = lv & 0x0F;
   if( lv <= lg_lv) {
-    time(&t);
-    strftime(tstr,64,"%Y-%m-%d %X",localtime(&t));
+    if (tstamp) {
+      time(&t);
+      strftime(tstr,32,"%Y-%m-%d %X",localtime(&t));
+	} else {
+	  strcmp(tstr,"                   ");          
+	}
     fprintf(f, "%s %.4s", tstr, log_abbrev+(lv<<2));
     va_start(args, format);  vfprintf(f,format, args);  va_end(args);
     fputc('\n',f);
@@ -794,8 +803,17 @@ void log_assert(logger lg,int e,char *estr, char *file,int line)
 #define logCritical(lg, ...)  ((void)0)
 #define logAlarm(lg, ...)     ((void)0)
 #define logFatal(lg, ...)     ((void)0)
+
+#define logDContinue(lg, ...) ((void)0)
+#define logIContinue(lg, ...) ((void)0)
+#define logMContinue(lg, ...) ((void)0)
+#define logWContinue(lg, ...) ((void)0)
+#define logEContinue(lg, ...) ((void)0)
+#define logCContinue(lg, ...) ((void)0)
+#define logAContinue(lg, ...) ((void)0)
+#define logFContinue(lg, ...) ((void)0)
+
 #define logAssert(lg,e)       ((void)0)
-#define logContinue(lg,...)   ((void)0)
 
 #define logIf(lg,lv) if (!utlZero) (void)0 ; else
 
@@ -1070,7 +1088,11 @@ chs_t chs_setsize(chs_t s, long ndx)
   return cb->chs;  
 }
 
-chs_t chs_free(chs_t s) { if (s) free(chs_blk(s)); return NULL; }
+chs_t chs_free(chs_t s) { 
+  logDebug(utl_logger,"FREE: %p",s);
+  if (s) free(chs_blk(s));
+  return NULL;
+}
 
 long chsLen(chs_t s)
 {
@@ -1078,7 +1100,7 @@ long chsLen(chs_t s)
   long l;
   cb = chs_blk(s);
   l = (s? cb->len  : 0);
-  logDebug(utl_logger,"CHSLEN: %p %ld\n",s,l);
+  logDebug(utl_logger,"CHSLEN: %p %ld",s,l);
   return l;
 }
 
@@ -1090,7 +1112,7 @@ static long fixndx(chs_t s, long n)
     if (n > chsLen(s)) n = chsLen(s)-1;
   }
   if (n < 0) n = 0;
-  logDebug(utl_logger,"%d\n",n);
+  logDContinue(utl_logger,"           %d",n);
   
   return n;
 }
@@ -1111,15 +1133,17 @@ chs_t chs_set(chs_t s, long ndx, uint32_t c)
     cb->len = ndx+1;
     
   s[ndx+1] = '\0';
-  logDebug(utl_logger,"chs_Set: [%d] = %d\n",ndx,c);
+  logDebug(utl_logger,"chs_Set: [%d] = %d",ndx,c);
   return s;
 }
 
+char chsChrAt(chs_t s, long ndx)
+{
+  ndx = fixndx(s,ndx);
+  return (s && ndx < chsLen(s)) ? s[ndx] : '\0';
+}
 #endif  /*- UTL_LIB */
 
-
-#define chsnew     chsNew            
-#define chsfree    chsFree           
 #define chslen     chsLen            
                                      
 #define chscpy     chsCpy            
@@ -1155,8 +1179,7 @@ chs_t chs_set(chs_t s, long ndx, uint32_t c)
 #define chssubarr  chsSubArr         
 #define chssubfun  chsSubfun         
 #define chssubfun_t chsSubF_t
-                                     
-#define chschrat   chsChrAt          
+                                             
 #endif /*- UTL_NOCHS */
 
 #endif /* UTL_H */
