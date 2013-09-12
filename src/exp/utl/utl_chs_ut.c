@@ -29,12 +29,12 @@ int main (int argc, char *argv[])
       }
     }
     TSTSECTION("chs add") {
-      TSTGROUP("chsset()") {
-        TSTEQINT("Len 1", 1, chsLen(s) );
-        chsSetChr(s,3,'a');
+      TSTGROUP("chs set()") {
+        TSTEQINT("Len 0", 0, chsLen(s) );
+        chsSetChr(s,0,'a');
         TSTNEQPTR("Is not NULL", NULL, s );
-        TSTEQINT("Set properly direct access", 'a', s[3] );
-        TSTEQINT("Set properly (chrAt)", 'a', chsChrAt(s,3) );
+        TSTEQINT("Set properly direct access", 'a', s[0] );
+        TSTEQINT("Set properly (chrAt)", 'a', chsChrAt(s,0) );
         TSTEQINT("Len 1", 1, chsLen(s) );
         
       }
