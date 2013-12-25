@@ -6,5 +6,5 @@
 **   http://opensource.org/licenses/bsd-license.php 
 */
 
-#define  UTL_C
+#define  UTL_LIB
 #include "utl.h"
