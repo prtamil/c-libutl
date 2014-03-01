@@ -268,7 +268,9 @@ typedef struct utl_env_s {
 /*  .% Finite state machine
 **  =======================
 **
-**    A Finite State Machine (FSM) is very useful when 
+**    A Finite State Machine (FSM) is very common paradigm for software that respond to 
+**  external events.  There are many ways to code a FSM, this one has the advantage to 
+**  closely mimic the graphical representation of a FSM.
 **
 ** .v
 **      fsm ({            // Note the use of '|({| and '|})| !!
@@ -303,8 +305,8 @@ typedef struct utl_env_s {
                 }} while (utlZero)
                          
 #define fsmGoto(x)  fsm_next = x; break
-#define fsmRestart fsm_next = fsmSTART; break
-#define fsmExit    fsm_next = fsmEND; break
+#define fsmRestart  fsm_next = fsmSTART; break
+#define fsmExit     fsm_next = fsmEND; break
 
 
 /* .% UnitTest
@@ -821,6 +823,10 @@ void log_assert(logger lg,int e,char *estr, char *file,int line)
 #define logClose(lg)    (lg=NULL)
 
 typedef void *logger;
+
+#define logFile(x) NULL
+#define logStdout  NULL
+#define logStderr  NULL
 
 #endif /*- UTL_NOLOGGING */
 

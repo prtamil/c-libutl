@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
     }
     
     TSTSECTION("NULL logger") {
-      lg = logNULL;
+      lg = NULL;
       TSTNULL("logger is NULL",  lg);
       TSTEQPTR("log file is NULL", NULL,logFile(lg));
       TSTEQINT("log is disabled", log_X , logLevel(lg,"?") );
@@ -74,7 +74,9 @@ int main (int argc, char *argv[])
         lg = logStderr;
       } 
       TSTNNULL("logger is not NULL",lg);
+      #ifndef UTL_NOLOGGING
       TSTFAILNOTE("&log_stderr = %p logStderr = %p",&log_stderr,logStderr);
+      #endif
       TSTEQPTR("log file is stderr", stderr,logFile(lg));
       TSTEQINT("logLevel is Warn", log_W, logLevel(lg,"") );
 
