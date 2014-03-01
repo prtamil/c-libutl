@@ -1082,8 +1082,8 @@ chs_t chs_setsize(chs_t s, long ndx)
  
   sz = (ndx / chs_blk_inc) * chs_blk_inc; /* round to the next block size */
   cb = realloc(cb, sizeof(chs_blk_t) + sz);
-  logDebug(utl_logger,"realloc() failed");
-  if (!cb) return NULL;
+  
+  if (!cb) {logDebug(utl_logger,"realloc() failed"); return NULL;}
 
   sz += chs_blk_inc;   /* chs_blk_inc are in the chs_blk_t struct already */
   
