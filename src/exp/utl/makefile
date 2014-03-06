@@ -21,7 +21,11 @@ CFLAGS=-O3
 
 all: logging$(_EXE)   nologging$(_EXE)  general$(_EXE) \
      exception$(_EXE) exception2$(_EXE) memory$(_EXE) \
-     fsm$(_EXE)
+     fsm$(_EXE) buf$(_EXE)
+
+buf$(_EXE): utl.h  utl_buf_ut.c
+	$(CC) $(CFLAGS) -c -o utl_buf_ut.$(_OBJ) utl_buf_ut.c
+	gcc -o $@ utl_buf_ut.$(_OBJ)
 
 logging$(_EXE): utl.h  utl_logging_ut.c
 	$(CC) $(CFLAGS) -c -o utl_logging_ut.$(_OBJ) utl_logging_ut.c

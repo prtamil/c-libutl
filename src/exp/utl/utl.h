@@ -720,13 +720,13 @@ utlLogger utl_log_open(char *fname, char *mode)
       lg->flags = 0;
       lg->rot = 0;
       lg->file = f;
-	  {/* Assume that log_L is the last level in utl_log_abbrev */
+	    /* Assume that log_L is the last level in utl_log_abbrev */
 	    utlAssume( (log_L +1) == ((sizeof(utl_log_abbrev)-1)>>2));
-        lg->level = log_L;
-        utl_log_write(lg,log_L, 1, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
-	  }
+      lg->level = log_L;
+      utl_log_write(lg,log_L, 1, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
+	    
       lg->level = log_W;
-	}
+	  }
   }
   if (f && !lg) fclose(f);
   return lg;
@@ -1040,165 +1040,117 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #endif /* UTL_MEMCHECK */
 
-/* .% Variable length strings
-** ~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-#ifndef UTL_NOCHS
- 
-#define chs_blk_inc 16
+#ifndef UTL_NOBUF
 
 typedef struct {
-  long size;
-  long len;
-  char chs[chs_blk_inc];
-} chs_blk_t;
+  unsigned long max;
+  unsigned long len;
+  char *str;
+} *buf_t;
 
-typedef char *chs_t;
+buf_t utl_buf_new();
+#define bufNew() utl_buf_new()
 
-chs_t utl_chs_setsize(chs_t s, long ndx);
-#define chsNew(s) (s = utl_chs_setsize(NULL,0)) 
+buf_t utl_buf_free(buf_t bf);
+#define bufFree(bf) utl_buf_free(bf)
 
-chs_t utl_chs_free(chs_t s);
-#define chsFree(s) (s=utl_chs_free(s))
+unsigned long utl_buf_set(buf_t bf, unsigned long i, char c);
+#define bufSet(bf,i,c) utl_buf_set(bf,i,c)
 
-#define chsLen(s)  utl_chsLen(s)
-#define chsSize(s) utl_chsSize(s)
+unsigned long utl_buf_add(buf_t bf, char c);
+#define bufAdd(bf,c)   utl_buf_add(bf,c)
 
-long utl_chsLen(chs_t s);
-long utl_chsSize(chs_t s);
+unsigned long utl_buf_addstr(buf_t bf, char *s);
+#define bufAddStr(bf,s) utl_buf_addstr(bf,s)
 
-#define chsChrAt(s,n) utl_chsChrAt(s,n)
-char   utl_chsChrAt  (chs_t s, long ndx);
+char utl_buf_get(buf_t bf, unsigned long i);
+#define bufGet(bf,i) utl_buf_get(bf,i)
 
-chs_t utl_chs_set(chs_t s, long ndx, uint32_t c);
-#define chsSetChr(s, n, c) (s = utl_chs_set(s,n,c))
+#define bufStr(bf) ((bf)->str)
+#define bufLen(bf) ((bf)->len)
+#define bufMax(bf) ((bf)->max)
 
 #ifdef UTL_LIB
 
-#define chs_blk(s) ((chs_blk_t *)(((char*)(s)) - offsetof(chs_blk_t,chs)))
-#define chs_chs(b) ((char *)(((char *)b)+ offsetof(chs_blk_t,chs)))
-
-chs_t utl_chs_setsize(chs_t s, long ndx)
+buf_t utl_buf_new()
 {
-  long sz = 0;
-  chs_blk_t *cb = NULL;
-  
-  if (s) cb = chs_blk(s);
-  
-  if (cb) sz = cb->size;
-  
-  if (ndx < sz) return s; /* enough room already */
- 
-  sz = (ndx / chs_blk_inc) * chs_blk_inc; /* round to the next block size */
-  cb = realloc(cb, sizeof(chs_blk_t) + sz);
-  
-  if (!cb) {logDebug(utl_logger,"realloc() failed"); return NULL;}
-
-  sz += chs_blk_inc;   /* chs_blk_inc are in the chs_blk_t struct already */
-  
-  cb->size = sz;
-
-  if (!s) {  /* created a fresh string */
-    cb->len    = 0;
-    cb->chs[0] = '\0';
+  buf_t bf = malloc(sizeof(buf_t));
+  if (bf) {
+    bf->max = 0;
+    bf->len = 0;
+    bf->str = NULL;
   }
-  return cb->chs;  
+  return bf;
 }
 
-chs_t utl_chs_free(chs_t s) { 
-  logDebug(utl_logger,"FREE: %p",s);
-  if (s) free(chs_blk(s));
+buf_t utl_buf_free(buf_t bf)
+{
+  if (bf) {
+    if (bf->str) free(bf->str);
+    bf->max = 0;
+    bf->len = 0;
+    bf->str = NULL;
+    free(bf);
+  }
   return NULL;
 }
 
-long utl_chsLen(chs_t s)
+unsigned long utl_buf_set(buf_t bf, unsigned long i, char c)
 {
-  chs_blk_t *cb;
-  long l;
-  cb = chs_blk(s);
-  l = (s? cb->len  : 0);
-  logDebug(utl_logger,"CHSLEN: %p %ld",s,l);
-  return l;
-}
-
-static long fixndx(chs_t s, long n)
-{
-  logDebug(utl_logger,"fixndx: %p  %d -> ",s,n);
-  if (s) {
-    if (n < 0) n += utl_chsLen(s);
-    if (n > utl_chsLen(s)) n = utl_chsLen(s)-1;
+  unsigned long new_max;
+  char *new_str = NULL;
+   
+  if (!bf) return 0;
+   
+  new_max = bf->max;
+  if (new_max == 0) new_max = 16;
+  while (new_max <= (i+1)) new_max *= 2; /* double */
+   
+  if (new_max > bf->max) {
+    new_str = realloc(bf->str,new_max);
+    if (!new_str) return 0;
+    bf->str = new_str;
+    bf->max = new_max;
   }
-  if (n < 0) n = 0;
-  logDContinue(utl_logger,"           %d",n);
   
-  return n;
+  bf->str[i] = c;
+  
+  if (c == '\0') {
+    bf->len = i;
+  }
+  else if (i >= bf->len) {
+    bf->str[i+1] = '\0';
+    bf->len = i+1;
+  }
+  
+  return 1;
 }
 
-chs_t utl_chs_set(chs_t s, long ndx, uint32_t c)
+char utl_buf_get(buf_t bf, unsigned long i)
 {
-  chs_blk_t *cb;
-  
-  if (ndx < 0) ndx = fixndx(s,ndx);
-  s = utl_chs_setsize(s,ndx+8); /* ensure enough space for an UTF char */
-
-  s[ndx] = c;
-  cb = chs_blk(s);
-  
-  if (c == '\0') 
-    cb->len = ndx;
-  else if (ndx >= cb->len)
-    cb->len = ndx+1;
-    
-  s[ndx+1] = '\0';
-  logDebug(utl_logger,"chs_Set: [%d] = %d",ndx,c);
-  return s;
+  if (!bf) return '\0';
+  if (i >= bf->len) return '\0';
+  return bf->str[i];
 }
 
-char utl_chsChrAt(chs_t s, long ndx)
+unsigned long utl_buf_add(buf_t bf, char c)
 {
-  ndx = fixndx(s,ndx);
-  return (s && ndx < utl_chsLen(s)) ? s[ndx] : '\0';
+  return utl_buf_set(bf,bf->len,c);
 }
 
-#endif  /*- UTL_LIB */
+unsigned long utl_buf_addstr(buf_t bf, char *s)
+{
+  if (!bf) return 0;
+  if (!s) return 1;
+  
+  while (*s) if (!utl_buf_set(bf,bf->len,*s++)) return 0;
+  
+  return utl_buf_add(bf,'\0');
+}
 
-#define chslen     chsLen            
-                                     
-#define chscpy     chsCpy            
-#define chsncpy    chsCpyL           
-#define chscat     chsAddStr         
-#define chsins     chsInsStr         
-#define chsncat    chsAddStrL        
-#define chsnins    chsInsStrL        
-                                     
-#define chssetchr  chsChrSet         
-#define chscatchr  chsAddChar        
-#define chsinschr  chsInsChar        
+#endif
 
-#define chsprintf chsPrintf
-                                     
-#define chsdel     chsDel            
-#define chstrim    chsTrim           
-                                     
-#define chsupper   chsUpper          
-#define chslower   chsLower          
-#define chsnupper  chsUpper          
-#define chsnlower  chsLower          
-#define chsreverse chsReverse        
-                                     
-#define chsgetline chsCpyLine        
-#define chsgetfile chsCpyFile        
-#define chscatline chsAddLine        
-#define chscatfile chsAddFile        
-#define chslines   chsForLines       
-                                     
-#define chsmatch   chsMatch          
-#define chssub     chsSubStr         
-#define chssubarr  chsSubArr         
-#define chssubfun  chsSubfun         
-#define chssubfun_t chsSubF_t
-                                             
-#endif /*- UTL_NOCHS */
+#endif /* UTL_NOCHS */
 
 #endif /* UTL_H */
 
