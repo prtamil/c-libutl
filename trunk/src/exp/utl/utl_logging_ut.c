@@ -18,7 +18,7 @@ int k=0;
 int c=0;
 int enabled=1;
 
-logger lg = NULL;
+utlLogger lg = NULL;
 
 int main (int argc, char *argv[])
 {
@@ -75,7 +75,7 @@ int main (int argc, char *argv[])
       } 
       TSTNNULL("logger is not NULL",lg);
       #ifndef UTL_NOLOGGING
-      TSTFAILNOTE("&log_stderr = %p logStderr = %p",&log_stderr,logStderr);
+      TSTFAILNOTE("&log_stderr = %p logStderr = %p",&utl_log_stderr,logStderr);
       #endif
       TSTEQPTR("log file is stderr", stderr,logFile(lg));
       TSTEQINT("logLevel is Warn", log_W, logLevel(lg,"") );
