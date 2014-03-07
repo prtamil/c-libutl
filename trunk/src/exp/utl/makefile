@@ -27,6 +27,10 @@ buf$(_EXE): utl.h  utl_buf_ut.c
 	$(CC) $(CFLAGS) -c -o utl_buf_ut.$(_OBJ) utl_buf_ut.c
 	gcc -o $@ utl_buf_ut.$(_OBJ)
 
+vec$(_EXE): utl.h  utl_vec_ut.c
+	$(CC) $(CFLAGS) -c -o utl_vec_ut.$(_OBJ) utl_vec_ut.c
+	gcc -o $@ utl_vec_ut.$(_OBJ)
+
 logging$(_EXE): utl.h  utl_logging_ut.c
 	$(CC) $(CFLAGS) -c -o utl_logging_ut.$(_OBJ) utl_logging_ut.c
 	gcc -o $@ utl_logging_ut.$(_OBJ)
