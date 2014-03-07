@@ -1043,109 +1043,88 @@ void *utl_strdup(void *ptr, char *file, int line)
 #ifndef UTL_NOBUF
 
 typedef struct {
-  unsigned long max;
-  unsigned long len;
-  char *str;
-} *buf_t;
+  size_t  max;
+  size_t  cnt;
+  size_t  esz;
+  void   *vec;
+} *vec_t;
 
-buf_t utl_buf_new();
-#define bufNew() utl_buf_new()
+vec_t utl_vecNew(size_t esz);
+#define vecNew utl_vecNew
 
-buf_t utl_buf_free(buf_t bf);
-#define bufFree(bf) utl_buf_free(bf)
+vec_t utl_vecFree(vec_t v);
+#define vecFree utl_vecFree
 
-unsigned long utl_buf_set(buf_t bf, unsigned long i, char c);
-#define bufSet(bf,i,c) utl_buf_set(bf,i,c)
+int utl_vecSet(vec_t v, size_t i, void *e);
+#define vecSet utl_vecSet
 
-unsigned long utl_buf_add(buf_t bf, char c);
-#define bufAdd(bf,c)   utl_buf_add(bf,c)
+int utl_vecAdd(vec_t v, void *e);
+#define vecAdd  utl_vecAdd
 
-unsigned long utl_buf_addstr(buf_t bf, char *s);
-#define bufAddStr(bf,s) utl_buf_addstr(bf,s)
+void *utl_vecGet(vec_t v, size_t  i);
+#define vecGet utl_vecGet
 
-char utl_buf_get(buf_t bf, unsigned long i);
-#define bufGet(bf,i) utl_buf_get(bf,i)
-
-#define bufStr(bf) ((bf)->str)
-#define bufLen(bf) ((bf)->len)
-#define bufMax(bf) ((bf)->max)
+#define vecCount(v) ((v)->cnt)
 
 #ifdef UTL_LIB
 
-buf_t utl_buf_new()
+vec_t utl_vecNew(size_t esz)
 {
-  buf_t bf = malloc(sizeof(buf_t));
-  if (bf) {
-    bf->max = 0;
-    bf->len = 0;
-    bf->str = NULL;
+  vec_t v = malloc(sizeof(vec_t));
+  if (v) {
+    v->max = 0;    v->cnt = 0;
+    v->esz = esz;  v->vec = NULL;
   }
-  return bf;
+  return v;
 }
 
-buf_t utl_buf_free(buf_t bf)
+vec_t utl_vecFree(vec_t v)
 {
-  if (bf) {
-    if (bf->str) free(bf->str);
-    bf->max = 0;
-    bf->len = 0;
-    bf->str = NULL;
-    free(bf);
+  if (v) {
+    if (v->vec) free(v->vec);
+    v->max = 0;  v->cnt = 0;
+    v->esz = 0;  v->vec = NULL;
+    free(v);
   }
   return NULL;
 }
 
-unsigned long utl_buf_set(buf_t bf, unsigned long i, char c)
+int utl_vecSet(vec_t v, size_t  i, void *e)
 {
   unsigned long new_max;
-  char *new_str = NULL;
+  char *new_vec = NULL;
    
-  if (!bf) return 0;
+  if (!v) return 0;
    
-  new_max = bf->max;
-  if (new_max == 0) new_max = 16;
-  while (new_max <= (i+1)) new_max *= 2; /* double */
+  new_max = v->max;
+  if (new_max == 0) new_max = 8;
+
+  while (new_max <= i) new_max *= 2; /* double */
    
-  if (new_max > bf->max) {
-    new_str = realloc(bf->str,new_max);
-    if (!new_str) return 0;
-    bf->str = new_str;
-    bf->max = new_max;
+  if (new_max > v->max) {
+    new_vec = realloc(v->vec,new_max * v->esz);
+    if (!new_vec) return 0;
+    v->vec = new_vec;
+    v->max = new_max;
   }
   
-  bf->str[i] = c;
-  
-  if (c == '\0') {
-    bf->len = i;
-  }
-  else if (i >= bf->len) {
-    bf->str[i+1] = '\0';
-    bf->len = i+1;
-  }
+  memcpy(((char *)(v->vec)) + (i* v->esz),e,v->esz);
+
+  if (i >= v->cnt) v->cnt = i+1;
   
   return 1;
 }
 
-char utl_buf_get(buf_t bf, unsigned long i)
+void *utl_vecGet(vec_t v, size_t i)
 {
-  if (!bf) return '\0';
-  if (i >= bf->len) return '\0';
-  return bf->str[i];
+  if (!v) return '\0';
+  if (i >= v->cnt) return '\0';
+  return ((char *)(v->vec)) + (i*v->esz);
 }
 
-unsigned long utl_buf_add(buf_t bf, char c)
+int utl_vecAdd(vec_t v, void *e)
 {
-  return utl_buf_set(bf,bf->len,c);
-}
-
-unsigned long utl_buf_addstr(buf_t bf, char *s)
-{
-  if (!bf) return 0;
-  if (!s) return 1;
-  
-  while (*s) if (!utl_buf_set(bf,bf->len,*s++)) return 0;
-  
-  return utl_buf_add(bf,'\0');
+  return utl_vecSet(v,v->cnt,e);
 }
 
 #endif
