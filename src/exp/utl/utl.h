@@ -40,6 +40,9 @@
 **   [Guarded memory allocation]
 **                    Replacement for malloc(), calloc(), realloc() and free()
 **                    that account and report about misuse of memory.
+**
+**   [Dynamic arrays]
+**   [Text buffers}
 **  ..
 **
 */
@@ -365,7 +368,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 #define _TSTGROUP(s) XTSTGROUP(s)
 
 /* Test code will be skipped if needed */
-#define TSTCODE   if (TSTSKP)   ((void)0); else  
+#define TSTCODE   if (TSTSKP && *TSTSKP)   ((void)0); else  
 #define XTSTCODE  if (!utlZero) ((void)0); else
 #define _TSTCODE  XTSTCODE
                      
@@ -376,7 +379,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 */
 #define XTST(s,x)
 
-#define TST(s,x) (TST_DO(s,(TSTSKP?1:(x))),TST_WRDIR, TSTWRITE("\n"), TSTRES)
+#define TST(s,x) (TST_DO(s,((TSTSKP && *TSTSKP)?1:(x))),TST_WRDIR, TSTWRITE("\n"), TSTRES)
 
 #define TST_DO(s,x) (TSTRES = (x), TSTGTT++, TSTTOT++, TSTNUM++, \
                      TSTPASSED = (TSTPASSED && (TSTRES || TSTTD)), \
@@ -385,7 +388,7 @@ utl_extern(FILE *TST_FILE, = NULL);
                                TSTGTT, s, __LINE__))
 
 #define TST_WRDIR \
-           (TSTSKP ? (TSTNSK++, TSTWRITE(" # SKIP %s",TSTSKP)) \
+           ((TSTSKP && *TSTSKP)? (TSTNSK++, TSTWRITE(" # SKIP %s",TSTSKP)) \
                    : (TSTTD ? (TSTNTD++, (TSTWRITE(" # TODO %s%s",TSTTD, \
                                         (TSTRES?TSTWRN:utlEmptyString)))) : 0))
 
@@ -394,7 +397,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 /* You can skip a set of tests giving a reason.
 ** Nested skips are not supported!
 */
-#define TSTSKIP(x,r) if (!(x)) ((void)0); else for (TSTSKP=r; TSTSKP; TSTSKP=NULL)
+#define TSTSKIP(x,r) for (TSTSKP=(x)?r:utlEmptyString; TSTSKP; TSTSKP=NULL)
 
 #define TSTTODO(r)   for (TSTTD=r; TSTTD; TSTTD=NULL)
 
@@ -406,28 +409,28 @@ utl_extern(FILE *TST_FILE, = NULL);
 #define TSTEXPECTED(f1,v1,f2,v2) \
                              (TSTRES? 0 : (TSTNOTE("Expected "f1" got "f2,v1,v2)))
 
-#define TSTEQINT(s,e,r) do { int __exp = (e); int __ret = (r);\
-                             TST(s,__exp==__ret);\
-                             TSTEXPECTED("(int) %d",__exp,"%d",__ret); \
+#define TST_INT(s,e,r,o) do { int utl_exp = (e); int utl_ret = (r);\
+                             TST(s,utl_exp o utl_ret);\
+                             TSTEXPECTED("(int) "#o" %d",utl_exp,"%d",utl_ret); \
                            } while (utlZero)
 
-#define TSTNEQINT(s,e,r) do { int __exp = (e); int __ret = (r);\
-                             TST(s,__exp!=__ret);\
-                             TSTEXPECTED("(int) other than %d",__exp,"%d",__ret); \
-                           } while (utlZero)
+                             
+#define TSTEQINT(s,e,r)  TST_INT(s,e,r, == )
+#define TSTNEQINT(s,e,r) TST_INT(s,e,r, != )
+#define TSTLTINT(s,e,r)  TST_INT(s,e,r, < )
+#define TSTLEINT(s,e,r)  TST_INT(s,e,r, <= )
+#define TSTGTINT(s,e,r)  TST_INT(s,e,r, > )
+#define TSTGEINT(s,e,r)  TST_INT(s,e,r, >= )
+
+#define TST_PTR(s,e,r,o)  do { void *utl_exp = (e); void *utl_ret = (r); \
+                              TST(s,utl_exp o utl_ret) ; \
+                              TSTEXPECTED("(ptr) "#o" 0x%p",utl_exp,"0x%p",utl_ret); \
+                            }  while (utlZero)
+
                            
-#define TSTEQPTR(s,e,r)  do { void *__exp = (e); void *__ret = (r); \
-                              TST(s,__exp == __ret) ; \
-                              TSTEXPECTED("(ptr) 0x%p",__exp,"0x%p",__ret); \
-                            }  while (utlZero)
-
-#define TSTNEQPTR(s,e,r) do { void *__exp = (e); void *__ret = (r); \
-                              TST(s,__exp != __ret) ; \
-                              TSTEXPECTED("(ptr) other than 0x%p",__exp,"0x%p",__ret); \
-                            }  while (utlZero)
-
+#define TSTEQPTR(s,e,r)  TST_PTR(s,e,r, == )
+#define TSTNEQPTR(s,e,r) TST_PTR(s,e,r, != )
 #define TSTNULL(s,r)     TSTEQPTR(s,NULL,r)
-
 #define TSTNNULL(s,r)    TSTNEQPTR(s,NULL,r)
 
 							
@@ -511,13 +514,14 @@ typedef struct {
   unsigned char  level;
   unsigned char  flags;
   unsigned short rot;
+  char          *pre;
 } utl_log_s, *utlLogger;
 
-#define utl_log_stdout_init {NULL, log_W, UTL_LOG_OUT,0}
+#define utl_log_stdout_init {NULL, log_W, UTL_LOG_OUT,0,NULL}
 utl_extern(utl_log_s utl_log_stdout , = utl_log_stdout_init);
 #define logStdout (&utl_log_stdout)
 
-#define utl_log_stderr_init {NULL, log_W, UTL_LOG_ERR,0}
+#define utl_log_stderr_init {NULL, log_W, UTL_LOG_ERR,0,NULL}
 utl_extern(utl_log_s utl_log_stderr , = utl_log_stderr_init);
 #define logStderr (&utl_log_stderr)
 
@@ -580,7 +584,6 @@ int   logLevelEnv(utlLogger lg, char *var, char *level);
 */
 
 
-
 /* .%% Logging format
 ** ~~~~~~~~~~~~~~~~~~
 ** 
@@ -617,7 +620,9 @@ int   logLevelEnv(utlLogger lg, char *var, char *level);
 */
 
 #define logOpen(l,f,m)   (l=utl_log_open(f,m))
-#define logClose(l)      (utl_log_close(l),l=NULL)
+#define logClose(l)      (l=utl_log_close(l))
+
+#define logPre(l,s)      ((l)->pre = s)
 
 utlLogger utl_log_open(char *fname, char *mode);
 utlLogger utl_log_close(utlLogger lg);
@@ -775,9 +780,10 @@ void utl_log_write(utlLogger lg, int lv, int tstamp, char *format, ...)
     if (tstamp) {
       time(&t);
       strftime(tstr,32,"%Y-%m-%d %X",localtime(&t));
-	} else {
-	  strcmp(tstr,"                   ");          
-	}
+	  } else {
+	    strcpy(tstr,"                   ");          
+    }
+    if (lg->pre) fprintf(f, "%s ",lg->pre);
     fprintf(f, "%s %.4s", tstr, utl_log_abbrev+(lv<<2));
     va_start(args, format);  vfprintf(f,format, args);  va_end(args);
     fputc('\n',f);
@@ -1040,9 +1046,9 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #endif /* UTL_MEMCHECK */
 
-#ifndef UTL_NOBUF
+#ifndef UTL_NOVEC
 
-typedef struct {
+typedef struct vec_s {
   size_t  max;
   size_t  cnt;
   size_t  esz;
@@ -1050,7 +1056,7 @@ typedef struct {
 } *vec_t;
 
 vec_t utl_vecNew(size_t esz);
-#define vecNew utl_vecNew
+#define vecNew(ty) utl_vecNew(sizeof(ty))
 
 vec_t utl_vecFree(vec_t v);
 #define vecFree utl_vecFree
@@ -1064,13 +1070,45 @@ int utl_vecAdd(vec_t v, void *e);
 void *utl_vecGet(vec_t v, size_t  i);
 #define vecGet utl_vecGet
 
+int utl_vecResize(vec_t v, size_t n);
+#define vecResize utl_vecResize
+
 #define vecCount(v) ((v)->cnt)
+#define vec(v,ty)   ((ty *)((v)->vec))
+
+#define buf_t vec_t
+int utl_bufSet(buf_t bf, size_t i, char c);
+
+#define bufNew() utl_vecNew(1)
+#define bufFree  utl_vecFree
+
+char utl_bufGet(buf_t bf, size_t i);
+#define bufGet   utl_bufGet
+
+int utl_bufSet(buf_t bf, size_t i, char c);
+#define bufSet   utl_bufSet
+
+int utl_bufAdd(buf_t bf, char c);
+#define bufAdd   utl_bufAdd
+
+int utl_bufAddStr(buf_t bf, char *s);
+#define bufAddStr  utl_bufAddStr
+
+#define bufResize utl_vecResize
+
+#define bufClr(bf) utl_bufSet(bf,0,'\0');
+
+char *utl_bufStr(buf_t bf);
+#define bufStr utl_bufStr
+
+#define bufLen vecCount
 
 #ifdef UTL_LIB
 
 vec_t utl_vecNew(size_t esz)
 {
-  vec_t v = malloc(sizeof(vec_t));
+  vec_t v;
+  v = malloc(sizeof(struct vec_s));
   if (v) {
     v->max = 0;    v->cnt = 0;
     v->esz = esz;  v->vec = NULL;
@@ -1089,7 +1127,7 @@ vec_t utl_vecFree(vec_t v)
   return NULL;
 }
 
-int utl_vecSet(vec_t v, size_t  i, void *e)
+static int utl_vec_expand(vec_t v, size_t i)
 {
   unsigned long new_max;
   char *new_vec = NULL;
@@ -1097,7 +1135,8 @@ int utl_vecSet(vec_t v, size_t  i, void *e)
   if (!v) return 0;
    
   new_max = v->max;
-  if (new_max == 0) new_max = 8;
+  
+  if (new_max < 8) new_max = 8;
 
   while (new_max <= i) new_max *= 2; /* double */
    
@@ -1107,24 +1146,93 @@ int utl_vecSet(vec_t v, size_t  i, void *e)
     v->vec = new_vec;
     v->max = new_max;
   }
-  
-  memcpy(((char *)(v->vec)) + (i* v->esz),e,v->esz);
+  return 1;
+}
 
-  if (i >= v->cnt) v->cnt = i+1;
+int utl_vecSet(vec_t v, size_t  i, void *e)
+{
+  if (!utl_vec_expand(v,i)) return 0;
   
+  memcpy(((char *)(v->vec)) + (i * v->esz),e,v->esz);
+  if (i >= v->cnt) v->cnt = i+1;
   return 1;
 }
 
 void *utl_vecGet(vec_t v, size_t i)
 {
   if (!v) return '\0';
-  if (i >= v->cnt) return '\0';
+  if (i >= v->cnt) return NULL;
   return ((char *)(v->vec)) + (i*v->esz);
 }
 
 int utl_vecAdd(vec_t v, void *e)
 {
   return utl_vecSet(v,v->cnt,e);
+}
+
+int utl_vecResize(vec_t v, size_t n)
+{
+  size_t new_max = 1;
+  char *new_vec = NULL;
+  if (!v) return 0;
+
+  while (new_max <= n) new_max *= 2;
+  
+  if (new_max != v->max) {
+    new_vec = realloc(v->vec,new_max * v->esz);
+    if (!new_vec) return 0;
+    v->vec = new_vec;
+    v->max = new_max;
+    if (v->cnt > v->max) v->cnt = v->max;
+  }
+  
+  return 1;
+}
+
+int utl_bufSet(buf_t bf, size_t i, char c)
+{
+  char *s;
+  logDebug(logStderr,"buf: %p %d %c",bf,i,c);
+  if (!utl_vec_expand(bf,i+1)) return 0;
+  utlMemCheck(bf->vec);
+  s = bf->vec;
+  s[i] = c;
+  
+  if (c == '\0') {
+    bf->cnt = i;
+  }
+  else if (i >= bf->cnt) {
+    s[i+1] = '\0';
+    bf->cnt = i+1;
+  }
+  return 1;
+}
+
+char utl_bufGet(buf_t bf, size_t i)
+{
+  if (!bf) return '\0';
+  if (i >= bf->cnt) return '\0';
+  return ((char*)(bf->vec))[i];
+}
+
+int utl_bufAdd(buf_t bf, char c)
+{
+  return utl_bufSet(bf,bf->cnt,c);
+}
+
+int utl_bufAddStr(buf_t bf, char *s)
+{
+  if (!bf) return 0;
+  if (!s) return 1;
+  
+  while (*s) if (!utl_bufSet(bf,bf->cnt,*s++)) return 0;
+  
+  return utl_bufAdd(bf,'\0');
+}
+
+char *utl_bufStr(buf_t bf)
+{
+  return bf? bf->vec : NULL;
 }
 
 #endif
