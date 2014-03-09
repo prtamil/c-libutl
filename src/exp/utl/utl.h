@@ -9,6 +9,18 @@
 #ifndef UTL_H
 #define UTL_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+#include <string.h>
+#include <stdarg.h>
+#include <stddef.h>
+
+#include <setjmp.h>
+#include <assert.h>
+
+
 /* .% Overview
 **
 ** =========== 
@@ -47,17 +59,6 @@
 **
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-
-#include <string.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <setjmp.h>
-#include <assert.h>
-
 /*
 ** .% How to use '|utl|
 ** ====================
@@ -73,7 +74,7 @@
 **    As an alternative to the second step above, you can create a source
 **  file (say '|utl.c|) with only the following lines:
 **  .{{ C
-**       #define  UTL_LIB
+**       #define  UTL_C
 **       #include "utl.h"
 **  .}}
 **  and link it to your project.
@@ -85,21 +86,6 @@
 #define UTL_LIB
 #endif
 #endif
-
-/*
-**  The '{utl_extern} macro will take care of actually initializing the 
-**  variables needed by '|utl.c| instead of simply declaring them as '|extern|
-*/
-
-#ifdef UTL_LIB
-#define utl_extern(n,v) n v
-#else
-#define utl_extern(n,v) extern n
-#endif
-
-#define utl_initvoid ;
-
-#define UTL_VERSION 0x0003  /* 0.3 */
 
 /* .%% Enable/disable utl features
 ** -------------------------------
@@ -131,8 +117,28 @@
 #endif
 
 
-/* .% Constants
-** ============
+/* .% Globals
+** ==========
+** 
+**    There are some symbols (costants or variables) that need to be shared by
+**  all the modules that include '|utl.h|.  They are defined with the aid of
+**  the macro '{utl_extern} which takes care of their definition and initialization
+**  in the '/main/ code and of their declaration as '|extern| in the rest of the code.
+*/
+
+#ifdef UTL_LIB
+#define utl_extern(n,v) n v
+#else
+#define utl_extern(n,v) extern n
+#endif
+
+#define utl_initvoid ;
+
+#define UTL_VERSION 0x0003
+
+
+/* .%% Constants
+** -------------
 **
 **  A set of constants for generic use. Provided by for convenience.
 **
@@ -163,7 +169,6 @@ utl_extern(char *utlEmptyString, = "");
 **               constant values.
 **   ..
 */
-
   
 #ifdef __GNUC__
 #define utlZero 0
@@ -179,7 +184,8 @@ utl_extern(const int utlZero, = 0);
 
 
 /* .% Assumptions (static assertions)
-** ~~~~~~~~~~~~~~~~~~~~~~~
+** ==================================
+**
 ** http://www.drdobbs.com/compile-time-assertions/184401873
 */
 
@@ -188,8 +194,10 @@ utl_extern(const int utlZero, = 0);
 #define utlAssume(e)    utl_assum0(e,__LINE__)
 
 
-/* .% Try/Catch
-** ~~~~~~~~~~~~~~~~~~~~~~~
+#ifndef UTL_NOTRYCATCH
+
+/* .% Exceptions
+** ============
 **   Exceptions can be very useful when dealing with error conditions is so
 ** complicate that the logic of errors handling obscures the logic of the 
 ** program itself.
@@ -240,7 +248,6 @@ utl_extern(const int utlZero, = 0);
 ** .}}
 */ 
 
-#ifndef UTL_NOTRYCATCH
 
 typedef struct utl_env_s { 
   jmp_buf jb;
@@ -278,7 +285,7 @@ typedef struct utl_env_s {
 ** .v
 **      fsm ({            // Note the use of '|({| and '|})| !!
 **
-**        case : { ...
+**        case fsmSTART: { ...
 **                   if (c == 0) fsmGoto(z);
 **                   fsmGoto(y);
 **        }
@@ -313,6 +320,8 @@ typedef struct utl_env_s {
 
 #endif
 
+#ifdef UTL_UNITTEST
+
 /* .% UnitTest
 ** ===========
 **
@@ -326,7 +335,6 @@ typedef struct utl_env_s {
 **   '{UTL_UNITTEST} implies '{DEBUG}
 */
 
-#ifdef UTL_UNITTEST
 
 utl_extern(FILE *TST_FILE, = NULL);
 #define TSTFILE (TST_FILE?TST_FILE:stderr)
@@ -483,7 +491,6 @@ static const char *TSTWRN = " (passed unexpectedly!)";
 **
 */
 
-
 #define log_D 7
 #define log_I 6
 #define log_M 5
@@ -600,6 +607,8 @@ int   logLevelEnv(utlLogger lg, char *var, char *level);
 **
 */
 
+/* .%% Loggers
+** ~~~~~~~~~~~
 /*    Log files can be opened in "write" or "append" mode as any normal file 
 ** using the '{=logOpen()} function.
 ** For example:
@@ -619,8 +628,8 @@ int   logLevelEnv(utlLogger lg, char *var, char *level);
 ** bad will happen.
 */
 
-#define logOpen(l,f,m)   (l=utl_log_open(f,m))
-#define logClose(l)      (l=utl_log_close(l))
+#define logOpen(f,m)   utl_log_open(f,m)
+#define logClose(l)    utl_log_close(l)
 
 #define logPre(l,s)      ((l)->pre = s)
 
@@ -850,8 +859,8 @@ typedef void *utlLogger;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-/*  .% Traced memory check
-**  ======================
+/*  .% Traced memory
+**  ================
 */
 #define utlMemInvalid    -2
 #define utlMemOverflow   -1
@@ -1194,7 +1203,6 @@ int utl_bufSet(buf_t bf, size_t i, char c)
   char *s;
   logDebug(logStderr,"buf: %p %d %c",bf,i,c);
   if (!utl_vec_expand(bf,i+1)) return 0;
-  utlMemCheck(bf->vec);
   s = bf->vec;
   s[i] = c;
   
@@ -1216,9 +1224,7 @@ char utl_bufGet(buf_t bf, size_t i)
 }
 
 int utl_bufAdd(buf_t bf, char c)
-{
-  return utl_bufSet(bf,bf->cnt,c);
-}
+{  return utl_bufSet(bf,bf->cnt,c); }
 
 int utl_bufAddStr(buf_t bf, char *s)
 {
@@ -1231,8 +1237,10 @@ int utl_bufAddStr(buf_t bf, char *s)
 }
 
 char *utl_bufStr(buf_t bf)
+{  return bf? bf->vec : NULL; }
+
+int utl_bufRead(buf_t bf, FILE *f)
 {
-  return bf? bf->vec : NULL;
 }
 
 #endif

@@ -1,7 +1,7 @@
 /* 
-**  (C) by Remo Dentato (rdentato@gmail.com)
+**  (CC) by Remo Dentato (rdentato@gmail.com)
 ** 
-** This sofwtare is distributed under the terms of the BSD license:
+** This software is distributed under the terms of the BSD license:
 **   http://creativecommons.org/licenses/BSD/
 **   http://opensource.org/licenses/bsd-license.php 
 */
@@ -37,7 +37,9 @@ int main (int argc, char *argv[])
   
     TSTSECTION("vec creation") {
       TSTGROUP("vecNew()") {
-        vv = vecNew(point);
+        TSTCODE {
+          vv = vecNew(point);
+        }
         TSTNNULL("Is not NULL", vv );
         TSTEQINT("Mem Valid", utlMemValid, utlMemCheck(vv));
         TSTEQINT("Len 0", 0, vecCount(vv) );
