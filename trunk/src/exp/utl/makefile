@@ -15,6 +15,7 @@ TESTS = general logging
 .SUFFIXES: .c .h $(_OBJ)
 
 CFLAGS=-O3
+CFLAGS=-g
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $*.$(_OBJ) $*.c
