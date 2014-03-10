@@ -1242,7 +1242,15 @@ int utl_bufRead(buf_t bf, FILE *f)
 {
 }
 
-int utl_bufFormat(buf_t bf, FILE *f)
+#ifdef _MSC_VER
+int _scprintf(
+   const char *format [,
+   argument] ... 
+);
+#else 
+#define utl_fmtcnt(f,...) snprintf(NULL,f,
+#endif
+int utl_bufFormat(buf_t bf, )
 {
 }
 
