@@ -63,7 +63,7 @@ int main (int argc, char *argv[])
       } TSTEQINT("logLevel() and logIf()", 110, k );
       
       TSTCODE {
-        logClose(lg);
+        lg = logClose(lg);
       }
       TSTEQPTR("logger is NULL", NULL,lg);
     }
@@ -92,7 +92,7 @@ int main (int argc, char *argv[])
       } TSTEQINT("logLevel() and logIf()", 110, k );
       
       TSTCODE {
-        logClose(lg);
+        lg = logClose(lg);
       }
       TSTEQPTR("logger is NULL", NULL,lg);
     }
@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
     TSTSECTION("test.log") {
     
       TSTCODE {
-        logOpen(lg,"test.log","w"); 
+        lg = logOpen("test.log","w"); 
       } 
       TSTNNULL("logger is not NULL", lg);
       TSTNNULL("log file is not NULL", logFile(lg));
@@ -118,7 +118,7 @@ int main (int argc, char *argv[])
       } TSTEQINT("logLevel() and logIf()", 110, k );
       
       TSTCODE {
-        logClose(lg);
+        lg = logClose(lg);
       }
       TSTNULL("logger is NULL",lg);
       
@@ -129,8 +129,8 @@ int main (int argc, char *argv[])
       if(f) fclose(f);
 
       TSTCODE {
-        logOpen(lg,"test.log","a"); 
-        logClose(lg);
+        lg = logOpen("test.log","a"); 
+        lg = logClose(lg);
       } 
       
       TSTCODE {

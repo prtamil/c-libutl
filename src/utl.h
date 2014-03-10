@@ -628,13 +628,13 @@ int   logLevelEnv(utlLogger lg, char *var, char *level);
 ** bad will happen.
 */
 
-#define logOpen(f,m)   utl_log_open(f,m)
+#define logOpen(f,m)   utl_logOpen(f,m)
 #define logClose(l)    utl_log_close(l)
 
 #define logPre(l,s)      ((l)->pre = s)
 
-utlLogger utl_log_open(char *fname, char *mode);
-utlLogger utl_log_close(utlLogger lg);
+utlLogger utl_logOpen(char *fname, char *mode);
+utlLogger utl_logClose(utlLogger lg);
 void utl_log_write(utlLogger lg,int lv, int tstamp, char *format, ...);
 
 #define logFile(l) utl_logFile(l)
@@ -716,10 +716,10 @@ int utl_logLevelEnv(utlLogger lg, char *var, char *level)
   return utl_logLevel(lg,lvl_str);
 }
 
-utlLogger utl_log_open(char *fname, char *mode)
+utlLogger utl_logOpen(char *fname, char *mode)
 {
   char md[4];
-  utlLogger lg = logNull;
+  utlLogger lg = logStderr;
   FILE *f = NULL;
   
   if (fname) {
@@ -733,9 +733,10 @@ utlLogger utl_log_open(char *fname, char *mode)
     if (lg) { 
       lg->flags = 0;
       lg->rot = 0;
+	  lg->pre = NULL;
       lg->file = f;
-	    /* Assume that log_L is the last level in utl_log_abbrev */
-	    utlAssume( (log_L +1) == ((sizeof(utl_log_abbrev)-1)>>2));
+	  /* Assume that log_L is the last level in utl_log_abbrev */
+	  utlAssume( (log_L +1) == ((sizeof(utl_log_abbrev)-1)>>2));
       lg->level = log_L;
       utl_log_write(lg,log_L, 1, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
 	    
@@ -839,8 +840,8 @@ void utl_log_assert(utlLogger lg,int e,char *estr, char *file,int line)
 
 #define logIf(lg,lv) if (!utlZero) (void)0 ; else
 
-#define logOpen(lg,f,m) (lg=NULL)
-#define logClose(lg)    (lg=NULL)
+#define logOpen(f,m)    NULL
+#define logClose(lg)    NULL
 
 typedef void *utlLogger;
 
@@ -1201,7 +1202,7 @@ int utl_vecResize(vec_t v, size_t n)
 int utl_bufSet(buf_t bf, size_t i, char c)
 {
   char *s;
-  logDebug(logStderr,"buf: %p %d %c",bf,i,c);
+
   if (!utl_vec_expand(bf,i+1)) return 0;
   s = bf->vec;
   s[i] = c;
@@ -1240,6 +1241,10 @@ char *utl_bufStr(buf_t bf)
 {  return bf? bf->vec : NULL; }
 
 int utl_bufRead(buf_t bf, FILE *f)
+{
+}
+
+int utl_bufFormat(buf_t bf, FILE *f)
 {
 }
 
