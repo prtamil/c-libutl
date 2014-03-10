@@ -1,0 +1,62 @@
+/* 
+**  (C) by Remo Dentato (rdentato@gmail.com)
+** 
+** This software is distributed under the terms of the BSD license:
+**   http://creativecommons.org/licenses/BSD/
+**   http://opensource.org/licenses/bsd-license.php 
+*/
+
+#include "libutl.h"
+
+#define CODE    1
+#define COMMENT 2
+
+int state = CODE;
+
+chs_t ln;
+
+int main(int argc, char *argv[])
+{
+  FILE *inf = stdin;
+  char *cur;
+  
+  if (argc > 1) { 
+    fprintf(stderr,"Usage: uncomment <inputfile. >outputfile");
+    exit(1);
+  }
+
+  chsForLines(ln,inf) {
+    cur = ln;
+    while (*cur) {
+      switch (state) {
+        case CODE :
+          switch pmx(cur) {
+          
+              case "/*"  :
+                state = COMMENT;
+                break;
+                
+              case "/" :
+              case "<+!/>" :
+                printf("%.*s",pmx(Len,0),pmx(Start,0));
+          }
+          break;
+          
+        case COMMENT :
+          switch pmx(cur) {
+              case "*/" :
+                state = CODE;
+                break;
+
+              case "*" :
+              case "<+!*>" :
+                break;
+          }
+          break;
+      }
+    }
+  }
+  
+  ln = chsFree(ln);
+  return 0;  
+}
