@@ -20,7 +20,7 @@ int main (int argc, char *argv[])
   int k;
   
   TSTPLAN("utl unit test: memory check") {
-    logOpen(utlMemLog,"memory.info","w");
+    utlMemLog = logOpen("memory.log","w");
     logLevel(utlMemLog,"Info");
 
     TSTSECTION("malloc") {
@@ -60,7 +60,7 @@ int main (int argc, char *argv[])
       
       }
     }
-    TSTNOTE("Check the file 'memory.info' to see the log of traced allocations");
+    TSTNOTE("Check the file 'memory.log' to see the log of traced allocations");
   }
   
   logClose(utlMemLog);
