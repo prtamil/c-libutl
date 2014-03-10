@@ -1,0 +1,771 @@
+/* 
+**  (C) by Remo Dentato (rdentato@gmail.com)
+** 
+** This sofwtare is distributed under the terms of the BSD license:
+**   http://creativecommons.org/licenses/BSD/
+**   http://opensource.org/licenses/bsd-license.php 
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#include "libutl.h"
+
+tbl_t cmd = NULL;
+vec_t patterns = NULL;
+chs_t expr = NULL;
+vec_t strings = NULL; 
+
+#define lnbuf_sz 512
+char lnbuf[lnbuf_sz];
+
+#define prterr(num, ...) \
+      do { \
+        printf("* ERR%02d: ", num);\
+        printf(__VA_ARGS__); printf("\n\n");\
+        fflush(stdout);\
+      } while (utlZero)
+
+/* replace \. with the proper character */
+chs_t unescape(chs_t str)
+{
+  char *t ;
+  long from, to;
+  unsigned int c;
+  
+  if (!str) return  NULL;
+  t = str;
+  while ((t = strchr(t,'\\'))) {
+     from = t-str; to = from+1;
+     c = '\0';
+     switch (t[1]) {
+       case '\0' :  break;
+       case 't'  :  c = '\t' ; break; 
+       case 'n'  :  c = '\n' ; break; 
+       case 'r'  :  c = '\r' ; break;       
+       case 'a'  :  c = '\a' ; break; 
+       case 'b'  :  c = '\b' ; break; 
+       case 'e'  :  c = '\033' ; break; 
+       case 'f'  :  c = '\f' ; break; 
+       case 'v'  :  c = '\v' ; break; 
+
+       case 'x'  :  if (sscanf(t+2,"%2x",&c) == 0) {
+                      c = t[1];
+                    }
+                    else {                    
+                      if (c >  0) to++;
+                      if (c > 15) to++;
+                    }
+                    break;
+                    
+       case '0' : case '1' : case '2' : case '3' :
+       case '4' : case '5' : case '6' : case '7' :
+                   if (sscanf(t+1,"%3o",&c) == 0) {
+                      c = t[1];
+                    }
+                    else {                    
+                      if (c >  7) to++;
+                      if (c > 63) to++;
+                    }
+                    break;
+
+       default   :  c = t[1] ; break; 
+     }
+     if (c) {
+       str[from] = c;
+       chsDel(str,from+1,to);
+     }
+     /* Note that str may have been changed, that's why we recalc t */
+     t = str+from+1;
+  }
+  return str;  
+}
+
+chs_t get_expr(chs_t expr)
+{
+  int k;
+  
+  chsDel(expr,0,-1);
+  if (vecCount(patterns) > 0) {
+    for (k=0; k< vecCount(patterns); k++) {
+      chsAddStr(expr,vecGetS(patterns,k,""));
+      chsAddStr(expr,"&|");
+    }
+    
+    chsDel(expr,-2,-1);
+    expr = unescape(expr);
+  }
+  return expr;     
+}
+
+void addx(char *arg, char *name, vec_t *list)
+{
+  do {
+    switch pmx(arg) {
+       case "&S(&e\\&q)&S" :
+          if (pmx(Len,1)>2) {
+            pmx(End,1)[-1] = '\0';
+            vecAddS(*list,pmx(Start,1)+1);
+          }            
+          break;
+       default :
+          prterr(91,"Syntax: add s|p \"%s\" ...",name);
+          return ;
+    }
+  } while (*arg) ;
+  printf("  %ld %ss defined\n",vecCount(*list),name);
+}
+
+void cmd_add(char *arg) {
+  switch (*arg) {  
+    case 'p' : addx(arg+1,"pattern",&patterns); 
+               expr = get_expr(expr);
+               break;
+    case 's' : addx(arg+1,"string",&strings);  break;
+    default  : prterr(90,"Syntax: add s|p \"string\" ..."); break;
+  } 
+}
+
+void delx(char *arg, char *name, vec_t *list)
+{
+  long n;
+  switch pmx(arg) {
+     case "&Sall&S" :
+        vecDel(*list,0,-1);
+        arg = "";
+        break;
+     case ">&S(<+d>)&S" :
+        n = atoi(pmx(Start,1))-1;
+        if (n>=0 && n<vecCount(*list)) 
+          vecDel(*list,n,n);
+        break;
+     default :
+        prterr(93,"Syntax: del s|p  all|n");
+        return ;
+  }
+  printf("  %ld %s defined\n",vecCount(*list),name); 
+}
+
+void cmd_del(char *arg) {
+  switch (*arg) {  
+    case 'p' : delx(arg+1,"patterns",&patterns);  
+               expr = get_expr(expr);
+               break;
+    case 's' : delx(arg+1,"strings",&strings);  break;
+    default  : prterr(92,"Syntax: del s|p  all|n"); break;
+  }
+}
+
+void movex(char *arg, char *name, vec_t *list)
+{
+  long from,to;
+  switch pmx(arg) {
+     case "&S(<+d>)&s(<+d>)" :
+        from = atoi(pmx(Start,1))-1;
+        to = atoi(pmx(Start,2))-1;
+        if (to >= vecCount(*list)) to = vecCount(*list)-1; 
+        if (from >= 0 && from < vecCount(*list)) { 
+          /**list = vecMove(*list,from,to);*/
+          break;
+        }
+     default :
+        prterr(83,"Syntax: move s|p from to");
+        return ;
+  }
+  printf("  %ld %s defined\n",vecCount(*list),name);
+}
+
+void cmd_move(char *arg) {
+  switch (*arg) {  
+    case 'p' : movex(arg+1,"patterns",&patterns);  
+               expr = get_expr(expr);
+               break;
+    case 's' : movex(arg+1,"strings",&strings);  break;
+    default  : prterr(82,"Syntax: move s|p from to"); break;
+  }
+}
+
+void listx(char *arg,vec_t list,FILE *f)
+{
+  int k;
+  arg = NULL;
+  for (k=0;k<vecCount(list);k++) {
+    fprintf(f,"%4d: \"%s\"\n",k+1,vecGetS(list,k,""));
+  }
+}
+
+void cmd_list(char *arg) {
+  FILE *f = stdout;
+  
+  if (vecCount(strings) == 0 && vecCount(patterns) == 0)
+    return ;
+
+  if (*arg) {
+    switch pmx(arg) {
+      case "<?=sp>&S<?=&>>&S(&Q)&S" :
+          if (pmx(End,0)[0] == '\0') {
+            if (pmx(Len,1)>2) {
+              pmx(End,1)[-1] = '\0';
+              f = fopen(pmx(Start,1)+1,"w");
+              if (!f) {
+                prterr(96,"Unable to open \"%s\" for writing",pmx(Start,1)+1);
+                return ;
+              }
+            }
+            arg = pmx(Start,0);
+            break;
+          }
+          
+      default :
+          prterr(97,"Syntax: list [s|p] [> \"filename\"]");
+          return ;
+    }
+  }
+  
+  if ((*arg != 's') && vecCount(patterns) > 0 ) {
+    fprintf(f,":: Patterns ::\n");
+    listx(arg, patterns, f);
+  }
+  
+  if ((*arg != 'p')  && vecCount(strings) > 0) { 
+    fprintf(f,"\n:: Strings ::\n");
+    listx(arg, strings, f);
+  }
+  
+  fprintf(f,"\n");
+  
+  if (f!=stdout) {
+    printf("! Saved successfully\n");
+    fclose(f);
+  }
+}
+
+void print_escaped(char *s,long len)
+{
+  long k=0;
+  
+  while (k<len) {
+    if (isprint((int)s[k])) putchar(s[k]);
+    else printf("\\x%02X",s[k]);
+    k++;
+  }
+}
+
+void do_test(char *txttomatch, int txtindex, int verbose)
+{
+  pmx_t ret;
+  int k;
+  chs_t 
+
+  text = chsDup(txttomatch);
+  text = unescape(text);
+  ret = pmxMatchStr(text, expr);          
+  if (ret) {
+    k = pmxMatched(ret);
+    if (verbose) {
+      printf("String \"%s\" [%d] matches \"%s\" [%d]\n",
+          txttomatch, txtindex+1,
+          vecGetS(patterns,k-1,""), k);
+    }
+    else {
+      printf("[%d,%d]",txtindex+1,pmxMatched(ret));
+    }
+    for (k=0; k < pmxCaptMax; k++) {
+      if (verbose) {
+        if (pmxLen(ret,k) > 0) {
+          printf(" (%d) \"",k);
+          print_escaped((char*)text+pmxStart(ret,k),pmxLen(ret,k));
+          printf("\"\n");
+        }
+      }
+      else {
+        printf(" (%d,%d)",pmxStart(ret,k),pmxLen(ret,k));
+      }
+    }
+    printf("\n");
+  }
+  else if (verbose) {
+    printf("String \"%s\" [%d] doesn't match\n\n",
+        txttomatch, txtindex+1);
+  }
+  chsFree(text);
+}
+
+void testx(char *arg, int verbose)
+{
+  int k;
+  char *text = NULL;
+
+  if (vecCount(patterns) == 0) {
+    prterr(70,"No patterns defined");
+    return ;
+  }
+  
+  if (*arg == '\0') {
+    for (k=0; k<vecCount(strings);k++) {
+      do_test( vecGetS(strings,k,""),k,verbose);
+    }
+  }
+  else { 
+    switch pmx(arg) {
+       case "&e\\&q" :
+          if (pmx(Len,0)>2) { 
+            text = pmx(Start,0)+1;
+            pmx(End,0)[-1] = '\0';
+            k = -1;
+          }
+          break;
+       case "<+d>" :
+          k = atoi(pmx(Start,0))-1;
+          if (k>=0 && k<vecCount(strings)) 
+            text = vecGetS(strings,k,"");
+          break;
+       default: 
+          prterr(73,"Syntax test [n|\"string\"]");
+          return;
+    }
+    if (text) {
+      do_test(text,k,verbose);
+    }
+    else
+      prterr(74,"No text to test");
+  }  
+}
+
+void cmd_test(char *arg) { testx(arg,1); }
+void cmd_TEST(char *arg) { testx(arg,0); }
+
+void cmd_export(/*char *arg*/)
+{
+  FILE *f=stdout;
+  int k;
+  
+  if (vecCount(patterns) == 0)
+    return ;
+    
+  fprintf(f,"  switch pmx(PMXBUFFER) { /* <-- Replace buffer pointer */\n");
+  for (k=0;k<vecCount(patterns);k++) {
+    fprintf(f,"    case \"%s\" :\n",vecGetS(patterns,k,""));
+    fprintf(f,"      break;\n\n");
+  }
+  fprintf(f,"    default: /* No pattern matched! */\n");
+  fprintf(f,"  }\n");
+  
+  if (f != stdout) {
+    printf("! Exported successfully\n");
+    fclose(f);
+  }
+}
+
+int do_trace(char *text, pmx_t mtc,int verbose)
+{
+  int k;
+  
+  for (k=0; k < pmxCaptMax; k++) {
+    if (verbose) {
+      if (pmxLen(mtc,k) > 0) {
+        printf("%d: \"",k);
+        print_escaped((char*)text+pmxStart(mtc,k),pmxLen(mtc,k));
+        printf("\"\n");
+      }
+    }
+    else {
+      printf(" (%d,%d)",pmxStart(mtc,k),pmxLen(mtc,k));
+    }
+  }
+  printf("\n");
+ 
+  return 0;
+}
+
+int do_trace_verbose(char *text, pmx_t mtc)
+{return do_trace(text,mtc,1);}
+
+int do_trace_notverbose(char *text, pmx_t mtc)
+{return do_trace(text,mtc,0);}
+
+void tracex(char *arg, int verbose)
+{
+  chs_t buf = NULL;
+  char *text = NULL;
+  FILE *f;
+  
+  switch pmx(arg) {
+    case "&S&<&S(&q)" :
+      if (pmx(Len,1)>2) {
+        pmx(End,1)[-1] = '\0';
+        f = fopen(pmx(Start,1)+1,"r");
+        if (!f) {
+          prterr(71,"File \"%s\" not found",pmx(Start,1));
+          return;
+        }
+        chsRead(buf, f,'w');
+        text = (char *)buf;
+        fclose(f);
+      }            
+      break;
+      
+    case "&S&e\\(&q)" :
+      if (pmx(Len,0)>2) { 
+        text = pmx(Start,0)+1;
+        pmx(End,0)[-1] = '\0';
+      }
+      break;
+    
+    default :
+      prterr(91,"Syntax: trace [n | < \"file\" | \"string\"]");
+      return ;
+  }
+  
+  if (text && *text) {
+    if (verbose) pmxScanStr(text,expr,do_trace_verbose);
+    else pmxScanStr(text,expr,do_trace_notverbose);
+  }
+  
+  chsFree(buf);
+}
+
+void cmd_trace(char *arg) {tracex(arg,1);}
+void cmd_TRACE(char *arg) {tracex(arg,0);}
+
+
+void explain(char *ptrn)
+{  
+  int capt[pmxCaptMax];
+  int capt_num=0;
+  int capt_max=0;
+  int k,j;
+  char *start_ptrn = ptrn;
+
+  #define expl_ptrn() \
+    ((k = pmx(Len,0)), printf("%.*s",k,pmx(Start,0)),\
+     (k>=30)?printf("\n%*s",30," "): printf("%*s",30-k," "))
+  
+  if (!ptrn || !*ptrn) return;
+  
+  while (*ptrn) {
+    switch pmx(ptrn) {
+      case "&>": 
+        expl_ptrn();
+        if (pmx(End,0)[0] == '\0')
+          printf("  the end of the string\n");
+        else if (pmx(Start,0) == start_ptrn)
+          printf("  skip char if doesn't match and repeat\n");
+        else {
+          printf("  INVALID PATTERN '>'\n");
+          return;
+        }
+        break;
+        
+      case "&<(<?=?*+>)(<=1-9>)&>" :
+        expl_ptrn();
+        if (pmx(Len,1)>0) {
+          switch(*pmx(Start,1)) {
+            case '?': printf("  optionally"); break;
+            case '+': printf("  one or more times"); break;
+            case '*': printf("  zero or more times"); break;
+          }
+        }
+        printf("  the capture %c\n",*pmx(Start,2));
+        break;
+                     
+      case "&<(<?=?*+>)(<=.qaikcdglrpsuxwQAIKCDGLRPSUXW>)&>" :
+        expl_ptrn();
+        if (pmx(Len,1)>0) {
+          switch(*pmx(Start,1)) {
+            case '?': printf("  optionally a"); break;
+            case '+': printf("  one or more"); break;
+            case '*': printf("  zero or more"); break;
+          }
+        }
+        else printf ("  a");
+        printf(" character");
+        if (isupper((int)*pmx(Start,2))) printf(" not");
+        printf(" being");
+        j=tolower((int)*pmx(Start,2));
+        switch (j) {
+          case 'q' : printf(" alphanumeric ([0-9A-Za-z])"); break;
+          case 'a' : printf(" alphabetic ([A-Za-z])"); break;
+          case 'i' : printf(" coded between 0 and 127 (ASCII)"); break;
+          case 'k' : printf(" blank (space or tab)"); break;
+          case 'c' : printf(" a control character (between 0 and 31)"); break;
+          case 'd' : printf(" a decimal digit"); break;
+          case 'g' : printf(" a graphical character (not letter or digit)"); break;
+          case 'l' : printf(" lower case"); break;
+          case 'r' : printf(" printable"); break;
+          case 'p' : printf(" a punctuation character"); break;
+          case 's' : printf(" a space (including newlines, tabs, etc)"); break;
+          case 'u' : printf(" upper case"); break;
+          case 'x' : printf(" an hexadecimal digit"); break;
+          case 'w' : printf(" a 'word' character (alphanumeric plus underscore)"); break;
+          case '.' : printf(" any"); break;
+        }
+        printf("\n");
+        break;
+        
+      case "&<(<?=?*+>)(<=#!=>)&e&&(<+#&>>)&>" :
+        expl_ptrn();
+        if (pmx(Len,1)>0) {
+          switch(*pmx(Start,1)) {
+            case '?': printf("  optionally a"); break;
+            case '+': printf("  one or more"); break;
+            case '*': printf("  zero or more"); break;
+          }
+        }
+        else printf ("  a ");
+        printf(" character");
+        switch (*pmx(Start,2)) {
+          case '#' : printf(" followed by one in \"%.*s\" (excluded)",pmx(Len,3),pmx(Start,3)); break;
+          case '!' : printf(" not in \"%.*s\"",pmx(Len,3),pmx(Start,3)); break;
+          case '=' : printf(" among \"%.*s\"",pmx(Len,3),pmx(Start,3)); break;
+        }
+        printf("\n");
+        break;
+      
+      case "&<(<?=?*+>)$&e&&(<+#&>>)&>" :
+        expl_ptrn();
+        if (pmx(Len,1)>0) {
+          switch(*pmx(Start,1)) {
+            case '?': printf("  optionally one"); break;
+            case '+': printf("  one or more"); break;
+            case '*': printf("  zero or more"); break;
+          }
+        }
+        else printf("  one");
+        printf(" of the strings: \"%.*s\"\n",pmx(Len,2),pmx(Start,2));
+        break;
+      
+      case "&(" :
+        expl_ptrn();
+        if (capt_num >= pmxCaptMax) {
+          printf("  TOO MANY CAPTURES\n");
+          return;
+        }
+        printf("  the start of capture %d\n",++capt_max);
+        capt[capt_num++] = capt_max;
+        break;
+        
+      case "&)" :
+        expl_ptrn();
+        if (capt_num == 0) {
+          printf("  UNBALANCED END CAPTURE\n");
+          return;
+        }
+        printf("  the end of capture %d\n",capt[--capt_num]);
+        break;
+        
+      case "&&G" : 
+        expl_ptrn();
+        printf("  goal mark (lookahaed)\n"); break;
+      case "&&I" : 
+        expl_ptrn();
+        printf("  stop case insensitive match\n"); break;
+      case "&&i" :  
+        expl_ptrn();
+        printf("  start case insensitive match\n"); break;
+      case "&&L" :  
+        expl_ptrn();
+        printf("  anything (possibly nothing) up to the end of line\n"); break;
+      case "&&l" :  
+        expl_ptrn();
+        printf("  anything up to the end of line\n"); break;
+      case "&&N" :  
+        expl_ptrn();
+        printf("  optionally the end of line\n"); break;
+      case "&&n" : printf("  the end of line\n"); break;
+      case "&&W" :  
+        expl_ptrn();
+        printf("  optionally\n"); break;
+      case "&&w" : printf("  a sequence of word characters\n"); break;
+      case "&&|" :  
+        expl_ptrn();
+        printf("  alternative pattern\n"); break;
+      case "&&E" :  
+        expl_ptrn();
+        printf("  clear escape character\n"); break;
+      case "&&e<?=&&>(<.>)" :   
+        expl_ptrn();
+        printf("  set escape character to '%c'\n",*pmx(Start,1)); break;
+      case "&&Q" :  
+        expl_ptrn();
+        printf("  optionally a quoted string\n"); break;
+      case "&&q" :  
+        expl_ptrn();
+        printf("  a quoted string\n"); break;
+      case "&&B(<.>)(<.>)" :
+        printf("  an optional string enclosed in balanced '%c' and '%c'\n",*pmx(Start,1),*pmx(Start,2));
+        break;    
+      case "&&b(<.>)(<.>)" :
+        printf("  a string enclosed in balanced '%c' and '%c'\n",*pmx(Start,1),*pmx(Start,2));
+        break;     
+      case "&&K" :  
+        expl_ptrn();
+        printf("  an optional sequence of blank\n"); break;    
+      case "&&k" :  
+        expl_ptrn();
+        printf("  a sequence of blank\n"); break;
+      
+      case "&&F" :  
+        expl_ptrn();
+        printf("  an optional floating point number\n"); break;    
+      case "&&f" :  
+        expl_ptrn();
+        printf("  a floating point number\n"); break;
+                    
+      case "&&D" :  
+        expl_ptrn();
+        printf("  an optional integer number\n"); break;    
+      case "&&d" :  
+        expl_ptrn();
+        printf("  an integer number\n"); break;
+                    
+      case "&&X" :  
+        expl_ptrn();
+        printf("  an optional hexadecimal number\n"); break;    
+      case "&&x" :  
+        expl_ptrn();
+        printf("  an hexadecimal number\n"); break;
+                    
+      case "&&S" :  
+        expl_ptrn();
+        printf("  an optional sequence of spaces\n"); break;        
+      case "&&s" :  
+        expl_ptrn();
+        printf("  a sequence of spaces\n"); break;
+      
+      case "&&:(<.>)" :
+        expl_ptrn();
+        printf("  pattern is %d characters\n",(unsigned char)*pmx(Start,1)); 
+       
+      case "&&(<.>)" :   
+        expl_ptrn();
+        if (*pmx(Start,1) & 0x80)
+          printf("  set token to 'x%02X'\n",(unsigned char)*pmx(Start,1)); 
+        else
+          printf("  the character '%c'\n",*pmx(Start,1)); break;
+
+      case "<+!&&&(&)&<>" : 
+        expl_ptrn();
+        printf("  the string \"%.*s\"\n",pmx(Len,0),pmx(Start,0));
+        break;
+      
+      case "<.>": 
+        expl_ptrn();
+        printf("INVALID PATTERN %c\n",*pmx(Start,0));
+        return;
+    }  
+  }
+  if (capt_num != 0) {
+    printf("  %d UNBALANCED CAPTURES\n",capt_num);
+  }
+}
+
+void cmd_explain(char *arg)
+{
+  int k;
+  char *exp = NULL;
+  
+  switch pmx(arg) {
+     case "&e\\&q" :
+        if (pmx(Len,0)>2) {
+          exp = pmx(Start,0)+1; 
+          pmx(End,0)[-1] = '\0';
+        }
+        break;
+        
+     case "<+d>" :
+        k = atoi(pmx(Start,0))-1;
+        if (k>=0 && k<vecCount(strings)) 
+          exp = vecGetS(strings,k,"");
+        break;
+        
+     default: 
+        prterr(43,"Syntax explain [n|\"pattern\"]");
+        return;
+  }
+  if (exp) explain(exp);
+}
+
+void cmd_help(/*char *arg*/)
+{
+  printf("PMX shell 0.1\n");
+  printf("  add s|p  \"str\" ...                  Add strings or patterns\n");
+  printf("  del s|p  all|n                      Delete a string or a pattern\n");
+  printf(" ?export [> \"file\"]                   Print a .pmx switch\n");
+  printf("  explain n|\"pattern\"]                Translate pattern to english\n");
+  /*printf("  move s|p from to                    Move a string or a pattern\n");*/
+  printf("  help                                This help\n");
+  printf(" ?load  [s|p] < \"file\"                Load strings and/or patterns\n");
+  printf("  list  [s|p] [> \"file\"]              List or save strings and/or patterns\n");
+  printf("  quit                                Exit the shell\n");
+  printf("  test [n | \"str\"]                    Test specified string\n");
+  printf("  trace [n | < \"file\" | \"string\"]     Trace parsing\n");                                                                                   
+}                                     
+                                      
+void init_cmd()                       
+{
+  #define cmdtbl(x) tblSetSP(cmd,#x,cmd_##x)
+      cmdtbl(add);
+      cmdtbl(list);
+      cmdtbl(help);
+      cmdtbl(del);
+      /*cmdtbl(move);*/
+      cmdtbl(export);
+      cmdtbl(test);
+      cmdtbl(trace);
+      cmdtbl(explain);
+      
+/* These commands are meant to be used by the GUI not by the user */
+      cmdtbl(TEST);
+      cmdtbl(TRACE);
+}
+
+typedef void (*cmdfun)(char *);
+void shell()
+{
+  char *arg;
+  cmdfun fun;
+  char *p;
+  #define GET_CMD  (printf ("> "), fflush(stdout),\
+                    (p = fgets(lnbuf,lnbuf_sz,stdin)) && *p)
+   
+  
+  printf("PMX shell 0.1\nEnter help for the list of commands.\n");
+  
+  init_cmd();
+  
+  for ( ; GET_CMD ; ) {
+    switch pmx(p) {
+          
+       case "&K<$quit$exit>" :
+          return;
+          
+       case "&K(<+a>)&S(<*.>)" :
+          arg = ((pmx(Len,2)) > 0) ? pmx(Start,2) : "" ;
+          pmx(End,1)[0] = '\0';
+          fun = tblGetSP(cmd,pmx(Start,1),NULL);
+          if (fun) fun(arg);
+          else prterr(13,"Unrecognized command");
+          break;
+          
+       case "&s>" :
+          break;
+          
+       default :
+          prterr(15,"Unrecognized command");
+          break;
+    }
+  }
+}
+ 
+int main()
+{
+  
+  shell();
+
+  return (0);
+}
+
+
