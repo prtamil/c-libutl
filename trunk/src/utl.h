@@ -335,7 +335,6 @@ typedef struct utl_env_s {
 **   '{UTL_UNITTEST} implies '{DEBUG}
 */
 
-
 utl_extern(FILE *TST_FILE, = NULL);
 #define TSTFILE (TST_FILE?TST_FILE:stderr)
 
@@ -351,7 +350,7 @@ utl_extern(FILE *TST_FILE, = NULL);
                                  
 #define TSTPLAN(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
                                              TSTPASSED; TSTDONE(),TSTPASSED=0)
-
+											 
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
@@ -1056,7 +1055,7 @@ void *utl_strdup(void *ptr, char *file, int line)
 
 #endif /* UTL_MEMCHECK */
 
-#ifndef UTL_NOVEC
+#ifndef UTL_NOADT
 
 typedef struct vec_s {
   size_t  max;
@@ -1206,7 +1205,6 @@ int utl_bufSet(buf_t bf, size_t i, char c)
   if (!utl_vec_expand(bf,i+1)) return 0;
   s = bf->vec;
   s[i] = c;
-  
   if (c == '\0') {
     bf->cnt = i;
   }
@@ -1230,7 +1228,7 @@ int utl_bufAdd(buf_t bf, char c)
 int utl_bufAddStr(buf_t bf, char *s)
 {
   if (!bf) return 0;
-  if (!s) return 1;
+  if (!s || !*s) return 1;
   
   while (*s) if (!utl_bufSet(bf,bf->cnt,*s++)) return 0;
   
@@ -1250,7 +1248,7 @@ int utl_bufFormat(buf_t bf, FILE *f)
 
 #endif
 
-#endif /* UTL_NOCHS */
+#endif /* UTL_NOADT */
 
 #endif /* UTL_H */
 
