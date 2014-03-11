@@ -1242,14 +1242,6 @@ int utl_bufRead(buf_t bf, FILE *f)
 {
 }
 
-#ifdef _MSC_VER
-int _scprintf(
-   const char *format [,
-   argument] ... 
-);
-#else 
-#define utl_fmtcnt(f,...) snprintf(NULL,f,
-#endif
 int utl_bufFormat(buf_t bf, )
 {
 }
@@ -1257,6 +1249,30 @@ int utl_bufFormat(buf_t bf, )
 #endif
 
 #endif /* UTL_NOADT */
+
+
+#ifndef UTL_NOMATCH
+
+/*
+  pmx = term+
+  
+  term = atom ('|' atom)*
+  
+  atom = op? (char | '^')
+  
+  op = '*' | '=' | '?' | '+'
+
+*/
+
+typedef size_t pmxMatches[16][2];
+typedef pmxMatches *pmx_t;
+
+int pmx_match(char *pat, char *str, pmx_t)
+{
+   
+}
+
+#endif /* UTL_NOMATCH */
 
 #endif /* UTL_H */
 
