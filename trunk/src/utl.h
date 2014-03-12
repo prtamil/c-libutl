@@ -176,12 +176,6 @@ utl_extern(char *utlEmptyString, = "");
 utl_extern(const int utlZero, = 0);
 #endif
 
-/*  MS Visual C doesn't have '|snprintf()| ! How could it be?
-*/
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-
 
 /* .% Assumptions (static assertions)
 ** ==================================
@@ -1110,6 +1104,9 @@ int utl_bufAddStr(buf_t bf, char *s);
 char *utl_bufStr(buf_t bf);
 #define bufStr utl_bufStr
 
+int utl_bufFormat(buf_t bf, char *format, ...);
+#define bufFormat utl_bufFormat
+
 #define bufLen vecCount
 
 #ifdef UTL_LIB
@@ -1236,21 +1233,65 @@ int utl_bufAddStr(buf_t bf, char *s)
 }
 
 char *utl_bufStr(buf_t bf)
-{  return bf? bf->vec : NULL; }
+{ return bf? bf->vec : NULL; }
 
 int utl_bufRead(buf_t bf, FILE *f)
+{}
+
+
+/* code from http://stackoverflow.com/questions/2915672 */
+
+#if !defined(UTL_HAS_SNPRINTF) && defined(_MSC_VER) && (_MSC_VER < 1800)
+
+#define snprintf  c99_snprintf
+#define vsnprintf c99_vsnprintf
+
+inline int c99_snprintf(char* str, size_t size, const char* format, ...)
 {
+    int count;
+    va_list ap;
+
+    va_start(ap, format);
+    count = c99_vsnprintf(str, size, format, ap);
+    va_end(ap);
+
+    return count;
 }
 
-int utl_bufFormat(buf_t bf, )
+inline int c99_vsnprintf(char* str, size_t size, const char* format, va_list ap)
 {
+    int count = -1;
+
+    if (size != 0)
+        count = _vsnprintf_s(str, size, _TRUNCATE, format, ap);
+    if (count == -1)
+        count = _vscprintf(format, ap);
+
+    return count;
+}
+
+#endif // _MSC_VER
+int utl_bufFormat(buf_t bf, char *format, ...)
+{
+  int count;
+  va_list ap;
+
+  if (!bf) return -1;
+  
+  va_start(ap, format);
+  count = vsnprintf(NULL,0,format, ap);
+  utl_bufSet(bf,count+1,'\0');
+  count = vsprintf(utl_bufStr(bf),format, ap);
+  va_end(ap);
+  
+  return count;
 }
 
 #endif
 
 #endif /* UTL_NOADT */
 
-
+#define UTL_NOMATCH
 #ifndef UTL_NOMATCH
 
 /*
