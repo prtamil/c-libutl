@@ -1076,8 +1076,14 @@ void *utl_vecGet(vec_t v, size_t  i);
 int utl_vecResize(vec_t v, size_t n);
 #define vecResize utl_vecResize
 
-#define vecCount(v) ((v)->cnt)
-#define vec(v,ty)   ((ty *)((v)->vec))
+size_t utl_vecCount(vec_t v);
+#define vecCount     utl_vecCount
+
+size_t utl_vecMax(vec_t v);
+#define vecMax     utl_vecMax
+
+void  *utl_vecVec(vec_t v);
+#define vec(v,ty)   ((ty *)utl_vecVec(v))
 
 #define buf_t vec_t
 int utl_bufSet(buf_t bf, size_t i, char c);
@@ -1101,13 +1107,12 @@ int utl_bufAddStr(buf_t bf, char *s);
 
 #define bufClr(bf) utl_bufSet(bf,0,'\0');
 
-char *utl_bufStr(buf_t bf);
-#define bufStr utl_bufStr
-
 int utl_bufFormat(buf_t bf, char *format, ...);
 #define bufFormat utl_bufFormat
 
 #define bufLen vecCount
+#define bufMax vecMax
+#define bufStr(b) vec(b,char)
 
 #ifdef UTL_LIB
 
@@ -1132,6 +1137,10 @@ vec_t utl_vecFree(vec_t v)
   }
   return NULL;
 }
+
+size_t utl_vecCount(vec_t v) { return v? v->cnt : 0; }
+size_t utl_vecMax(vec_t v)   { return v? v->max : 0; }
+void  *utl_vecVec(vec_t v)   { return v? v->vec : NULL; } 
 
 static int utl_vec_expand(vec_t v, size_t i)
 {
@@ -1232,45 +1241,50 @@ int utl_bufAddStr(buf_t bf, char *s)
   return utl_bufAdd(bf,'\0');
 }
 
-char *utl_bufStr(buf_t bf)
-{ return bf? bf->vec : NULL; }
+/* A line in the file can be ended by '\r\n', '\n' or '\r'.
+** The NEWLINE characters are discarded.
+** The string in the buffer is terminated with '\n\0'. 
+*/
+int utl_bufAddLine(buf_t bf, FILE *f)
+{
+  int c = 0;
+  int n = 0;
+  do {
+    switch ((c = fgetc(f))) {
+      case '\r' : if ((c = fgetc(f)) != '\n') ungetc(c,f);
+	  case '\n' :
+	  case EOF  : c = EOF; utl_bufAdd(bf,'\n'); break;
+      default   : utl_bufAdd(bf,(char)c); n++; break;
+	}
+  } while (c != EOF);
+  return n;
+}
 
-int utl_bufRead(buf_t bf, FILE *f)
-{}
-
-
-/* code from http://stackoverflow.com/questions/2915672 */
-
+/* {{ code from http://stackoverflow.com/questions/2915672 */
 #if !defined(UTL_HAS_SNPRINTF) && defined(_MSC_VER) && (_MSC_VER < 1800)
-
 #define snprintf  c99_snprintf
 #define vsnprintf c99_vsnprintf
 
 inline int c99_snprintf(char* str, size_t size, const char* format, ...)
 {
-    int count;
-    va_list ap;
-
-    va_start(ap, format);
-    count = c99_vsnprintf(str, size, format, ap);
-    va_end(ap);
-
-    return count;
+  int count;
+  va_list ap;
+  va_start(ap, format);
+  count = c99_vsnprintf(str, size, format, ap);
+  va_end(ap);
+  return count;
 }
 
 inline int c99_vsnprintf(char* str, size_t size, const char* format, va_list ap)
 {
-    int count = -1;
-
-    if (size != 0)
-        count = _vsnprintf_s(str, size, _TRUNCATE, format, ap);
-    if (count == -1)
-        count = _vscprintf(format, ap);
-
-    return count;
+  int count = -1;
+  if (size != 0)   count = _vsnprintf_s(str, size, _TRUNCATE, format, ap);
+  if (count == -1) count = _vscprintf(format, ap);
+  return count;
 }
-
 #endif // _MSC_VER
+/* }} */
+
 int utl_bufFormat(buf_t bf, char *format, ...)
 {
   int count;
@@ -1280,15 +1294,14 @@ int utl_bufFormat(buf_t bf, char *format, ...)
   
   va_start(ap, format);
   count = vsnprintf(NULL,0,format, ap);
-  utl_bufSet(bf,count+1,'\0');
-  count = vsprintf(utl_bufStr(bf),format, ap);
+  utl_bufSet(bf,count,'\0'); /* ensure there's enough room */
+  count = vsprintf(bufStr(bf),format, ap);
   va_end(ap);
   
   return count;
 }
 
 #endif
-
 #endif /* UTL_NOADT */
 
 #define UTL_NOMATCH
@@ -1296,13 +1309,9 @@ int utl_bufFormat(buf_t bf, char *format, ...)
 
 /*
   pmx = term+
-  
   term = atom ('|' atom)*
-  
   atom = op? (char | '^')
-  
   op = '*' | '=' | '?' | '+'
-
 */
 
 typedef size_t pmxMatches[16][2];
@@ -1310,7 +1319,6 @@ typedef pmxMatches *pmx_t;
 
 int pmx_match(char *pat, char *str, pmx_t)
 {
-   
 }
 
 #endif /* UTL_NOMATCH */
