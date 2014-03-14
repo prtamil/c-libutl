@@ -1,3 +1,7 @@
+/* TEST LINE 1
+   TEST LINE (a rather long like, to tell the truth) 2
+   TEST LINE 3
+*/
 /* 
 **  (C) by Remo Dentato (rdentato@gmail.com)
 ** 
@@ -29,7 +33,12 @@ int main (int argc, char *argv[])
         s = bufNew();
         TSTNEQPTR("Is not NULL", NULL, s );
         TSTEQINT("Mem Valid", utlMemValid, utlMemCheck(s));
+      }
+      TSTGROUP("Check on empty") {
         TSTEQINT("Len 0", 0, bufLen(s) );
+        TSTEQINT("Max 0", 0, bufMax(s) );
+        TSTEQPTR("NULL str", NULL, bufStr(s) );
+        TSTEQINT("Get out out bound", '\0', bufGet(s,31));
       }
     }
     TSTSECTION("buf add") {
@@ -46,20 +55,35 @@ int main (int argc, char *argv[])
         TSTEQINT("Direct access", 0, strcmp("ab",bufStr(s)) );
         TSTFAILNOTE("str: [%s]\n",bufStr(s));
       }
-      TSTGROUP("buf add") {
+      TSTGROUP("buf add char") {
         bufAdd(s,'c');
         TSTEQINT("Len 3", 3, bufLen(s));
         TSTEQINT("Len 3", strlen(bufStr(s)), bufLen(s));
         TSTEQINT("Set properly direct access", 0, strcmp("abc",bufStr(s)) );
         TSTFAILNOTE("str: [%s]\n",bufStr(s));
       }
+      TSTGROUP("buf add string") {
+        bufAddStr(s,"xyz");
+        TSTEQINT("Len 6", 6, bufLen(s));
+        TSTEQINT("Len 6", strlen(bufStr(s)), bufLen(s));
+        TSTEQINT("Set properly direct access", 0, strcmp("abcxyz",bufStr(s)) );
+        TSTFAILNOTE("str: [%s]\n",bufStr(s));
+      }
+      TSTGROUP("buf format") {
+        bufFormat(s,"|%d|",123);
+        TSTEQINT("Len 5", 5, bufLen(s));
+        TSTEQINT("Len 5", strlen(bufStr(s)), bufLen(s));
+        TSTEQINT("Set properly direct access", 0, strcmp("|123|",bufStr(s)) );
+      }
     }
 
     TSTSECTION("buf cleanup") {
       TSTGROUP("buf clear") {
+        int l = bufMax(s);
         bufClr(s);
         TSTEQINT("Len 0", 0, bufLen(s));
         TSTEQINT("Empty", 0, bufStr(s)[0]);
+        TSTEQINT("Not shrunk", l, bufMax(s));
       }
       TSTGROUP("buf free") {
         TSTNEQPTR("Is Not Null", NULL, s);
@@ -69,3 +93,4 @@ int main (int argc, char *argv[])
     }
   }
 }
+
