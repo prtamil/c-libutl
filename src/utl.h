@@ -344,7 +344,7 @@ utl_extern(FILE *TST_FILE, = NULL);
                                  
 #define TSTPLAN(s) for (TSTPASSED = TST_INIT0 + 1, TSTTITLE(s); \
                                              TSTPASSED; TSTDONE(),TSTPASSED=0)
-											 
+                       
 /* Tests are divided in sections introduced by '{=TSTSECTION(title)} macro.
 ** The macro reset the appropriate counters and prints the section header 
 */
@@ -434,7 +434,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 #define TSTNULL(s,r)     TSTEQPTR(s,NULL,r)
 #define TSTNNULL(s,r)    TSTNEQPTR(s,NULL,r)
 
-							
+              
 #define TSTBAILOUT(r) \
           if (!(r)) ((void)0); else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
 
@@ -726,15 +726,15 @@ utlLogger utl_logOpen(char *fname, char *mode)
     if (lg) { 
       lg->flags = 0;
       lg->rot = 0;
-	  lg->pre = NULL;
+    lg->pre = NULL;
       lg->file = f;
-	  /* Assume that log_L is the last level in utl_log_abbrev */
-	  utlAssume( (log_L +1) == ((sizeof(utl_log_abbrev)-1)>>2));
+    /* Assume that log_L is the last level in utl_log_abbrev */
+    utlAssume( (log_L +1) == ((sizeof(utl_log_abbrev)-1)>>2));
       lg->level = log_L;
       utl_log_write(lg,log_L, 1, "%s \"%s\"", (md[0] == 'a') ? "ADDEDTO" : "CREATED",fname); 
-	    
+      
       lg->level = log_W;
-	  }
+    }
   }
   if (f && !lg) fclose(f);
   return lg;
@@ -783,8 +783,8 @@ void utl_log_write(utlLogger lg, int lv, int tstamp, char *format, ...)
     if (tstamp) {
       time(&t);
       strftime(tstr,32,"%Y-%m-%d %X",localtime(&t));
-	  } else {
-	    strcpy(tstr,"                   ");          
+    } else {
+      strcpy(tstr,"                   ");          
     }
     if (lg->pre) fprintf(f, "%s ",lg->pre);
     fprintf(f, "%s %.4s", tstr, utl_log_abbrev+(lv<<2));
@@ -800,11 +800,11 @@ void utl_log_assert(utlLogger lg,int e,char *estr, char *file,int line)
   if (!e) {
     logFatal(lg,"Assertion failed:  %s, file %s, line %d", estr, file, line);
 #ifndef NDEBUG
-	abort();
+  abort();
 #endif
   }
 }
-							   
+                 
 #endif  /*- UTL_LIB */
 
 #else   /*- UTL_NOLOGGING */
@@ -1007,7 +1007,7 @@ void *utl_strdup(void *ptr, char *file, int line)
 {
   char *dest;
   size_t size;
-	
+  
   if (ptr == NULL) {
     logWarn(utlMemLog,"strdup NULL (%u %s %d)", utl_mem_allocated, file, line);
     return NULL;
@@ -1113,6 +1113,12 @@ int utl_bufFormat(buf_t bf, char *format, ...);
 #define bufLen vecCount
 #define bufMax vecMax
 #define bufStr(b) vec(b,char)
+
+int utl_bufAddLine(buf_t bf, FILE *f);
+#define bufAddLine utl_bufAddLine
+
+int utl_bufAddFile(buf_t bf, FILE *f);
+#define bufAddFile utl_bufAddFile
 
 #ifdef UTL_LIB
 
@@ -1252,13 +1258,27 @@ int utl_bufAddLine(buf_t bf, FILE *f)
   do {
     switch ((c = fgetc(f))) {
       case '\r' : if ((c = fgetc(f)) != '\n') ungetc(c,f);
-	  case '\n' :
-	  case EOF  : c = EOF; utl_bufAdd(bf,'\n'); break;
+      case '\n' :
+      case EOF  : c = EOF; utl_bufAdd(bf,'\n'); break;
       default   : utl_bufAdd(bf,(char)c); n++; break;
-	}
+    }
   } while (c != EOF);
   return n;
 }
+
+int utl_bufAddFile(buf_t bf, FILE *f)
+{
+  int c = 0;
+  int n = 0;
+  do {
+    switch ((c = fgetc(f))) {
+      case EOF  : c = EOF; break;
+      default   : utl_bufAdd(bf,(char)c); n++; break;
+    }
+  } while (c != EOF);
+  return n;
+}
+
 
 /* {{ code from http://stackoverflow.com/questions/2915672 */
 #if !defined(UTL_HAS_SNPRINTF) && defined(_MSC_VER) && (_MSC_VER < 1800)
