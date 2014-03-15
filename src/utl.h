@@ -436,7 +436,7 @@ utl_extern(FILE *TST_FILE, = NULL);
 
               
 #define TSTBAILOUT(r) \
-          if (!(r)) ((void)0); else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(1);}
+          if (!(r)) ((void)0); else {TSTWRITE("Bail out! %s\n",r); TSTDONE(); exit(0);}
 
 /* At the end of a section, the accumulated stats can be printed out */
 #define TSTSTAT() \

@@ -117,7 +117,6 @@ int main (int argc, char *argv[])
         while (k>0 && isspace(bufGet(s,--k)) ) ; 
         while (k>0 && (bufGet(s,k-1) != '\n') ) {k--;n++;}; 
         
-        TSTNOTE("|%s|",bufStr(s)+k);
         TSTEQINT("Last line 2", 0, strncmp("/* TEST LINE LAST */",bufStr(s)+k,n));
       }
       if (f) fclose(f);
