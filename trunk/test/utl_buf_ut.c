@@ -75,8 +75,19 @@ int main (int argc, char *argv[])
         TSTEQINT("Len 5", strlen(bufStr(s)), bufLen(s));
         TSTEQINT("Set properly direct access", 0, strcmp("|123|",bufStr(s)) );
       }
+      TSTGROUP("buf format enough space") {
+        bufFormat(s,"[%d-%d]",2,3);
+        TSTEQINT("Format 1",0,strcmp("[2-3]",bufStr(s)));
+      }
+      TSTGROUP("buf format not enough space") {
+        unsigned long x = 0xFFFFFFFF;
+        size_t l = s->max;
+        bufFormat(s,"[%X-%X-%X]",x,x,x);
+        TSTEQINT("expanded string",0,strcmp("[FFFFFFFF-FFFFFFFF-FFFFFFFF]",bufStr(s)));
+        TSTFAILNOTE("str: [%s]\n",bufStr(s));
+        TSTGTINT("expanded len",s->max,l);
+      }
     }
-
     TSTSECTION("buf cleanup") {
       TSTGROUP("buf clear") {
         int l = bufMax(s);
@@ -85,12 +96,41 @@ int main (int argc, char *argv[])
         TSTEQINT("Empty", 0, bufStr(s)[0]);
         TSTEQINT("Not shrunk", l, bufMax(s));
       }
+    }
+    TSTSECTION("buf read") {
+      FILE *f = fopen(__FILE__,"r");
+      size_t k;
+      size_t n=0;
+      TSTSKIP(!f,"Unable to open file "__FILE__) {
+        TSTCODE {
+          bufAddLine(s,f);
+        }
+        TSTEQINT("First line", 0, strcmp("/* TEST LINE 1\n",bufStr(s)));
+        TSTCODE {
+          bufAddLine(s,f);
+        }
+        TSTEQINT("Second line", '2', bufGet(s,bufLen(s)-2));
+        TSTCODE {
+          bufAddFile(s,f);
+          k = bufLen(s);
+        }
+        while (k>0 && isspace(bufGet(s,--k)) ) ; 
+        while (k>0 && (bufGet(s,k-1) != '\n') ) {k--;n++;}; 
+        
+        TSTNOTE("|%s|",bufStr(s)+k);
+        TSTEQINT("Last line 2", 0, strncmp("/* TEST LINE LAST */",bufStr(s)+k,n));
+      }
+      if (f) fclose(f);
+    }
+    TSTSECTION("buf free") {
       TSTGROUP("buf free") {
         TSTNEQPTR("Is Not Null", NULL, s);
         s = bufFree(s);
         TSTEQPTR("Is Null", NULL, s);
       }
     }
+
   }
 }
 
+/* TEST LINE LAST */
