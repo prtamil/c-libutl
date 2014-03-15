@@ -25,6 +25,7 @@ CFLAGS= -I../src -g
 
 all: $(TESTS)
 	run_tests$(_BAT) 2> tests.log
+	sed -n -e '/^# \*\*/p' -e '/^# TOTAL/p' tests.log
 
 t_buf$(_EXE): $(UTL_H)  utl_buf_ut.c
 	$(CC) $(CFLAGS) -c -o utl_buf_ut.$(_OBJ) utl_buf_ut.c

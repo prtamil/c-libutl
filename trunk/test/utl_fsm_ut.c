@@ -22,7 +22,7 @@ int c=0;
 int main (int argc, char *argv[])
 {
 
-  TSTPLAN("utl fsm test") {
+  TSTPLAN("utl unit test: fsm") {
     TSTSECTION("Simple FSM") {
       TSTGROUP("Start state") {
         TSTCODE {
