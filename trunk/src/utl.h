@@ -1328,10 +1328,25 @@ int utl_bufFormat(buf_t bf, char *format, ...)
 #ifndef UTL_NOMATCH
 
 /*
-  pmx = term+
+  pmx = ('!'? term)+
   term = atom ('|' atom)*
-  atom = op? (char | '^')
-  op = '*' | '=' | '?' | '+'
+  atom = op? (  class | char | '(' term ')' | '{' term '}')
+  class = '%' classid | '[' '^'? range ']' 
+  range = char + | char '-' char
+  op = '*'  | '?' | '+'
+  
+  %a alpha-numeric
+  %x hex digit
+  %d digit
+  %s space
+  %n newline
+  %w white space (no nl)
+  %l letter 
+  
+  %f floating point
+  %i integer
+  %b balanced
+  %e escape
 */
 
 typedef size_t pmxMatches[16][2];
