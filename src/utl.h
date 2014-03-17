@@ -1120,6 +1120,12 @@ int utl_bufAddLine(buf_t bf, FILE *f);
 int utl_bufAddFile(buf_t bf, FILE *f);
 #define bufAddFile utl_bufAddFile
 
+#if !defined(UTL_HAS_SNPRINTF) && defined(_MSC_VER) && (_MSC_VER < 1800)
+#define UTL_ADD_SNPRINTF
+#define snprintf  c99_snprintf
+#define vsnprintf c99_vsnprintf
+#endif
+
 #ifdef UTL_LIB
 
 vec_t utl_vecNew(size_t esz)
@@ -1281,9 +1287,7 @@ int utl_bufAddFile(buf_t bf, FILE *f)
 
 
 /* {{ code from http://stackoverflow.com/questions/2915672 */
-#if !defined(UTL_HAS_SNPRINTF) && defined(_MSC_VER) && (_MSC_VER < 1800)
-#define snprintf  c99_snprintf
-#define vsnprintf c99_vsnprintf
+#ifdef UTL_ADD_SNPRINTF
 
 inline int c99_snprintf(char* str, size_t size, const char* format, ...)
 {
@@ -1302,7 +1306,7 @@ inline int c99_vsnprintf(char* str, size_t size, const char* format, va_list ap)
   if (count == -1) count = _vscprintf(format, ap);
   return count;
 }
-#endif // _MSC_VER
+#endif // UTL_ADD_SNPRINTF
 /* }} */
 
 int utl_bufFormat(buf_t bf, char *format, ...)
@@ -1324,16 +1328,16 @@ int utl_bufFormat(buf_t bf, char *format, ...)
 #endif
 #endif /* UTL_NOADT */
 
-#define UTL_NOMATCH
+/*#define UTL_NOMATCH*/
 #ifndef UTL_NOMATCH
 
 /*
-  pmx = ('!'? term)+
+  pmx = term
   term = atom ('|' atom)*
-  atom = op? (  class | char | '(' term ')' | '{' term '}')
-  class = '%' classid | '[' '^'? range ']' 
-  range = char + | char '-' char
-  op = '*'  | '?' | '+'
+  atom = op? (class | char | '(' term ')' | '{' term '}')
+  class = '%' classid | '[' '^'? range+ ']' 
+  range = char | char '-' char
+  op = '*' | '?' | '+' | '!'
   
   %a alpha-numeric
   %x hex digit
@@ -1349,13 +1353,78 @@ int utl_bufFormat(buf_t bf, char *format, ...)
   %e escape
 */
 
-typedef size_t pmxMatches[16][2];
-typedef pmxMatches *pmx_t;
+typedef struct {
+  char *orig_str;
+  char *orig_pat;
+  char *cur_str;
+  char *cur_pat;
+  int   cur_lvl;
+  int   nmatches;
+  char *matches[10][2];
+} pmx_t;
 
-int pmx_match(char *pat, char *str, pmx_t)
+#define cur_pat(p)   (p)->cur_pat
+#define adv_pat(p)   ((p)->cur_pat += 1)
+
+#define cur_str(p)   ((p)->cur_str)
+#define adv_str(p)   ((p)->cur_str += 1)
+
+#define cur_start(p) (p)->matches[(p)->cur_lvl][0]
+#define cur_end(p)   (p)->matches[(p)->cur_lvl][0]
+#define cur_level(p) (p)->cur_lvl
+
+int utl_pmxMatch(char *pat, char *str, pmx_t *p);
+#define pmxMatch utl_pmxMatch
+
+#ifdef UTL_LIB
+
+static int atom(pmx_t *p, int skip)
 {
+  int r = 0;
+  char *str = cur_str(p);
+  char *pat = cur_pat(p);
+  if (*pat == '\0') {r = 1; }
+  if (*pat == '%') {
+    
+  }
+  else {
+    if (*pat == *str) {
+      r = 1;
+      str++;
+    }
+    p->cur_pat += 1;
+  }
+  if (r) {
+    if (cur_start(p) == NULL) cur_start(p) = cur_str(p);
+	cur_end(p) = str;
+  }
+  return r;
 }
 
+static int term(pmx_t *p)
+{
+  int r = 0;
+  char *old_pat = p->cur_pat;
+  do {
+    if (cur_pat(p)[0] == '|') p->cur_pat += 1;
+	r = atom(p,r);
+  } while (cur_pat(p)[0] == '|');
+  return r;
+}
+
+int utl_pmxMatch(char *pat, char *str, pmx_t *p)
+{
+  int r;
+  p->nmatches = 0;
+  p->orig_str = str; p->cur_str = str;
+  p->orig_pat = pat; p->cur_pat = pat; 
+  cur_level(p) = 0;
+  cur_start(p) = NULL;
+  cur_end(p) = NULL;
+  r =term(p);
+  return r;
+}
+#endif
 #endif /* UTL_NOMATCH */
 
 #endif /* UTL_H */
