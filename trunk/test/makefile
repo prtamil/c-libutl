@@ -14,7 +14,8 @@ UTL_H=../src/utl.h
 
 TESTS = t_buf$(_EXE)     t_vec$(_EXE)  t_log$(_EXE)   \
         t_general$(_EXE) t_try$(_EXE)  t_try2$(_EXE)  \
-		t_mem$(_EXE)     t_fsm$(_EXE)  t_nolog$(_EXE)
+		t_mem$(_EXE)     t_fsm$(_EXE)  t_nolog$(_EXE) \
+		t_pmx$(_EXE)
 
 .SUFFIXES: .c .h $(_OBJ)
 
@@ -26,6 +27,10 @@ CFLAGS= -I../src -g
 all: $(TESTS)
 	run_tests$(_BAT) 2> tests.log
 	sed -n -e '/^# \*\*/p' -e '/^# TOTAL/p' tests.log
+
+t_pmx$(_EXE): $(UTL_H) utl_pmx_ut.c
+	$(CC) $(CFLAGS) -c -o utl_pmx_ut.$(_OBJ) utl_pmx_ut.c
+	gcc -o $@ utl_pmx_ut.$(_OBJ)
 
 t_buf$(_EXE): $(UTL_H)  utl_buf_ut.c
 	$(CC) $(CFLAGS) -c -o utl_buf_ut.$(_OBJ) utl_buf_ut.c
