@@ -33,8 +33,13 @@ int main (int argc, char *argv[])
       }
       TSTGROUP("alternate") {
         TSTEQINT("alternate letter (first)",1,pmxMatch("a|b","a",&p));
+        TSTEQINT("pattern consumed",'\0',cur_pat(&p)[0]);
+        TSTFAILNOTE("pattern: '%s'",cur_pat(&p));
         TSTEQINT("alternate letter (second)",1,pmxMatch("a|b","b",&p));
+        TSTEQINT("pattern consumed",'\0',cur_pat(&p)[0]);
         TSTEQINT("alternate letter (third)",1,pmxMatch("a|b|c","c",&p));
+        TSTEQINT("alternate letter (fail)",0,pmxMatch("a|b|c","d",&p));
+        TSTEQINT("pattern consumed",'\0',cur_pat(&p)[0]);
       }
     }
   }
