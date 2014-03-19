@@ -136,6 +136,7 @@
 
 #define UTL_VERSION 0x0003
 
+utl_extern(unsigned short utlVersion, = UTL_VERSION);
 
 /* .%% Constants
 ** -------------
@@ -1378,37 +1379,67 @@ int utl_pmxMatch(char *pat, char *str, pmx_t *p);
 
 #ifdef UTL_LIB
 
-static int atom(pmx_t *p, int skip)
+static utl_skipatom(pmx_t *p)
+{
+  char *pat = cur_pat(p);
+  int cnt = 0;
+  
+  if (!*pat) return;
+  if (strchr("*?+!",*pat)) pat++;
+  if (*pat == '%') { if (*++pat) pat++;}
+  else if (*pat == '[' ) {
+    if (*++pat == ']') *pat++;
+    while (*pat && *pat++ != ']') ;
+  } 
+  else if (*pat == '(') {
+    pat++;
+    while (*pat) {
+      if (*pat == '(') cnt++;
+      else if (*pat == ')') if (--cnt == 0) {pat++; break;}
+      pat++;
+    }
+  }
+  else pat++;
+  cur_pat(p) = pat;
+}
+
+static int utl_atom(pmx_t *p)
 {
   int r = 0;
   char *str = cur_str(p);
   char *pat = cur_pat(p);
   if (*pat == '\0') {r = 1; }
-  if (*pat == '%') {
-    
+  else if (*pat == '%') {
+    switch (*++pat) {
+      case 'd' : if (isdigit(*str)) {r = 1; str++;}  break;
+      case 'a' : if (isalpha(*str)) {r = 1; str++;}  break;
+    }
   }
   else {
-    if (*pat == *str) {
-      r = 1;
-      str++;
-    }
-    p->cur_pat += 1;
+    if (*pat == *str) {r = 1;  str++;}
+    pat++;
   }
   if (r) {
     if (cur_start(p) == NULL) cur_start(p) = cur_str(p);
-	cur_end(p) = str;
+    cur_end(p) = str;
+    cur_str(p) = str;
   }
+  p->cur_pat = pat;
   return r;
 }
 
-static int term(pmx_t *p)
+static int utl_term(pmx_t *p)
 {
   int r = 0;
   char *old_pat = p->cur_pat;
   do {
     if (cur_pat(p)[0] == '|') p->cur_pat += 1;
-	r = atom(p,r);
-  } while (cur_pat(p)[0] == '|');
+    r = utl_atom(p);
+  } while (r == 0 && cur_pat(p)[0] == '|');
+  while (cur_pat(p)[0] == '|') {
+    p->cur_pat += 1;
+    utl_skipatom(p);
+  }
   return r;
 }
 
@@ -1421,7 +1452,7 @@ int utl_pmxMatch(char *pat, char *str, pmx_t *p)
   cur_level(p) = 0;
   cur_start(p) = NULL;
   cur_end(p) = NULL;
-  r =term(p);
+  r =utl_term(p);
   return r;
 }
 #endif
